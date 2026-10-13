@@ -165,19 +165,51 @@ built. **RESEARCHING** means designed but not built yet.
 
 ## Architecture and research
 
-Four decisions shape the engine:
-- Exactness is part of the design: gradients are summed in a fixed microbatch order, kernels are pinned to
-  deterministic implementations, the wire is lossless, and initialization replays one seeded stream, so the bits never
-  depend on the cut. A change to the numerics is a new recipe, and the single-device reference runs it too.
-- One execution model, zero-bubble pipeline parallelism, scheduled per run from measured costs; it extends the
-  reference heuristic with per-stage costs and per-hop communication [1].
-- One device class per stage, so bits are guaranteed within a class.
-- Each stage builds only its own layers, so the model can outgrow any single GPU.
+### How a run is planned
 
-Open questions include whether ZB-V [2], which halves the bubble but crosses each WAN boundary twice, pays off per
-link; how to save bandwidth without the lossy compression or low-communication optimizers [6][7] that change what the
-model learns; and whether different vendors can agree on the bits, when exact accumulation cost 2.7 to 7.7× on the
-GEMM term in our H100 measurements [11].
+The coordinator measures every worker's device and the link between every pair of workers. It orders the stages so
+the slowest hop in the chain is as fast as possible, then cuts the model into contiguous ranges of layers with a
+min-max dynamic program over the measured per-layer costs, and solves the schedule from the measured compute and
+transfer times. Before step 0, every stage runs a fit check on its real device, and the coordinator re-plans if one
+doesn't fit.
+
+### What happens in a step
+
+Each step pushes many microbatches through the pipeline. A stage runs the forward pass and sends the activations to
+the next stage over one or more TCP flows, paced by the kernel and encrypted with AES-256-GCM (ChaCha20-Poly1305 when
+either end lacks hardware AES). The backward pass is split in two, as in zero-bubble pipeline parallelism [1]: the
+input gradient goes back upstream at once, and the weight gradient waits. That deferred work fills the time a stage
+would otherwise spend waiting on the network, in 5 ms slices, so it never delays the next scheduled operation.
+
+### How memory is handled
+
+Each stage builds only its own layers, so the model can be bigger than any single GPU. Large stages recompute
+activations instead of storing them, and can keep AdamW's moments in host memory, copying them over PCIe in chunks.
+The optimizer update then runs beside the next step's forward pass, which waits layer by layer for the new weights.
+
+### How the bits stay exact
+
+Gradients are summed in microbatch order, whatever order they arrive in. Kernels are pinned to deterministic
+implementations, the wire is lossless, and initialization replays one seeded stream, so the weights never depend on
+where the model is cut. Each stage runs on one device class. A reference run trains the same recipe on one device, in
+the same microbatch order, and the two must match bit for bit; a change that alters the numerics is a new recipe that
+the reference runs too.
+
+### When a worker fails
+
+Workers send heartbeats to the coordinator. When one goes silent, its stage moves to a spare of the same device class
+and every stage resumes from the last checkpoint, with the same bits. This works on CPU; on GPUs it is still being
+proven.
+
+### Open questions
+
+- Is ZB-V [2] worth it on a WAN? It halves the bubble and the activation memory but crosses each WAN boundary twice,
+  so the planner should decide per link.
+- How do we save bandwidth without changing the bits? Lossy compression and low-communication optimizers [6][7] change
+  what the model learns, so we work on the transport after idle periods, the bytes each token costs at a boundary, and
+  overlap between the optimizer and communication.
+- Can different vendors agree on the bits? In our H100 measurements, exact accumulation cost 2.7 to 7.7× on the GEMM
+  term [11].
 
 ## Benchmarks and evaluation
 
