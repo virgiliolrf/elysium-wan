@@ -2,12 +2,16 @@
 
 **Unifying the world's AI compute.**
 
-Elysium trains one model on GPUs that live in different data centers, over the ordinary internet. We cut the model
-into pipeline stages, put each stage wherever there is a GPU, and send only the activations between sites. Any run can
-be checked bit for bit against the same model trained on a single device.
+[![CI](https://github.com/virgiliolrf/elysium-wan/actions/workflows/ci.yml/badge.svg)](https://github.com/virgiliolrf/elysium-wan/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 
-[Website](https://elysium-network.vercel.app/) · [Results](#benchmarks-and-evaluation) · [Quick start](#quick-start) ·
-[How it works](#how-elysium-works) · [Capabilities](#current-capabilities) · [Roadmap](#roadmap) ·
+Elysium trains one model on GPUs that live in different data centers, over the ordinary internet. We cut the model
+into pipeline stages, put each stage wherever there is a GPU, and send only the activations between sites. Runs can be
+checked bit for bit against the same model trained on a single device.
+
+[Website](https://elysium-network.vercel.app/) · [How it works](#how-elysium-works) · [Quick start](#quick-start) ·
+[Capabilities](#current-capabilities) · [Results](#benchmarks-and-evaluation) · [Roadmap](#roadmap) ·
 [Contributing](#contributing)
 
 <picture>
@@ -23,42 +27,26 @@ Elysium is early research software. On real hardware it has:
 - matched a single H100 bit for bit: a 2.8B model trained between Czechia and Denver produced exactly the same 320
   losses;
 - reached 3,344 tokens/s on a 15.8B model split between Virginia and Czechia, with the GPUs busy 78% and 92% of each
-  step;
+  step.
 
 It doesn't yet mix GPU vendors, run a public compute network or run in production.
 
 ## The problem
 
-Today's training stacks assume all your GPUs sit in one building. Data parallelism and fully sharded data parallelism
-exchange a full set of gradients or weights on every step [6][7], and tensor parallelism communicates inside every
-layer [8]. That works because NVLink gives a Blackwell GPU 1.8 TB/s to its neighbors [13] and InfiniBand connects the
-racks. Between two data centers you get something like 1 to 10 Gb/s and 50 to 150 ms of latency, roughly a thousand
-times less bandwidth.
-
-Meanwhile, GPUs are expensive and scattered across clouds, smaller providers, universities and rented machines in
-dozens of regions. Each pool is usually too small, or too far from the others, to train a large model on its own, and
-a model that doesn't fit in one pool can't borrow the rest.
-
-Training one model across those pools puts the slow links inside every step, and a synchronous step waits for its
-slowest stage and its slowest link. In our first transatlantic run, the GPUs spent 72 to 79% of each step waiting.
-
-Hardware isn't interchangeable either. Different GPU models, even ones that differ only in their number of streaming
-multiprocessors, pick different kernels, so the same math can produce different bits. Vendors bring different stacks:
-CUDA, ROCm, XLA, Neuron. Pooling them changes performance, and it makes runs hard to reproduce and to verify.
+Training stacks assume all your GPUs sit in one building. Data and fully sharded parallelism exchange gradients or
+weights every step [3][4], and tensor parallelism communicates inside every layer [5], over NVLink at 1.8 TB/s per
+Blackwell GPU [10]. Between data centers you get 1 to 10 Gb/s and 50 to 150 ms of latency, and a synchronous step waits
+for its slowest link: in our first transatlantic run, the GPUs spent 72 to 79% of each step waiting. GPUs also sit in
+pools too small to train a large model alone, and different models and vendors pick different kernels, so the same
+math can produce different bits.
 
 ## The vision
 
-We want AI compute to work as one programmable layer, wherever the accelerators are. You would describe a training
-job once. The system would measure the machines and links available anywhere, place the work where it fits and runs
-best, and hand back the same model, bit for bit, that one big machine would have produced.
-
-The [target architecture](docs/VISION.md) goes further: GPUs, TPUs, Trainium and AMD in one run, each stage on its own
-native runtime behind a common tensor contract. The [website](https://elysium-network.vercel.app/) shows where the
-product is going.
-
-What exists today is the first layer: an engine that trains one model across sites on fleets of identical NVIDIA GPUs.
-Its correctness check is strict enough that we can change schedules, links and partitions without wondering whether
-the model still learns the same thing.
+We want AI compute to work as one programmable layer. You describe a training job once; the system measures the
+machines and links available anywhere, places the work where it fits and runs best, and hands back the same model, bit
+for bit, that one big machine would have produced. Today's engine covers fleets of identical NVIDIA GPUs across sites.
+The [target architecture](docs/VISION.md) adds GPUs, TPUs, Trainium and AMD in one run, each stage on its own native
+runtime behind a common tensor contract.
 
 ## How Elysium works
 
@@ -74,9 +62,82 @@ flowchart TB
     end
     CP <-.->|"specs, heartbeats, telemetry, checkpoint waves<br/>never activations or gradients"| DP
 ```
+
+## Quick start
+
+The laptop demo needs no GPU and takes about 70 seconds on an M4 MacBook Air. Real training needs one NVIDIA GPU per
+pipeline stage (ours ran in Linux containers with H100 and RTX cards; Windows hasn't been tried). Install Python 3.10
+or newer and [uv](https://docs.astral.sh/uv/), then:
+
+```bash
+git clone https://github.com/virgiliolrf/elysium-wan.git
+cd elysium-wan
+uv sync
+```
+
+### Try it on your laptop
+
+```bash
+uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
+```
+
+Five workers (four stages and a spare) run in two emulated regions joined by a 60 Mb/s link with a 60 ms round trip,
+and worker `w0` is killed at step 6. The output ends like this:
+
+```text
+>>> killing w0 (agent and stage) at step >= 6
+[coord error] slot (1, 0) convicted: worker unreachable: control connection lost 4s ago and not re-established
+[coord info] replacement for slot (1, 0): w3 -- identical device (cpu) in a surviving node's region: ...
+[coord info] every slot resumes after step 5 under the original spec
+[coord info] run ... complete: 240 losses, 2 attempt(s), 1 heal(s), 0 restart(s), 0 rebalance(s)
+vs single-device reference: {"ok": true, "compared": 240, "mismatches": 0, "max_abs_diff": 0.0, "first_mismatch": null}
+```
+
+`w3` takes over `w0`'s slot, every stage resumes after step 5, and the last line shows all 240 losses identical to a
+single device's. With `--mps`, one worker uses the Apple GPU and the comparison is skipped, since a mixed device map has
+no single-device reference.
+
+### Run on your own machines
+
+Tokenize a corpus (the GPT-2 tokenizer comes with the `data` extra):
+
+```bash
+uv sync --extra data
+uv run wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bin --tokenizer gpt2
+```
+
+Write a job file, `{"plan": {...}, "stages": N}`; the planner picks the cut, the schedule and the memory mode from the
+fleet it measures. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json) is a two-stage example: set its
+`dataset` to your `data.bin`. Then start the coordinator and one worker per machine, all with the same token
+(`--any-region` lets a run span regions):
+
+```bash
+# the coordinator (control plane only)
+WANTRAIN_COORD_TOKEN=<secret> uv run wantrain coordinator --port 28000 --job job.json --any-region
+
+# every worker
+WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-ip>:28000 \
+    --advertise-host <public-ip> --data-port 29000 --region eu-west --device cuda
+```
+
+### Rented GPUs
+
+[`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) drives the whole flow from your machine, assuming Vast.ai-style
+containers (mapped ports and `vast-capabilities`) and an SSH key at `~/.ssh/elysium_vast`:
+
+```bash
+cd benchmarks/wan
+python cluster.py check nodes.txt                    # driver, TLS, disk, bandwidth
+python cluster.py setup nodes.txt code.tar.gz        # engine and corpus on every node
+python cluster.py discover nodes.txt                 # public IPs and port maps -> nodes.json
+python cluster.py sustain nodes.json job.json        # every pair loaded both ways; picks the microbatch count
+python cluster.py launch nodes.json job.json         # coordinator plus one worker per node
+python cluster.py watch nodes.json                   # per step: tokens/s, idle per stage, slow stages
+```
+
 ## How it compares
 
-| | Data / fully sharded parallelism in one cluster [6][7][8] | Low-communication training (DiLoCo, INTELLECT-1) [9][10][11] | Decentralized pipelines (SWARM) [12] | Elysium |
+| | Data / fully sharded parallelism in one cluster [3][4][5] | Low-communication training (DiLoCo, INTELLECT-1) [6][7][8] | Decentralized pipelines (SWARM) [9] | Elysium |
 |---|---|---|---|---|
 | What crosses the slow link | Gradients or weights every step | Pseudo-gradients every H local steps | Activations, routed stochastically | Activations at fixed stage boundaries |
 | Training algorithm | Standard | Changed (inner and outer optimizers) | Standard pipeline, randomized wiring | Standard synchronous training |
@@ -107,203 +168,58 @@ built. **RESEARCHING** means designed but not built yet.
 | Any HuggingFace decoder through its own modules | **RESEARCHING** |
 | GPU, TPU and Trainium backends in one run  | **RESEARCHING** |
 
-## Quick start
-
-The quickest way to see Elysium work is the laptop demo: it needs no GPU and takes about 70 seconds on an M4 MacBook
-Air. Real training needs one NVIDIA GPU per pipeline stage. So far the demo has run on macOS (Apple Silicon), and GPU
-runs have used Linux containers with H100 and RTX cards. Windows hasn't been tried.
-
-Install Python 3.10 or newer and [uv](https://docs.astral.sh/uv/), then clone the repository. `uv sync` installs
-PyTorch 2.4 or newer, NumPy, zstandard and cryptography:
-
-```bash
-git clone https://github.com/virgiliolrf/elysium-wan.git
-cd elysium-wan
-uv sync
-```
-
-### Try it on your laptop
-
-```bash
-uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
-```
-
-This starts a coordinator and five workers on your machine, split into two emulated regions joined by a 60 Mb/s link
-with a 60 ms round trip. Four workers form the four-stage pipeline and the fifth is a spare. At step 6 the demo kills
-worker `w0`, and the end of the output looks like this:
-
-```text
->>> killing w0 (agent and stage) at step >= 6
-[coord error] slot (1, 0) convicted: worker unreachable: control connection lost 4s ago and not re-established
-[coord info] replacement for slot (1, 0): w3 -- identical device (cpu) in a surviving node's region: ...
-[coord info] every slot resumes after step 5 under the original spec
-[coord info] run ... complete: 240 losses, 2 attempt(s), 1 heal(s), 0 restart(s), 0 rebalance(s)
-vs single-device reference: {"ok": true, "compared": 240, "mismatches": 0, "max_abs_diff": 0.0, "first_mismatch": null}
-```
-
-The coordinator notices that `w0`'s control connection is gone, hands its slot to `w3`, and every stage resumes after
-step 5. The last line compares the run with a single device: all 240 losses are identical, crash and heal included.
-
-On a Mac, add `--mps` to put one worker on the Apple GPU. The demo then skips the comparison, because a mixed device
-map has no single-device reference.
-
-### Run on your own machines
-
-Each pipeline stage needs a machine with an NVIDIA GPU and the repository installed as above.
-
-First, tokenize a corpus. The GPT-2 tokenizer comes with the `data` extra:
-
-```bash
-uv sync --extra data
-uv run wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bin --tokenizer gpt2
-```
-
-Next, write a job file. It is `{"plan": {...}, "stages": N}`, with the model shape, dataset, steps, microbatches and
-optimizer, and the planner works out the cut, the schedule and the memory mode from the fleet it measures. The job
-files in [`benchmarks/wan/`](benchmarks/wan/) are working examples. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json)
-is a two-stage one, and its `dataset` field is where your `data.bin` goes.
-
-Then start the coordinator, and one worker on each machine. They share a token, which is how the coordinator
-authenticates the workers:
-
-```bash
-# the coordinator (control plane only)
-WANTRAIN_COORD_TOKEN=<secret> uv run wantrain coordinator --port 28000 --job job.json --any-region
-
-# every worker
-WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-ip>:28000 \
-    --advertise-host <public-ip> --data-port 29000 --region eu-west --device cuda
-```
-
-`--any-region` lets one run span workers in different regions. Without it, the coordinator picks workers from a
-single region.
-
-### Rented GPUs
-
-[`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) drives the whole flow from your own machine, from checking
-the nodes to watching the run:
-
-```bash
-cd benchmarks/wan
-python cluster.py check nodes.txt                    # driver, TLS, disk, bandwidth
-python cluster.py setup nodes.txt code.tar.gz        # engine and corpus on every node
-python cluster.py discover nodes.txt                 # public IPs and port maps -> nodes.json
-python cluster.py sustain nodes.json job.json        # every pair loaded both ways; picks the microbatch count
-python cluster.py launch nodes.json job.json         # coordinator plus one worker per node
-python cluster.py watch nodes.json                   # per step: tokens/s, idle per stage, slow stages
-```
-
-It currently assumes Vast.ai-style containers (mapped ports and `vast-capabilities`) and an SSH key at
-`~/.ssh/elysium_vast`.
-
 ## Architecture and research
-Four decisions shape the rest of the engine:
 
-- Exactness is part of the design. Gradients are summed in a fixed microbatch order, whatever order they arrive in.
-  Kernels are pinned to deterministic implementations, and the wire is lossless. Initialization replays one seeded
-  stream in a fixed order, so the bits never depend on where the model is cut. A change that alters the numerics
-  counts as a new recipe, and the single-device reference has to run it too.
-- There is one execution model: zero-bubble pipeline parallelism, with the schedule solved for each run from measured
-  costs. The automatic schedule is a port of the reference implementation's heuristic, extended with per-stage costs
-  and per-hop communication [1].
-- Each stage uses one device class (ADR-0005). Bits are guaranteed within a device class, and a mixed fleet is
-  compared with a run on the same device map.
-- Each stage builds only its own layers (ADR-0007, RUNTIME-I22), so the model can be bigger than any single GPU.
+Four decisions shape the engine:
+- Exactness is part of the design: gradients are summed in a fixed microbatch order, kernels are pinned to
+  deterministic implementations, the wire is lossless, and initialization replays one seeded stream, so the bits never
+  depend on the cut. A change to the numerics is a new recipe, and the single-device reference runs it too.
+- One execution model, zero-bubble pipeline parallelism, scheduled per run from measured costs; it extends the
+  reference heuristic with per-stage costs and per-hop communication [1].
+- One device class per stage, so bits are guaranteed within a class.
+- Each stage builds only its own layers, so the model can outgrow any single GPU.
 
-Plenty of questions are still open:
-
-- How should a pipeline use a WAN? Pipelines suit WANs because only boundaries cross sites, but every boundary sits on
-  the critical path. ZB-V [2] halves the bubble and the activation memory, yet crosses each WAN boundary twice.
-  Whether that pays off depends on the link, so the planner should decide per link.
-- How do we save bandwidth without changing the bits? Lossy compression and low-communication optimizers [9][10] save
-  bandwidth by changing what the model learns. We keep the wire lossless and look at other costs: how the transport
-  behaves after idle periods, how many bytes each token costs at the boundary, and how much of the optimizer can
-  overlap with communication.
-- Can different vendors agree on the bits? Running one stage per device class is designed (ADR-0005) and partly built.
-  Getting different vendors to produce identical bits is an open problem: in our measurements on an H100, exact
-  accumulation cost 2.7 to 7.7× on the GEMM term (research branch `research/exact-native-speed`) [14].
-- What should a backend layer look like? The native backend layer and the tensor contract in the
-  [target architecture](docs/VISION.md) are planned and not yet built.
+Open questions include whether ZB-V [2], which halves the bubble but crosses each WAN boundary twice, pays off per
+link; how to save bandwidth without the lossy compression or low-communication optimizers [6][7] that change what the
+model learns; and whether different vendors can agree on the bits, when exact accumulation cost 2.7 to 7.7× on the
+GEMM term in our H100 measurements [11].
 
 ## Benchmarks and evaluation
 
-Everything below ran on GPUs rented by the hour on Vast.ai, and every run has a report with its raw stage logs,
-per-operation telemetry, losses and charts. Throughput is tokens per step divided by the median step time over
-steady-state steps, skipping the first one or two. Waiting is the share of a step a stage spent with nothing to run,
-waiting for a message.
+All runs used GPUs rented by the hour on Vast.ai; each model links to its report with raw logs, telemetry, losses and
+charts. Throughput is tokens per step over the median step time after the first one or two steps; waiting is the share
+of a step a stage had nothing to run.
 
 | Date | Model | Hardware and route | Batch | Throughput | Waiting |
 |---|---|---|---|---|---|
-| 10-12 | 607M | RTX 3070 Laptop, Bellevue ↔ RTX 3060, Seoul; residential, 156 ms | 4,096 tokens | 1,741 tok/s | 84% / 60% |
-| 10-12 | 2.8B | 2× H100 NVL, Czechia ↔ Denver, 134 ms | 16,384 tokens | 2,047 tok/s (one H100 alone: 5,304) | 72 to 79% |
-| 10-12 | 13.5B | 2× H100 NVL, Virginia ↔ Czechia | 32,768 tokens | 2,575 tok/s | 14% / 34% |
-| 10-12 | 25.1B | 4× H100 SXM, US, Czechia (2), Germany | 65,536 tokens | ~2,500 tok/s | 28 to 50% |
-| 10-13 | 15.8B | 2× H100 NVL, Virginia ↔ Czechia, 103 ms | 131,072 tokens | 3,344 tok/s | 6% / 20% |
+| 10-12 | [607M](benchmarks/wan/runs/2026-10-12-us-kr-607m/REPORT.md) | RTX 3070 Laptop, Bellevue ↔ RTX 3060, Seoul; residential, 156 ms | 4,096 tokens | 1,741 tok/s | 84% / 60% |
+| 10-12 | [2.8B](benchmarks/wan/runs/2026-10-12-h100/REPORT.md) | 2× H100 NVL, Czechia ↔ Denver, 134 ms | 16,384 tokens | 2,047 tok/s (one H100 alone: 5,304) | 72 to 79% |
+| 10-12 | [13.5B](benchmarks/wan/runs/2026-10-12-us3/REPORT.md) | 2× H100 NVL, Virginia ↔ Czechia | 32,768 tokens | 2,575 tok/s | 14% / 34% |
+| 10-12 | [25.1B](benchmarks/wan/runs/2026-10-12-sxm4/REPORT.md) | 4× H100 SXM, US, Czechia (2), Germany | 65,536 tokens | ~2,500 tok/s | 28 to 50% |
+| 10-13 | [15.8B](benchmarks/wan/runs/2026-10-13-h100/REPORT.md) | 2× H100 NVL, Virginia ↔ Czechia, 103 ms | 131,072 tokens | 3,344 tok/s | 6% / 20% |
 
-Notes on each run:
-
-- [607M on home internet](benchmarks/wan/runs/2026-10-12-us-kr-607m/REPORT.md): d 1536, 16 layers, sequence 512,
-  bf16, TinyStories. It ran 606 steps in 30 minutes, and the loss went from 11.03 to 3.07. With only 8 microbatches per
-  step the run was latency-bound, and the residential route lost packets in bursts.
-- [2.8B](benchmarks/wan/runs/2026-10-12-h100/REPORT.md): d 2560, 32 layers, sequence 1024, bf16 with recomputation and
-  host-memory moments, 20 steps of 16 microbatches. The baseline is one H100 running the same recipe. This run came
-  before our TCP tuning, when one flow carried only 41 to 49 Mbps.
-- [13.5B](benchmarks/wan/runs/2026-10-12-us3/REPORT.md): d 5632, 34 layers, 32 microbatches. The loss went from 11.06
-  to 5.95 in 31 steps.
-- [25.1B](benchmarks/wan/runs/2026-10-12-sxm4/REPORT.md): d 6144, 54 layers, 64 microbatches, about 26 seconds per
-  step. A node capped by its network card and a noisy host set the pace.
-- [15.8B](benchmarks/wan/runs/2026-10-13-h100/REPORT.md): d 5632, 40 layers, sequence 1024, bf16 with flash
-  attention, recomputation and host-memory moments, 128 microbatches, TinyStories. A step took 39.2 seconds at 19% MFU
-  (6·N·tokens/s over 2 × 835 TFLOPs), and the loss went from 11.00 to 6.05 in 35 steps before the budget ran out. The
-  GPUs cost $6.93 an hour, and network egress added about $0.17 per step, more than the GPUs themselves. Earlier that
-  day, before TCP pacing and flash attention, the same model reached 2,726 tokens/s.
-
-The runs are short (11 to 606 steps) and mostly single attempts. The fleets differ from row to row, so this isn't a
-scaling study, and the only same-workload baseline is the single H100 in the 2.8B run.
-
-To reproduce a figure:
-- [`bench_report.py`](benchmarks/wan/bench_report.py) turns a collected run into charts and a summary.
-- [`step_timeline.py`](benchmarks/wan/step_timeline.py) draws the figure at the top of this page.
-- [`msgbench.py`](benchmarks/wan/msgbench.py) measures how long a boundary message takes on a given path.
+The runs are short (11 to 606 steps), mostly single attempts, on fleets that differ from row to row, so this isn't a
+scaling study; the only same-workload baseline is the single H100 in the 2.8B run.
 
 ## Roadmap
 
-[Current capabilities](#current-capabilities) lists what already works. Nothing below has a date.
+[Current capabilities](#current-capabilities) lists what works today; nothing below has a date.
 
-### What we're working on
-
-- Balancing stages on measured costs. We calibrate the cut on step 0's real timings, then restart from step 0. Runs
-  don't depend on the cut, so the bits stay the same.
-- Keeping bf16 working weights on the GPU, with fp32 masters in host memory. Today each linear layer casts its fp32
-  weight to bf16 three times per microbatch, which is 31% of a block's forward pass on an H100. The change frees GPU
-  memory and keeps the same bits.
-- Longer runs, and exactness across cuts at 15B and beyond. That includes learning-rate warmup, since the first Adam
-  step currently makes the loss spike.
+In progress:
+- Balancing stages on step 0's measured timings (the bits don't depend on the cut).
+- bf16 working weights on the GPU with fp32 masters in host memory, removing casts that take 31% of a block's forward
+  pass on an H100.
+- Longer runs with learning-rate warmup, and exactness across cuts at 15B and beyond.
 - Selective recomputation on by default, once we understand an intermittent CUDA NaN in its keep-graph mode.
 
-### What we're researching
-
-- Heterogeneous device maps on GPU fleets (ADR-0005), and exact arithmetic across vendors.
-- WAN-aware scheduling: ZB-V where links allow it, a transport that keeps its window across idle periods, and
-  placement that accounts for egress prices.
-- Wider fleets: MoE and sharded wide stages on real GPUs, with 4 to 9 GPUs per run.
-- Any HuggingFace decoder through its own modules, checked against `transformers` (ADR-0009).
-
-### Where this could go
-
-The [vision](docs/VISION.md) lays out five phases:
-1. Homogeneous GPUs across sites (where we are now).
-2. Any model architecture.
-3. Heterogeneous accelerators in one run: NVIDIA, AMD, TPU and Trainium, each stage on its native runtime.
-4. A global compute fabric with multi-region scheduling and cost-aware placement.
-5. Tools that show placement, link cost, bubble and price before you rent anything.
+Research covers heterogeneous device maps and exact arithmetic across vendors, WAN-aware scheduling, MoE and sharded
+wide stages on 4 to 9 GPUs, and any HuggingFace decoder. The [vision](docs/VISION.md) goes on to heterogeneous
+accelerators in one run and a global compute fabric.
 
 ## Contributing
 
 We'd love help, especially from people who know kernel determinism, WAN transport, pipeline scheduling,
-heterogeneous backends or fault tolerance.
-
-`uv sync` also installs the development tools: pytest, ruff, mypy and hypothesis. Before sending a change, run:
+heterogeneous backends or fault tolerance. `uv sync` also installs the development tools. Before sending a change, run:
 
 ```bash
 uv run ruff format src tests                                  # formatting
@@ -313,20 +229,11 @@ uv run pytest -q tests/integration/test_engine_bitwise.py     # 354 multi-proces
 uv run pytest -q tests/chaos tests/oracle tests/wan           # worker death, oracles, WAN emulation
 ```
 
-A few habits keep the codebase honest:
-- Every behavior has a numbered invariant in a SPEC document, and tests and code cite it. When a SPEC changes, we
-  append its sha256 and the reason to [`docs/design/FROZEN.json`](docs/design/FROZEN.json).
-- Tests say what they cover and what would make them fail, in `covers:` and `WOULD-FAIL-IF:` lines.
-- A speedup has to keep the bits. If it changes the numerics, it's a new recipe, and the reference must run it too.
-- We measure before we theorize. Every GPU run leaves per-operation telemetry, and the fixes in the run reports came
-  from reading it.
-- An agent factory writes much of the code. It lives in [`agents-architetura/`](agents-architetura/) and follows
-  [`CLAUDE.md`](CLAUDE.md). Merges to `main` and paid GPU time stay with a person.
-
-The full guide is in [CONTRIBUTING.md](CONTRIBUTING.md), and everyone taking part follows the
-[code of conduct](CODE_OF_CONDUCT.md). Open a GitHub issue for bugs and ideas, and for larger changes, start the
-discussion there before opening a pull request. Please report security issues privately through GitHub security
-advisories; the threat model is in [`THREAT_MODEL.md`](docs/design/THREAT_MODEL.md).
+Every behavior has a numbered invariant in a [SPEC document](docs/design/), tests say what they cover and what would
+make them fail, and a speedup has to keep the bits. An agent factory in [`agents-architetura/`](agents-architetura/)
+writes much of the code; merges to `main` and paid GPU time stay with a person. See [CONTRIBUTING.md](CONTRIBUTING.md)
+and the [code of conduct](CODE_OF_CONDUCT.md), open an issue before a large change, and report security problems
+privately as described in [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
@@ -334,7 +241,7 @@ advisories; the threat model is in [`THREAT_MODEL.md`](docs/design/THREAT_MODEL.
 |---|---|
 | Understand the design and its cost model | [DESIGN.md](docs/design/DESIGN.md) |
 | Run and debug the engine | [docs/engine/ARCHITECTURE.md](docs/engine/ARCHITECTURE.md) |
-| Know the rules each subsystem keeps | the SPEC documents above |
+| Know the rules each subsystem keeps | [the SPEC documents](docs/design/) |
 | See why each big decision was made | [ADRs](docs/design/adr/) |
 | Read every GPU run with its raw data | [benchmarks/wan/runs/](benchmarks/wan/runs/) |
 | Know what we defend against | [THREAT_MODEL.md](docs/design/THREAT_MODEL.md) |
@@ -342,27 +249,22 @@ advisories; the threat model is in [`THREAT_MODEL.md`](docs/design/THREAT_MODEL.
 
 ## License, acknowledgments, and references
 
-Elysium is released under the [Apache License 2.0](LICENSE); see also [NOTICE](NOTICE). Virgilio Filho
-([@virgiliolrf](https://github.com/virgiliolrf)) wrote it with the agent factory described above.
+Elysium is released under the [Apache License 2.0](LICENSE) (see [NOTICE](NOTICE)); to cite it, use
+[CITATION.cff](CITATION.cff). Virgilio Filho ([@virgiliolrf](https://github.com/virgiliolrf)) wrote it with the agent
+factory described above. The schedule builds on Zero Bubble Pipeline Parallelism [1] and its
+[reference implementation](https://github.com/sail-sg/zero-bubble-pipeline-parallelism); the engine uses
+[PyTorch](https://pytorch.org), [zstandard](https://github.com/indygreg/python-zstandard),
+[cryptography](https://cryptography.io) and, optionally, tiktoken and Hugging Face Transformers; the GPU runs used
+machines rented through [Vast.ai](https://vast.ai).
 
-The pipeline schedule builds on Zero Bubble Pipeline Parallelism [1] and its reference implementation
-([sail-sg/zero-bubble-pipeline-parallelism](https://github.com/sail-sg/zero-bubble-pipeline-parallelism)). The engine
-is built on [PyTorch](https://pytorch.org), [zstandard](https://github.com/indygreg/python-zstandard) and
-[cryptography](https://cryptography.io), and uses tiktoken and Hugging Face Transformers for optional features. The GPU
-experiments ran on machines rented through [Vast.ai](https://vast.ai).
-
-References:
-1. P. Qi, X. Wan, G. Huang, M. Lin, "Zero Bubble Pipeline Parallelism", ICLR 2024. [arXiv:2401.10241](https://arxiv.org/abs/2401.10241)
-2. P. Qi, X. Wan, N. Amar, M. Lin, "Pipeline Parallelism with Controllable Memory", 2024. [arXiv:2405.15362](https://arxiv.org/abs/2405.15362)
-3. Y. Huang et al., "GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism", NeurIPS 2019. [arXiv:1811.06965](https://arxiv.org/abs/1811.06965)
-4. D. Narayanan et al., "PipeDream: Generalized Pipeline Parallelism for DNN Training", SOSP 2019. [arXiv:1806.03377](https://arxiv.org/abs/1806.03377)
-5. B. Yuan et al., "Decentralized Training of Foundation Models in Heterogeneous Environments", NeurIPS 2022. [arXiv:2206.01288](https://arxiv.org/abs/2206.01288)
-6. S. Rajbhandari et al., "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", SC20. [arXiv:1910.02054](https://arxiv.org/abs/1910.02054)
-7. Y. Zhao et al., "PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel", VLDB 2023. [arXiv:2304.11277](https://arxiv.org/abs/2304.11277)
-8. D. Narayanan et al., "Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM", SC21. [arXiv:2104.04473](https://arxiv.org/abs/2104.04473)
-9. A. Douillard et al., "DiLoCo: Distributed Low-Communication Training of Language Models", 2023. [arXiv:2311.08105](https://arxiv.org/abs/2311.08105)
-10. A. Douillard et al., "Streaming DiLoCo with overlapping communication", 2025. [arXiv:2501.18512](https://arxiv.org/abs/2501.18512)
-11. S. Jaghouar et al., "INTELLECT-1 Technical Report", 2024. [arXiv:2412.01152](https://arxiv.org/abs/2412.01152)
-12. M. Ryabinin, T. Dettmers, M. Diskin, A. Borzunov, "SWARM Parallelism: Training Large Models Can Be Surprisingly Communication-Efficient", ICML 2023. [arXiv:2301.11913](https://arxiv.org/abs/2301.11913) · [code](https://github.com/yandex-research/swarm)
-13. NVIDIA, Multi-Node NVLink systems: 1.8 TB/s per Blackwell GPU. [docs.nvidia.com](https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/overview.html)
-14. J. Demmel, H. D. Nguyen, "Parallel Reproducible Summation", IEEE Transactions on Computers, 2015. [doi:10.1109/TC.2014.2345391](https://doi.org/10.1109/TC.2014.2345391)
+1. Qi et al., "Zero Bubble Pipeline Parallelism", ICLR 2024. [arXiv:2401.10241](https://arxiv.org/abs/2401.10241)
+2. Qi et al., "Pipeline Parallelism with Controllable Memory", 2024. [arXiv:2405.15362](https://arxiv.org/abs/2405.15362)
+3. Rajbhandari et al., "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", SC20. [arXiv:1910.02054](https://arxiv.org/abs/1910.02054)
+4. Zhao et al., "PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel", VLDB 2023. [arXiv:2304.11277](https://arxiv.org/abs/2304.11277)
+5. Narayanan et al., "Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM", SC21. [arXiv:2104.04473](https://arxiv.org/abs/2104.04473)
+6. Douillard et al., "DiLoCo: Distributed Low-Communication Training of Language Models", 2023. [arXiv:2311.08105](https://arxiv.org/abs/2311.08105)
+7. Douillard et al., "Streaming DiLoCo with overlapping communication", 2025. [arXiv:2501.18512](https://arxiv.org/abs/2501.18512)
+8. Jaghouar et al., "INTELLECT-1 Technical Report", 2024. [arXiv:2412.01152](https://arxiv.org/abs/2412.01152)
+9. Ryabinin et al., "SWARM Parallelism: Training Large Models Can Be Surprisingly Communication-Efficient", ICML 2023. [arXiv:2301.11913](https://arxiv.org/abs/2301.11913) · [code](https://github.com/yandex-research/swarm)
+10. NVIDIA, Multi-Node NVLink systems: 1.8 TB/s per Blackwell GPU. [docs.nvidia.com](https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/overview.html)
+11. Demmel and Nguyen, "Parallel Reproducible Summation", IEEE Transactions on Computers, 2015. [doi:10.1109/TC.2014.2345391](https://doi.org/10.1109/TC.2014.2345391)

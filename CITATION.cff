@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use Elysium in your work, please cite it as below."
+type: software
+title: "Elysium: byte-exact pipeline-parallel training across data centers"
+authors:
+  - given-names: Virgilio
+    family-names: Filho
+version: 0.1.0
+date-released: 2026-10-13
+license: Apache-2.0
+repository-code: "https://github.com/virgiliolrf/elysium-wan"
+url: "https://elysium-network.vercel.app/"
+keywords:
+  - distributed training
+  - pipeline parallelism
+  - wide-area network
+  - reproducibility
