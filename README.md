@@ -63,9 +63,8 @@ flowchart TB
 
 ## Quick start
 
-The laptop demo needs no GPU and takes about 70 seconds on an M4 MacBook Air. Real training needs one NVIDIA GPU per
-pipeline stage (ours ran in Linux containers with H100 and RTX cards; Windows hasn't been tried). Install Python 3.10
-or newer and [uv](https://docs.astral.sh/uv/), then:
+**1. Install** with Python 3.10 or newer and [uv](https://docs.astral.sh/uv/). The demo runs on macOS (Apple Silicon);
+GPU runs have used Linux with H100 and RTX cards. Windows hasn't been tried.
 
 ```bash
 git clone https://github.com/virgiliolrf/elysium-wan.git
@@ -73,14 +72,14 @@ cd elysium-wan
 uv sync
 ```
 
-### Try it on your laptop
+**2. Run the laptop demo.** No GPU needed, about 70 seconds on an M4 MacBook Air. Five workers in two emulated regions
+(60 Mb/s, 60 ms round trip) run a four-stage pipeline with one spare, and worker `w0` is killed at step 6.
 
 ```bash
 uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
 ```
 
-Five workers (four stages and a spare) run in two emulated regions joined by a 60 Mb/s link with a 60 ms round trip,
-and worker `w0` is killed at step 6. The output ends like this:
+The spare takes over, and the run ends with the same 240 losses as a single device:
 
 ```text
 >>> killing w0 (agent and stage) at step >= 6
@@ -91,23 +90,21 @@ and worker `w0` is killed at step 6. The output ends like this:
 vs single-device reference: {"ok": true, "compared": 240, "mismatches": 0, "max_abs_diff": 0.0, "first_mismatch": null}
 ```
 
-`w3` takes over `w0`'s slot, every stage resumes after step 5, and the last line shows all 240 losses identical to a
-single device's. With `--mps`, one worker uses the Apple GPU and the comparison is skipped, since a mixed device map has
-no single-device reference.
+Add `--mps` to put one worker on the Apple GPU. The comparison is then skipped, since a mixed device map has no
+single-device reference.
 
-### Run on your own machines
-
-Tokenize a corpus (the GPT-2 tokenizer comes with the `data` extra):
+**3. Train on your own GPUs.** You need one machine with an NVIDIA GPU per pipeline stage. Tokenize a corpus (the
+GPT-2 tokenizer comes with the `data` extra):
 
 ```bash
 uv sync --extra data
 uv run wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bin --tokenizer gpt2
 ```
 
-Write a job file, `{"plan": {...}, "stages": N}`; the planner picks the cut, the schedule and the memory mode from the
-fleet it measures. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json) is a two-stage example: set its
-`dataset` to your `data.bin`. Then start the coordinator and one worker per machine, all with the same token
-(`--any-region` lets a run span regions):
+Then write a job file, `{"plan": {...}, "stages": N}`, and start the coordinator and one worker per machine with the
+same token. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json) is a two-stage example: set its `dataset` to
+your `data.bin`. The planner picks the cut, the schedule and the memory mode from the fleet it measures, and
+`--any-region` lets a run span regions.
 
 ```bash
 # the coordinator (control plane only)
@@ -118,10 +115,8 @@ WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-
     --advertise-host <public-ip> --data-port 29000 --region eu-west --device cuda
 ```
 
-### Rented GPUs
-
-[`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) drives the whole flow from your machine, assuming Vast.ai-style
-containers (mapped ports and `vast-capabilities`) and an SSH key at `~/.ssh/elysium_vast`:
+**4. Rent GPUs.** [`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) runs the whole flow from your machine. It
+assumes Vast.ai-style containers (mapped ports and `vast-capabilities`) and an SSH key at `~/.ssh/elysium_vast`.
 
 ```bash
 cd benchmarks/wan
@@ -132,6 +127,8 @@ python cluster.py sustain nodes.json job.json        # every pair loaded both wa
 python cluster.py launch nodes.json job.json         # coordinator plus one worker per node
 python cluster.py watch nodes.json                   # per step: tokens/s, idle per stage, slow stages
 ```
+
+See [docs/engine/ARCHITECTURE.md](docs/engine/ARCHITECTURE.md) to run and debug the engine in more depth.
 
 ## How it compares
 
