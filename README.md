@@ -22,12 +22,10 @@ checked bit for bit against the same model trained on a single device.
 <sub>One measured training step: a 15.8B-parameter model on two H100s 6,900 km apart, with both GPUs on the same
 clock ([run report](benchmarks/wan/runs/2026-10-13-h100/REPORT.md)).</sub>
 
-Elysium is early research software. On real hardware it has:
-- trained dense GPT models from 607M to 25.1B parameters over the public internet, on GPUs rented by the hour;
-- matched a single H100 bit for bit: a 2.8B model trained between Czechia and Denver produced exactly the same 320
-  losses;
-- reached 3,344 tokens/s on a 15.8B model split between Virginia and Czechia, with the GPUs busy 78% and 92% of each
-  step.
+Elysium is early research software. So far we've trained dense GPT models from 607M to 25.1B parameters over the
+public internet, on GPUs rented by the hour. Between Czechia and Denver, a 2.8B model produced the same 320 losses as a
+single H100, bit for bit. A 15.8B model split between Virginia and Czechia reached 3,344 tokens/s, with the GPUs busy
+78% and 92% of each step.
 
 It doesn't yet mix GPU vendors, run a public compute network or run in production.
 
