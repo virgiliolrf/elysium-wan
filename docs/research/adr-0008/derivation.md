@@ -23,7 +23,7 @@ them; full sha256 below, which match the 16-hex prefixes the round-0 ADR cited).
 
 - Tree: they ran on 5f2c815 (worktree `edt-sec`), Apple M4, torch 2.14.1 CPU, 1 thread,
   `use_deterministic_algorithms(True)`, `.venv/bin/python -I <script>` (pieces.py from the scripts' directory, since
-  it imports proto). `probe.py` and `proto.py` put `/Users/virgiliofilho/edt-sec/src` first on `sys.path`.
+  it imports proto). `probe.py` and `proto.py` put the repository's `src` first on `sys.path` (run them from the repository root).
 - The only product module they import is `wantrain.model.wgrad`. FACT: its blob is `86c0404` on both 5f2c815 and
   a62e4eb (`git rev-parse <tree>:src/wantrain/model/wgrad.py`), and `git diff 5f2c815 a62e4eb -- src/wantrain/model
   src/wantrain/validation/reference.py src/wantrain/runtime/accumulate.py` is empty. The scripts reimplement the

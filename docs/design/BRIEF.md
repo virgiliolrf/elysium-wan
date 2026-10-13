@@ -7,7 +7,8 @@ Anything inferred is marked ASSUMPTION. The human owns this file: edit it freely
 Train neural networks (decoders) efficiently across heterogeneous machines connected by wide-area networks. The
 engine and the distributed scheduler only. In the human's words: "Build only the distributed-training engine and
 distributed scheduler". The execution has a single path, zero-bubble pipeline parallelism: "unifique a arquitetura para
-ter só um caminho tipo só zero-bubble pipeline paralelism e não 1f1b".
+ter só um caminho tipo só zero-bubble pipeline paralelism e não 1f1b" ("unify the architecture to have a single
+path, only zero-bubble pipeline parallelism and not 1F1B").
 
 # Existing Architecture
 See [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) and [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md): the `wantrain`

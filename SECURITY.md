@@ -12,7 +12,7 @@ credit you in the fix unless you'd rather stay anonymous.
 ## What's in scope
 
 The threat model is in [docs/design/THREAT_MODEL.md](docs/design/THREAT_MODEL.md). In scope:
-- **Peer authentication and the sealed data plane:** ed25519 identities and AES-256-GCM links between stages.
+- **Peer authentication and the sealed data plane:** ed25519 identities and AES-256-GCM links between stages (ChaCha20-Poly1305 when either end lacks hardware AES).
 - **The coordinator's control channel and its token handling.**
 - **Checkpoint integrity:** waves are sha256-verified.
 - **Anything else that lets a worker or a network attacker change training results, or read data it shouldn't.**

@@ -3,15 +3,17 @@
 
 One coordinator (this process) and N worker agents (separate processes, each
 supervising its own stage process) on this machine. Workers sit in two
-emulated regions joined by a slow, high-latency link; one may run on the Apple
-GPU (MPS) for a genuinely heterogeneous fleet. Optionally a worker is killed
-mid-run to show detection, replacement and an exact resume.
+emulated regions joined by a slow, high-latency link. Optionally a worker is
+killed mid-run to show detection, replacement and an exact resume.
 
     uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
-    uv run python examples/wan_cluster_demo.py --mps          # CPU + GPU fleet
 
-The last line prints the comparison against the single-device reference: on
-an all-CPU fleet the loss sequence is bit-identical, heal or no heal.
+The last line prints the comparison against the single-device reference: the
+loss sequence is bit-identical, heal or no heal.
+
+With --mps, worker 0 registers on the Apple GPU. A run uses one device class
+until the heterogeneous track returns (CONTROL-I25), so the stages go to the CPU
+workers and the Apple GPU worker stays idle.
 """
 
 from __future__ import annotations
@@ -49,7 +51,11 @@ def main() -> int:
     ap.add_argument("--stages", type=int, default=4)
     ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--kill-at", type=int, default=0, help="kill a worker at this step")
-    ap.add_argument("--mps", action="store_true", help="put worker 0 on the Apple GPU")
+    ap.add_argument(
+        "--mps",
+        action="store_true",
+        help="register worker 0 on the Apple GPU (it stays idle: a run uses one device class)",
+    )
     a = ap.parse_args()
 
     tmp = tempfile.mkdtemp(prefix="wantrain-demo-")
@@ -139,7 +145,7 @@ def main() -> int:
             default=str,
         )
     )
-    if res.ok and not a.mps:
+    if res.ok:
         ref = ensure_reference(JobSpec.from_json(recipe.to_json()), os.path.join(tmp, "ref"))
         print(
             "vs single-device reference:",

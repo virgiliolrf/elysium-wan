@@ -338,16 +338,9 @@ TPU            MB1  MB2  MB3  MB4  MB5
 Trainium            MB1  MB2  MB3  MB4  MB5
 ```
 
-For training, the runtime can use schedules such as:
-
-```text
-Forward
-Backward
-1F1B
-interleaved pipeline schedules
-```
-
-The goal is to minimize pipeline bubbles while maintaining memory efficiency.
+For training, the runtime uses one family of schedules, zero-bubble pipeline parallelism: the backward pass is
+split into the input gradient (B) and the weight gradient (W), and W fills the gaps a 1F1B schedule would leave idle.
+The order is solved per run from measured stage and link costs, keeping memory within each device's budget.
 
 ### 7. Hierarchical Parallelism
 
@@ -488,7 +481,7 @@ with:
 
 ```text
 microbatches = 32
-pipeline schedule = 1F1B
+pipeline schedule = zero-bubble
 precision = BF16
 ```
 

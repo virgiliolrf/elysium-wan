@@ -1,6 +1,6 @@
 """ADR-0008 probes (local Mac, CPU, 1 thread). Re-checks the researchers' claims the ADR relies on."""
 import sys, hashlib
-sys.path.insert(0, "/Users/virgiliofilho/edt-sec/src")
+sys.path.insert(0, "src")  # run from the repository root
 import torch, torch.nn as nn, torch.nn.functional as F
 from wantrain.model import wgrad
 torch.set_num_threads(1); torch.use_deterministic_algorithms(True)

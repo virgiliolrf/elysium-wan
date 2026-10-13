@@ -1,16 +1,16 @@
 # wantrain — distributed training engine over WAN
 
 `wantrain` trains a decoder with **zero-bubble pipeline parallelism** across
-heterogeneous machines connected by wide-area links. The model is cut into
+machines connected by wide-area links. The model is cut into
 contiguous layer slices, one slice per stage; stages exchange boundary
 activations forward and activation gradients backward over TCP. The engine's
 exactness contract: on identical hardware the per-microbatch loss sequence is
 **bit-identical** to a single-device run of the same recipe, whatever the
 partition, the schedule, the network, a crash or a heal.
 
-It is the distributed-training engine extracted from Elysium
-(`virgiliolrf/Efficient-Distributed-Training-with-Heterogeneous-Hardware-over-Wide-Area-Networks`);
-see [MIGRATION.md](MIGRATION.md) for what was taken, adapted and left behind.
+It is the distributed-training engine extracted from Elysium's earlier research
+prototype, a private repository; see [MIGRATION.md](MIGRATION.md) for what was
+taken, adapted and left behind.
 
 ## One execution model: zero-bubble pipeline parallelism
 
@@ -158,6 +158,11 @@ job ─▶ discovery: agents register measured capabilities
 | Reconnect grace for control-plane blips | agent + liveness |
 
 ## Heterogeneous hardware
+
+Paused: until the heterogeneous track returns, every run uses one device class
+(CONTROL-I25), and the coordinator refuses a device map that spans more than
+one (`MIXED-FLEET`). The machinery below stays in the code; within one class,
+nodes may still differ in speed and memory.
 
 Layers in proportion to measured speed and per-layer cost; a memory predicate
 inside the partition DP; per-slot device map (CUDA, MPS and CPU stages in one

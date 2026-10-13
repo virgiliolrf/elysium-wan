@@ -1,14 +1,16 @@
 # The recipe fold tree and element-range ZeRO-1 (research note)
 
+The heterogeneous track is paused, and the `hetero-*` files this note cites are not part of this repository.
+
 Cited by: ADR-0002. Extracted verbatim from the unsplit ADR-0001 round 3 (§D3 fold tree and element-range bullet,
 the `spread.py` analysis, and the rejected alternatives with their numbers) on 2026-10-08, when the human asked for
 the ADR to be split.
 
 Section references inside the extracted text (D1–D10, §Mathematical Model, §Migration Impact, App. A, E1–E19,
 Q0–Q7, "round N") refer to the unsplit ADR-0001 round-3 text, archived byte-for-byte at
-[hetero-adr-0001-round3-unsplit.md](hetero-adr-0001-round3-unsplit.md) (sha256
+`hetero-adr-0001-round3-unsplit.md` (sha256
 `6a67784175b4813fdde751b9a9afb182595b7c64c38659e16b0b0eabc1bac2ba`). The split map in
-[hetero-review-record.md](hetero-review-record.md) says which ADR now decides each item. This note decides nothing.
+`hetero-review-record.md` says which ADR now decides each item. This note decides nothing.
 
 ## Fold tree (unsplit §D3)
 
@@ -66,7 +68,7 @@ the recipe (CLAUDE.md), so the recipe may choose a tree that a wide stage can ev
 
 ## Within-class speed spread against fold groups (`spread.py`)
 
-Script: [hetero-scripts/spread.py](hetero-scripts/spread.py), sha256
+Script: `hetero-scripts/spread.py`, sha256
 `4c22a457fb62d0c708a0300ba98ab575412dd4396de2e26afb60a392e25c6342` (equal to the hash the unsplit ADR recorded;
 checked with `shasum -a 256` during the split). Run: `python3 -I docs/research/hetero-scripts/spread.py` (exit 0 in
 round 3; not re-run in the split). Output (round 3, MEASURED script output, an analytic model):

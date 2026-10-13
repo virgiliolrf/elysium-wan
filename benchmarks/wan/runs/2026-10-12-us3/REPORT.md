@@ -1,5 +1,8 @@
 # 2026-10-12: 13.5B dense on two H100 NVL across the Atlantic
 
+Commit hashes below refer to the development history before the public release; those fixes are in this
+repository's first commit.
+
 The 2026-10-12-us2 run left one open defect: about 5.5 GiB per layer above a stage's state capped a d=6144 stage at 7
 layers, and with them the compute per transferred byte. This run found that defect and two more, fixed all three,
 and trained the shape `advise.py` asked for (d 5632, 34 layers, 13.5B) for the first time. The pipeline now spends

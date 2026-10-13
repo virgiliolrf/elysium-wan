@@ -1,6 +1,6 @@
 # Migration from Elysium: audit and decisions
 
-Source: `virgiliolrf/Efficient-Distributed-Training-with-Heterogeneous-Hardware-over-Wide-Area-Networks`.
+Source: Elysium's earlier research prototype (a private repository).
 GitHub `main` holds 2 commits (`7aed4f3`); the engine's later evolution (74
 commits plus uncommitted work, including the panel's fault-tolerance logic)
 exists only in the local clone. The audit read all three states; the migration

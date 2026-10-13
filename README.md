@@ -68,8 +68,8 @@ cd elysium-wan
 uv sync
 ```
 
-**2. Run the laptop demo.** No GPU needed, about 70 seconds on an M4 MacBook Air. Five workers in two emulated regions
-(60 Mb/s, 60 ms round trip) run a four-stage pipeline with one spare, and worker `w0` is killed at step 6.
+**2. Run the laptop demo.** No GPU needed, about 70 to 80 seconds on an M4 MacBook Air. Five workers in two emulated
+regions (60 Mb/s, 60 ms round trip) run a four-stage pipeline with one spare, and one worker is killed at step 6.
 
 ```bash
 uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
@@ -78,16 +78,13 @@ uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
 The spare takes over, and the run ends with the same 240 losses as a single device:
 
 ```text
->>> killing w0 (agent and stage) at step >= 6
+>>> killing w4 (agent and stage) at step >= 6
 [coord error] slot (1, 0) convicted: worker unreachable: control connection lost 4s ago and not re-established
-[coord info] replacement for slot (1, 0): w3 -- identical device (cpu) in a surviving node's region: ...
+[coord info] replacement for slot (1, 0): w2 -- identical device (cpu) in the dead node's region: the healed run stays bit-comparable to an uninterrupted one
 [coord info] every slot resumes after step 5 under the original spec
 [coord info] run ... complete: 240 losses, 2 attempt(s), 1 heal(s), 0 restart(s), 0 rebalance(s)
 vs single-device reference: {"ok": true, "compared": 240, "mismatches": 0, "max_abs_diff": 0.0, "first_mismatch": null}
 ```
-
-Add `--mps` to put one worker on the Apple GPU. The comparison is then skipped, since a mixed device map has no
-single-device reference.
 
 **3. Train on your own GPUs.** You need one machine with an NVIDIA GPU per pipeline stage. Tokenize a corpus (the
 GPT-2 tokenizer comes with the `data` extra):
@@ -138,7 +135,7 @@ See [docs/engine/ARCHITECTURE.md](docs/engine/ARCHITECTURE.md) to run and debug 
 ## Current capabilities
 
 **IMPLEMENTED** means built and proven on GPUs. **PARTIAL** means proven on CPU but not yet on GPUs, or still being
-built. **RESEARCHING** means designed but not built yet.
+built. **RESEARCHING** means designed but not built yet, or paused.
 
 | Component | Status |
 |---|---|
@@ -150,7 +147,7 @@ built. **RESEARCHING** means designed but not built yet.
 | Host-memory optimizer state and recomputation | **IMPLEMENTED** |
 | Failure detection, heal from spares, resume from checkpoint waves | **PARTIAL** |
 | Re-cut a run to another partition at a checkpoint | **PARTIAL** |
-| Heterogeneous device maps (CUDA, MPS and CPU in one run) | **PARTIAL** |
+| Heterogeneous device maps (CUDA, MPS and CPU in one run) | **RESEARCHING** |
 | Sharded wide stages (FSDP-style pieces) | **PARTIAL** |
 | Mixture-of-Experts with deterministic routing | **PARTIAL** |
 | HuggingFace dense decoders (`arch: hf`) and user models (`arch: user`) | **PARTIAL** |
@@ -187,7 +184,7 @@ The optimizer update then runs beside the next step's forward pass, which waits 
 
 Gradients are summed in microbatch order, whatever order they arrive in. Kernels are pinned to deterministic
 implementations, the wire is lossless, and initialization replays one seeded stream, so the weights never depend on
-where the model is cut. Each stage runs on one device class. A reference run trains the same recipe on one device, in
+where the model is cut. Every run uses one device class. A reference run trains the same recipe on one device, in
 the same microbatch order, and the two must match bit for bit; a change that alters the numerics is a new recipe that
 the reference runs too.
 
@@ -221,8 +218,8 @@ of a step a stage had nothing to run.
 | 10-12 | [25.1B](benchmarks/wan/runs/2026-10-12-sxm4/REPORT.md) | 4× H100 SXM, US, Czechia (2), Germany | 65,536 tokens | ~2,500 tok/s | 28 to 50% |
 | 10-13 | [15.8B](benchmarks/wan/runs/2026-10-13-h100/REPORT.md) | 2× H100 NVL, Virginia ↔ Czechia, 103 ms | 131,072 tokens | 3,344 tok/s | 6% / 20% |
 
-The runs are short (11 to 606 steps), mostly single attempts, on fleets that differ from row to row, so this isn't a
-scaling study; the only same-workload baseline is the single H100 in the 2.8B run.
+The runs are short (35 steps or fewer on H100s, 606 on the RTX pair) and mostly single attempts, on fleets that differ
+from row to row, so this isn't a scaling study; the only same-workload baseline is the single H100 in the 2.8B run.
 
 ## Roadmap
 
