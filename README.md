@@ -2,10 +2,6 @@
 
 **Unifying the world's AI compute.**
 
-[![CI](https://github.com/virgiliolrf/elysium-wan/actions/workflows/ci.yml/badge.svg)](https://github.com/virgiliolrf/elysium-wan/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-
 Elysium trains one model on GPUs that live in different data centers, over the ordinary internet. We cut the model
 into pipeline stages, put each stage wherever there is a GPU, and send only the activations between sites. Runs can be
 checked bit for bit against the same model trained on a single device.
