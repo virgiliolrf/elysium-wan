@@ -24,7 +24,6 @@ Elysium is early research software. On real hardware it has:
   losses;
 - reached 3,344 tokens/s on a 15.8B model split between Virginia and Czechia, with the GPUs busy 78% and 92% of each
   step;
-- survived a worker crash in a 70-second laptop demo and still matched the single-device reference.
 
 It doesn't yet mix GPU vendors, run a public compute network or run in production.
 
@@ -39,11 +38,6 @@ times less bandwidth.
 Meanwhile, GPUs are expensive and scattered across clouds, smaller providers, universities and rented machines in
 dozens of regions. Each pool is usually too small, or too far from the others, to train a large model on its own, and
 a model that doesn't fit in one pool can't borrow the rest.
-
-The internet also misbehaves in ways a data center fabric doesn't. We measured these on real routes:
-- one TCP flow across the Atlantic carried only 41 to 49 Mbps between machines with multi-gigabit network cards;
-- a home connection lost packets in bursts that stretched training steps to over a minute;
-- 32 parallel flows sending in bursts lost 0.35% of their packets.
 
 A synchronous step waits for its slowest stage and its slowest link, so all of this turns into idle GPUs. In our
 first transatlantic run, the GPUs spent 72 to 79% of each step waiting.
