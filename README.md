@@ -74,20 +74,6 @@ flowchart TB
     end
     CP <-.->|"specs, heartbeats, telemetry, checkpoint waves<br/>never activations or gradients"| DP
 ```
-
-1. Workers dial the coordinator and prove they hold the shared token.
-2. The coordinator measures every worker's device and the links between them, cuts the model into stages from those
-   measurements, solves the schedule, and checks that each stage fits on its device before step 0.
-3. Each machine runs a worker agent that starts and supervises one stage. A stage builds only its own layers, so the
-   model can be bigger than any one GPU.
-4. Neighboring stages send activations forward and gradients back directly, over one or more TCP flows per hop. Both
-   this data plane and the control channel are encrypted: AES-256-GCM when both machines have hardware AES,
-   ChaCha20-Poly1305 otherwise.
-5. The coordinator never sees an activation or a gradient. It receives heartbeats and telemetry and, when the job sets
-   `ckpt_every`, each stage's checkpoint waves, which it stores only after every file's sha256 matches.
-6. If a worker dies, the coordinator gives its stage to a spare, and every stage resumes from the last stored wave
-   with the same bits. This path is proven on CPU, not yet on GPUs.
-
 ## How it compares
 
 | | Data / fully sharded parallelism in one cluster [6][7][8] | Low-communication training (DiLoCo, INTELLECT-1) [9][10][11] | Decentralized pipelines (SWARM) [12] | Elysium |
