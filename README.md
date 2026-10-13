@@ -29,8 +29,9 @@ It doesn't yet mix GPU vendors, run a public compute network or run in productio
 
 Training stacks expect every GPU to sit in one building, exchanging gradients or weights every step over links like
 NVLink that move terabytes per second [10]. Between data centers you get 1 to 10 Gb/s, so a synchronous step mostly
-waits: in our first transatlantic run, the GPUs sat idle 72 to 79% of each step. And GPUs are scattered across pools
-too small to train a large model alone, on hardware that can turn the same math into different bits.
+waits: in our first transatlantic run, the GPUs sat idle 72 to 79% of each step. And compute is scattered across pools
+too small to train a large model alone, on different accelerators (NVIDIA and AMD GPUs, TPUs, Trainium) that can turn
+the same math into different bits.
 
 ## The vision
 
