@@ -1,0 +1,1438 @@
+{
+ "milestone": "M4",
+ "binding": [
+  {
+   "id": "BA-401",
+   "what": "Build dispatch for arch 'hf'",
+   "where": "src/wantrain/model/gpt.py:364-367 (build_layers -> hf.build_layers)",
+   "ruling": "Rebuilt: arch 'hf' builds through hfm.build(cfg, seed, span) (an HFUnits of n+2 windowed units over one shared module tree; I-2); wgrad.convert runs with the trace's exclusion set. The native hf.build_layers path is deleted (SPEC-model 4a)."
+  },
+  {
+   "id": "BA-402",
+   "what": "Native HF loader and its users",
+   "where": "src/wantrain/model/hf.py (config_from_hf, load_into, build_layers, _LLAMA_*); users scheduler/fleetplan.py:88-97 and tests/unit/test_finetune.py:35-153,289",
+   "ruling": "Deleted (4a): config_from_hf, load_into, build_layers and _LLAMA_* go, checkpoint_digest stays (model-core); the old HF tests are replaced (model-core). fleetplan adopts the checkpoint's config.json into cfg.hf_config and its digest (plan-wire, wave 2: no scheduler test exercises the hf fleetplan path in between, read on this tree)."
+  },
+  {
+   "id": "BA-403",
+   "what": "GPTConfig.validate for arch 'hf' and for MoE",
+   "where": "src/wantrain/model/gpt.py:107-140 (GPTConfig.validate)",
+   "ruling": "Rebuilt (I-1): arch 'hf' requires hf_config with model_type, hf_impl 'modules', lora_rank 0, boundary_dtype 'fp32', no fp8 boundaries, compute_dtype fp32 or bf16, and mirrored fields equal to hf_census's when a census is present; moe_experts > 0 checks SPEC-model §2's group rule and refuses LoRA with MoE; each refusal names the field. validate never imports transformers."
+  },
+  {
+   "id": "BA-404",
+   "what": "Deferred-W conversion on HF and MoE modules",
+   "where": "src/wantrain/model/wgrad.py:214 (convert)",
+   "ruling": "Rebuilt: convert(module, exclude=frozenset()) leaves every Linear in exclude (the trace's read-elsewhere set, every tied Linear) and every MoE router (an nn.Linear subclass, never converted) as nn.Linear; native expert Linears are SplitLinear (MODEL-I8); with an empty exclude builtin, general and user archs convert exactly what they convert today."
+  },
+  {
+   "id": "BA-405",
+   "what": "RNG draws of the HF build, trace, classifier, gate and census",
+   "where": "src/wantrain/model/hfm.py (new)",
+   "ruling": "From-config: the full HF build draws under torch.manual_seed(seed) on the CPU in every slot and the oracle (decision 7). Checkpoint build: parameters on meta, no draw (RNG state asserted equal). Trace, classifier, gate and census run inside torch.random.fork_rng and assert the global CPU generator state unchanged afterwards. The MoE block draws nothing (MODEL-I8)."
+  },
+  {
+   "id": "BA-406",
+   "what": "RNG and kernel state at stage and oracle start",
+   "where": "src/wantrain/runtime/stage.py:159-161 (setup_determinism then build_layers); src/wantrain/validation/reference.py:34-36",
+   "ruling": "Carried in order: setup_determinism(seed), then (hf) hfm.guard_environment() and the build, then check_determinism() and the HF asserts (eager, dropout 0, HF checkpointing off, use_cache False, training mode, hf_code equal to the installed code). The gate never runs inside a stage or oracle process."
+  },
+  {
+   "id": "BA-407",
+   "what": "Every call site of a flat-list layer",
+   "where": "src/wantrain/runtime/stage.py:1993-2000 (_layers); src/wantrain/validation/reference.py:68-75; src/wantrain/resources/profile.py:66-70; src/wantrain/resources/fit.py:96-97; src/wantrain/validation/model_contract.py",
+   "ruling": "Rebuilt per caller, arch 'hf' only: the hf branch of each caller calls gpt.call_layer(layer, x, ids) (I-1), imported at call time; every dense, builtin, general, user and native-MoE call site keeps layer(x) byte for byte, so no wave-1 module depends on a sibling's new symbol outside the hf branch (round-2 finding 1); the reference's hf recompute passes ids through checkpoint(call_layer, layer, x, ids, use_reentrant=False); model_contract.py (user models only) carried unchanged."
+  },
+  {
+   "id": "BA-408",
+   "what": "Input ids on every stage",
+   "where": "src/wantrain/runtime/stage.py:1945-1960 (_forward), :2002-2014 (_backward_final)",
+   "ruling": "Rebuilt for arch 'hf': every stage computes ids = make_batch(data_seed, step, mb, ...)[0] on its own device for F and for B's recompute; no index travels on the wire."
+  },
+  {
+   "id": "BA-409",
+   "what": "Autocast region for HF units",
+   "where": "src/wantrain/runtime/stage.py:59-77 (engine_supplies_autocast, compute_autocast)",
+   "ruling": "Rebuilt: engine_supplies_autocast is true for arch 'hf' with an autocast recipe; stage, oracle, profile, fit and gate run the units inside the same torch.autocast region; builtin and user archs unchanged."
+  },
+  {
+   "id": "BA-410",
+   "what": "Loss on HF logits",
+   "where": "src/wantrain/runtime/stage.py:2016-2021; reference.py:76; hfm gate",
+   "ruling": "Rebuilt: for arch 'hf' loss = loss_fn(logits.float(), targets) in the stage, the oracle and the gate alike."
+  },
+  {
+   "id": "BA-411",
+   "what": "Trainable parameter list and its order",
+   "where": "src/wantrain/runtime/stage.py:177-185 (self.params, shard_params), :1933-1938; reference.py:40; validation/state.py:75",
+   "ruling": "Carried: the units' parameters in unit order. Changed only for a tied table split across stages: a parameter of the Head stage only; stage 0's working copy is out of self.params, the optimizer, the fold and the checkpoint."
+  },
+  {
+   "id": "BA-412",
+   "what": "B's autograd.grad and the missing-gradient guard",
+   "where": "src/wantrain/runtime/stage.py:2044 (allow_unused=True), :2064-2067",
+   "ruling": "Carried for every trainable parameter (a missing gradient stays fatal; an unrouted expert has a +0 gradient, never None, MODEL-I8). Stage 0's working copy of a split tied table is an autograd input whose gradient goes to a TIED frame, never to the guard's list."
+  },
+  {
+   "id": "BA-413",
+   "what": "Fold of the step gradient",
+   "where": "src/wantrain/runtime/stage.py:2100-2106; src/wantrain/runtime/accumulate.py",
+   "ruling": "Carried by microbatch index except a split tied table, folded on the Head by accumulate.TiedRowFold (I-6), the stock order of RUNTIME-I19."
+  },
+  {
+   "id": "BA-414",
+   "what": "Ownership and update of a split tied table",
+   "where": "src/wantrain/runtime/stage.py:2124 (_optimizer_step_local), :2311 (_run_step)",
+   "ruling": "Per-stage: the Head owns the table, its AdamW state and fold; after AdamW it sends TIED(t+1, k) = R_k; stage 0's F_k of step t+1 waits for R_0..R_k; a resume sends R_k from the loaded table before its first step."
+  },
+  {
+   "id": "BA-415",
+   "what": "Frame types and typed decode",
+   "where": "src/wantrain/transport/framing.py:29 (FWD..HELLO = range(7)), :162-169 (recv_frame)",
+   "ruling": "Rebuilt: TIED = 7; recv_frame refuses a type outside FRAME_TYPES before reading the payload, and a TIED frame whose codec is not RAW_F32, ndim not 2 or paylen not rows*h*4 (I-5)."
+  },
+  {
+   "id": "BA-416",
+   "what": "Stage frame dispatch",
+   "where": "src/wantrain/runtime/stage.py:2413-2431 (main dispatch; an unhandled type falls through silently)",
+   "ruling": "Rebuilt: TIED fragments at an intermediate stage are forwarded from the reader thread as they arrive; at stage 0 and the Head they are validated before use; a TIED frame under a plan with no tied relay, and any type the dispatch does not handle, is fatal at receipt."
+  },
+  {
+   "id": "BA-417",
+   "what": "Checkpoint waves and resume of an HF slot",
+   "where": "src/wantrain/runtime/stage.py:1437 (_checkpoint), :1622 (_resume), :1841 (_resume_logical); src/wantrain/runtime/logical_ckpt.py",
+   "ruling": "Rebuilt: every wave of an hf slot (whole-tensor and logical) lists hf_buffers.json (I-4) in wave.json through commit_wave(..., extra_files={'hf_buffers.json': canonical JSON bytes}) (I-15, BA-460); resume, heal, restart and rebalance load the buffers from the wave or the JobSpec and refuse a sha256 that differs from the pin, naming the tensor; nothing rebuilds the record; stage 0's working copy of a split table is not saved as the table."
+  },
+  {
+   "id": "BA-418",
+   "what": "Resume pins of an HF run",
+   "where": "src/wantrain/runtime/spec.py pins() (asdict(model) carries hf_config, hf_buffers, hf_census, hf_code)",
+   "ruling": "Rebuilt: pins add device_classes for arch 'hf' only (dense pins byte-identical); a resume whose class map differs is refused naming the slot (RUNTIME-I15 hf clause); hf_code (I-1) rides asdict(model), so a resume under another transformers or torch build is refused by the pin check."
+  },
+  {
+   "id": "BA-419",
+   "what": "JobSpec.finalize checks for HF plans",
+   "where": "src/wantrain/runtime/spec.py:160-250 (finalize), :263-274 (_check_pieces_tied), stage_param_shapes",
+   "ruling": "Rebuilt: finalize refuses an hf plan whose split tied table has any stage from stage 0 to the Head at width > 1 (R14 at the ends; BA-447 in between), naming it; tied_relay() says whether a TIED relay exists; stage_param_shapes for hf from cfg.hf_census's per-unit param_shapes (I-10), never importing hfm or transformers, because finalize runs in the coordinator and planner processes (BA-441); _check_pieces_tied carried unchanged."
+  },
+  {
+   "id": "BA-420",
+   "what": "The oracle for arch 'hf'",
+   "where": "src/wantrain/validation/reference.py:27-94 (run_baseline)",
+   "ruling": "Rebuilt: one device class in the map: the vanilla ForCausalLM forward of the same tree (HFUnits.vanilla) in one process; a mixed map one host holds: the unit chain in one process; any other map refused naming the classes."
+  },
+  {
+   "id": "BA-421",
+   "what": "The state manifest of an HF run",
+   "where": "src/wantrain/validation/state.py:89 (reference_manifest), :99 (distributed_manifest)",
+   "ruling": "Rebuilt for hf: names from the skeleton's units; a split tied table's bytes from the Head's checkpoint under every name the oracle's state_dict gives it; stage 0's working copy never read; buffers from the record."
+  },
+  {
+   "id": "BA-422",
+   "what": "Baseline cache key",
+   "where": "src/wantrain/launch/local.py:32 (recipe_digest)",
+   "ruling": "Rebuilt for hf: the digest also covers the device map and hf_code; every dense digest (builtin, general, user, native dense) is byte-identical to 3b0d2f8's because the model dict omits the new hf_*/moe_* fields by BA-465's rule (oracle-m4's golden test pins two dense digests recorded before the edit)."
+  },
+  {
+   "id": "BA-423",
+   "what": "Process environment of every HF process",
+   "where": "src/wantrain/launch/local.py:24 (_env), reference subprocess, stage Popen; src/wantrain/worker/agent.py _env, PROFILE, FIT, ASSIGN",
+   "ruling": "Rebuilt for arch 'hf' only: the child starts as python -X pycache_prefix=<fresh per-launch dir> with hfm.stage_env(os.environ); the prefix is removed when the child exits. Dense spawns unchanged."
+  },
+  {
+   "id": "BA-424",
+   "what": "The buffer record, census and hf_code are built once",
+   "where": "src/wantrain/coordinator/coordinator.py:_setup, _resume_spec, _heal, _restart_in_place, _rebalance; src/wantrain/launch/local.py run_local",
+   "ruling": "Built once, at the first launch, in a child (python -X pycache_prefix=... -m wantrain.model.hfm record) under the stage environment; pinned in the JobSpec (cfg.hf_buffers, hf_census, hf_code) with the RECORD text kept in the run directory; never rebuilt by a resume, heal, restart or rebalance."
+  },
+  {
+   "id": "BA-425",
+   "what": "GATE before placement",
+   "where": "src/wantrain/coordinator/coordinator.py:_setup, before _plan, _profile, _fit_check",
+   "ruling": "Rebuilt for arch 'hf': every selected node and spare runs GATE (I-9) before planning; the run is refused before placement unless every report passed and every fingerprint is admitted (CONTROL-I24)."
+  },
+  {
+   "id": "BA-426",
+   "what": "Decision 8 at every admission",
+   "where": "src/wantrain/coordinator/coordinator.py _heal, _restart_in_place, _maybe_rebalance, _rebalance, _resume_spec; src/wantrain/fault_tolerance/replacement.py:24",
+   "ruling": "Re-checked at every admission: a replacement only of the slot's recorded device class, gate passed, fingerprint admitted, torch RECORD and native set equal to the slot's; refused unless some node of the pool holds every class of the map; a heal that fails it fails cleanly."
+  },
+  {
+   "id": "BA-427",
+   "what": "Production entry for arch 'hf' and for MoE",
+   "where": "src/wantrain/coordinator/coordinator.py:1769 (unarmed_reason), :111 (PIECES_ARMED)",
+   "ruling": "Refused until armed: M4_ARMED = False makes unarmed_reason refuse every job whose model arch is 'hf' or whose moe_experts > 0, checked independently of PIECES_ARMED (today's early return when PIECES_ARMED is True must not skip it); tripwire m4-unarmed, first leg control-m4, arm arm-m4."
+  },
+  {
+   "id": "BA-428",
+   "what": "Agent GATE request",
+   "where": "src/wantrain/worker/agent.py _serve dispatch, new _on_gate",
+   "ruling": "New: the agent runs python -X pycache_prefix=<fresh> -m wantrain.model.hfm gate per requested device in the stage environment with a 300 s timeout, and replies GATE_REPORT (I-9) bounded at 1 MiB; a malformed GATE is refused with the reason."
+  },
+  {
+   "id": "BA-429",
+   "what": "PROFILE and FIT of an HF or MoE slot",
+   "where": "src/wantrain/resources/profile.py:55, src/wantrain/resources/fit.py:55",
+   "ruling": "Carried with cfg.hf_buffers present (GATE precedes them): build through build_layers, call through call_layer with ids inside compute_autocast; MoE records taken off after each call (arch.take_moe_records)."
+  },
+  {
+   "id": "BA-430",
+   "what": "Planner charges of HF models",
+   "where": "src/wantrain/scheduler/planner.py:194-199, :769, :918-943; autoconfig.py; zero_bubble.py:540, :602; partition.py:164; fleetplan.py:88-112",
+   "ruling": "Rebuilt (SCHEDULER-I22): 4 bytes per element at every hf cut, a narrower declared boundary refused; tied bytes on every chain hop, Delta T_tied's five terms, the tied memory on both ends; eager attention b*H*S^2*s per layer; per-unit costs from the census."
+  },
+  {
+   "id": "BA-431",
+   "what": "Determinism pins",
+   "where": "src/wantrain/runtime/determinism.py:16-32 (setdefault lets a pre-set value win; allow_tf32 only set under CUDA, never read back)",
+   "ruling": "Rebuilt (SPEC-runtime task 7 house item): the numeric pins are assigned and a pre-set differing value is refused naming it; every flag set unconditionally and read back (check_determinism); on x86 check_determinism also reads torch.backends.cpu.get_cpu_capability() and refuses a capability other than the pinned AVX2, naming it (the pin assigned after ATen cached its dispatch, round-2 finding 10); MKL has no read-back API in torch: residual R-9 (HYPOTHESIS); PYTORCH_CUDA_ALLOC_CONF stays a default (allocator only)."
+  },
+  {
+   "id": "BA-432",
+   "what": "Every setup_determinism caller",
+   "where": "stage.py:159, reference.py:34, profile.py:50, the hfm CLI children",
+   "ruling": "Carried unchanged at stage.py:159, reference.py:34 and profile.py:50; the hfm CLI children (gate, record, census) are new code that calls setup_determinism(seed) before any build (model-core); each caller now fails loudly on a pre-set differing pin; the ladder's environment sets none (checked in a clean subprocess, determinism-pins)."
+  },
+  {
+   "id": "BA-433",
+   "what": "Shared parameterless modules and their buffers",
+   "where": "transformers modules every unit window calls (e.g. model.rotary_emb.inv_freq)",
+   "ruling": "Per unit device: buffer copies on the unit's device from the buffer record, checked by sha256."
+  },
+  {
+   "id": "BA-434",
+   "what": "ZeRO-1 and pieces over HF and MoE chunks",
+   "where": "src/wantrain/runtime/stage.py:184 (params[k::w]); src/wantrain/runtime/pieces.py:106 (exchange_units)",
+   "ruling": "Carried in the runtime over the units' parameters (HF) and the expert units (MoE, BA-456); proven by the ZeRO-1 width-2 and pieces arms in identity-m4 (GATES-M4 hf-identity-x2 and moe-identity-x2). Reachability (BA-466): for arch 'hf' these layouts are reachable in spec mode only (a JobSpec written by hand, by run_local or by the coordinator's spec mode; JobSpec.finalize governs). The planner keeps refusing every wide hf candidate as 'unpriced' (planner.py:946-947), so plan mode emits hf plans at width 1 (HANDOUT D-10). Native MoE wide candidates are priced by SCHEDULER-I17's MoE unit model. A split tied table with pieces stays refused."
+  },
+  {
+   "id": "BA-435",
+   "what": "TIED bytes on paced, sealed sockets and in telemetry",
+   "where": "src/wantrain/runtime/stage.py:1299 (_sender_loop), WT_TELEM",
+   "ruling": "Carried: TIED frames use the chain's sealed sockets and pacers in send-queue order; WT_TELEM hop bytes include them."
+  },
+  {
+   "id": "BA-436",
+   "what": "Waves carrying hf_buffers.json through the control plane",
+   "where": "src/wantrain/fault_tolerance/checkpoint.py:412-448 (commit_wave), :206-211 (_check_files), :781-799 (export_wave); coordinator _restore_and_relaunch",
+   "ruling": "Rebuilt by BA-460 (round-2 finding 12; 'carried unchanged' was false: commit_wave wrote a one-entry manifest and _check_files refuses an unlisted file): commit_wave lists hf_buffers.json as an extra file (name, sha256, bytes); validate_wave and every reader check it like state.pt; the control plane's export_wave (checkpoint.py:781-799) already copies every listed file; proven by wave-files' tests, the resume arm (identity-m4) and the heal arm (arm-m4)."
+  },
+  {
+   "id": "BA-437",
+   "what": "Hub-to-fused expert map",
+   "where": "src/wantrain/model/hfm.py (new): load/export",
+   "ruling": "New (ADR-0009 D7, ADR-0008 decision 10 (i)): mixtral, qwen2_moe, qwen3_moe, deepseek_v3 per-expert hub tensors load as gate_up_proj[j, :f], gate_up_proj[j, f:], down_proj[j], inverted on export; the round trip keeps every sha256 and equals transformers 5.19.0's own conversion."
+  },
+  {
+   "id": "BA-438",
+   "what": "Sparse-MoE blocks in an HF model",
+   "where": "src/wantrain/model/hfm.py: trace/classify (D8), SUBSTITUTE",
+   "ruling": "Classifier first (model-core): every sparse-MoE block without a SUBSTITUTE row refuses naming its class (MOE-NO-ROW). Rows (model-families), all nine of SPEC-model §3's table at 5.19.0: the blocks MixtralSparseMoeBlock, Qwen2MoeSparseMoeBlock, Qwen3MoeSparseMoeBlock (forward calls arch.moe_forward), the routers Mixtral/Qwen2Moe/Qwen3MoeTopKRouter (the router GEMM) and the experts Mixtral/Qwen2Moe/Qwen3MoeExperts (dispatch and per-expert GEMMs), router and experts rows admitted only under a block with a row and called once each as modules, so HF's own experts forward never runs; the gate's reference carries the same swap and D8 injection (the seam rule). deepseek_v3, llama4_text, gpt_oss, jamba stay refused."
+  },
+  {
+   "id": "BA-439",
+   "what": "Optional packages transformers probes",
+   "where": "transformers 5.19.0 availability probes (hfm.PROBED)",
+   "ruling": "Refused when importable unless the hf extra locks it; the probe vector is part of the fingerprint."
+  },
+  {
+   "id": "BA-440",
+   "what": "The transformers pin",
+   "where": "pyproject.toml [project.optional-dependencies] hf; uv.lock",
+   "ruling": "Pinned: transformers==5.19.0 with hashes, resolved offline from the uv cache; no locked package changes version; installed into .venv additively (uv sync --inexact)."
+  },
+  {
+   "id": "BA-441",
+   "what": "transformers imported in the coordinator or planner process",
+   "where": "src/wantrain/coordinator/coordinator.py, src/wantrain/scheduler/*.py",
+   "ruling": "Refused by design: shapes and costs come from the builder child's census; a subprocess test asserts 'transformers' not in sys.modules after importing the coordinator (control-m4) and after planning an hf job (plan-wire). JobSpec.finalize, which both processes call, takes an hf plan's piece shapes from the census (BA-419). The import tests use a meta-path finder that raises on transformers or hfm, so they hold whether or not transformers is installed (control-m4, plan-wire, stage-wire, stage-m4)."
+  },
+  {
+   "id": "BA-442",
+   "what": "Disk and memory shared with the M2b gate",
+   "where": "this Mac: 16 GB, 11 GB free disk (df, 2026-10-11); pycache prefixes; overlay env; test tmp dirs",
+   "ruling": "Bounded: every pycache prefix removed at exit; gate builds capped at 64 MB and 30 s; every test command takes a slot; fast verifies run tiny configs and a family subset; sweeps run once in closeout."
+  },
+  {
+   "id": "BA-443",
+   "what": "The deferred-W exclusion and the tied Linear in the gate",
+   "where": "src/wantrain/model/hfm.py gate; wgrad.capture/flush",
+   "ruling": "Carried: the gate runs the unit chain with wgrad.convert (exclusion applied) and deferred W under capture(), as the stage does."
+  },
+  {
+   "id": "BA-444",
+   "what": "Module mode (training vs eval) of every HF and MoE module",
+   "where": "src/wantrain/runtime/stage.py:159-165 and src/wantrain/validation/reference.py:36 (no .train()/.eval() call); hfm gate, trace, census; profile.py, fit.py",
+   "ruling": "Fixed to training mode everywhere: hfm.build, skeleton, vanilla, trace, gate and census call root.train() explicitly (no forward runs in eval mode), so the gate and the trace compare the code path the stages run (self.training branches: MoE jitter, phimoe's router); stage, oracle, profile and fit assert every module of their units is in training mode at start, naming the first that is not."
+  },
+  {
+   "id": "BA-445",
+   "what": "One-slot launch of an hf spec (no gate, no admission)",
+   "where": "src/wantrain/cli.py:36-51 (cmd_stage refuses only shard 'pieces'); src/wantrain/worker/stage_main.py:111-141 (refuse_unchecked_pieces, main without --launcher)",
+   "ruling": "Refused, permanently (like M2b's BA-52/BA-58): `wantrain stage` and stage_main without --launcher refuse a spec whose JSON model.arch is 'hf', read before JobSpec.load, naming the reason ('launch through the coordinator or wantrain local, which run the gate and admission'); only run_local and the coordinator start an hf slot."
+  },
+  {
+   "id": "BA-446",
+   "what": "Tied table of a non-hf arch split across stages",
+   "where": "src/wantrain/model/arch.py:191 (out.weight = tok.weight in one process); src/wantrain/runtime/stage.py:161-165 (each process keeps full[a:b]); planner.py:918 (tied_cross_stage), :928-931 (_refusals_before_pricing returns for every width-1 candidate before any tied check), :940-944 (the tied refusal, reached only for wide pieces candidates); spec.py:244-246",
+   "ruling": "Refused (silently wrong today: each stage would train its own copy): JobSpec.finalize and the planner refuse tie_embeddings with the Embed and the Head on different stages for every arch but 'hf', naming the parameter (layers.0.tok.weight). In the planner the check moves ahead of the width-1 early return of _refusals_before_pricing, so a width-1 candidate with S > 1 (today's common case, which the early return admits) is marked not admitted with reason 'tied', and so is every wide one; the hf tied split goes to SCHEDULER-I22's charges and BA-447 instead. Same-stage ties (test_e1_core_tied, S 1 candidates) unchanged."
+  },
+  {
+   "id": "BA-447",
+   "what": "TIED fragments through a wide intermediate stage",
+   "where": "RUNTIME-I19 (routing specified for width 1 at stage 0 and the Head only); DESIGN §2 (wide stages form a full bipartite mesh)",
+   "ruling": "Refused: an hf plan with a split tied table and any stage between stage 0 and the Head at width > 1 is refused at finalize and in the planner, naming the stage (two paths would reorder TIED(t, i) at the Head, whose receipt rule makes out-of-order fatal). Recorded as deviation D-6 for the human; ZeRO-1 middle-stage arms use untied families."
+  },
+  {
+   "id": "BA-448",
+   "what": "transformers and torch code identity across a resume",
+   "where": "CONTROL-I24 ('a resume under another transformers RECORD is refused, naming the differing file'); spec.py pins",
+   "ruling": "Pinned: the builder child reports hf_code (transformers version and RECORD sha256, torch version and git_version) and the RECORD text; GPTConfig.hf_code is pinned (asdict(model), so every resume pin check compares it) and the RECORD text is kept in the run directory; the coordinator (every admission) and run_local (resume) compare each node's RECORD with the kept text and refuse naming the first differing path (hfm.record_diff); the stage refuses at start when the installed hf_code differs from the pin."
+  },
+  {
+   "id": "BA-449",
+   "what": "Checkpoint build of a stage: only its own units",
+   "where": "src/wantrain/runtime/stage.py:161-165 (full = build_layers(...); full[a:b]); ADR-0009 D3 ('Owned parameters load on the slot's device')",
+   "ruling": "Rebuilt for arch 'hf' with cfg.hf_model: build_layers(cfg, seed, span=(a, b)) gives the skeleton with only the units in [a, b) loaded (strict MODEL-I4 over them), every other parameter left on meta; a from-config hf run keeps the full build per slot (decision 7)."
+  },
+  {
+   "id": "BA-450",
+   "what": "MoE selection, its ties and its keys",
+   "where": "src/wantrain/model/arch.py (new MoEMLP, moe_forward); SPEC-model §2 MoE block",
+   "ruling": "New: the lowest-index rule by a stable descending sort (torch.topk never used), group selection by §2's rule, a NaN key fatal, refusals of group configs at construction (MODEL-I8)."
+  },
+  {
+   "id": "BA-451",
+   "what": "MoE reductions and the unrouted expert",
+   "where": "src/wantrain/model/arch.py moe_forward; src/wantrain/model/wgrad.py capture/flush",
+   "ruling": "New: dispatch, combine and fan-out backward are written left folds; one expert call per (microbatch, expert) on exactly its rows in token order, also on 0 rows (+0 gradient); under capture() each expert Linear records one (X, dY) per call; no scatter-add, index_add_ or atomics."
+  },
+  {
+   "id": "BA-452",
+   "what": "MoE aux terms per (step, mb, layer) and their replay",
+   "where": "src/wantrain/model/arch.py (records); src/wantrain/runtime/stage.py F and B's rebuild; src/wantrain/validation/reference.py",
+   "ruling": "New: aux values injected locally per layer and microbatch (decision 2), recorded by the slot owning the microbatch from F once per (step, mb, layer) and kept in its checkpoint; B's rebuild recomputes and a difference is fatal (MOE-REPLAY naming step, mb, layer); the oracle records the same hex."
+  },
+  {
+   "id": "BA-453",
+   "what": "Selection-bias update",
+   "where": "src/wantrain/runtime/stage.py:2124 (_optimizer_step_local); reference.py; arch.moe_bias_update",
+   "ruling": "New: after the step's AdamW the bias's owner applies moe_bias_update from the int64 counts of every microbatch of the step (integer add in microbatch order), moving each bias by +gamma, -gamma or 0; step t+1's F waits for it."
+  },
+  {
+   "id": "BA-454",
+   "what": "ZeRO-1 ownership of selection biases and their count vectors",
+   "where": "src/wantrain/runtime/stage.py:184 (params[k::w]); :2077-2096 (_store_grads: stream_grads OBJ per microbatch, batch retained); :2146-2178 (_optimizer_step_wide: native _native_acc fold, stream shard_acc, batch one OBJ per step); :372-404 (_w_native, _ship_native, _send_exchange)",
+   "ruling": "New, per ZeRO-1 gradient path (round-2 finding 13): biases appended to the ownership list after the trainable parameters (index n_params + j, owner index % w); each microbatch's count vectors ride to the owner on the frames that already carry that microbatch's gradients (ADR-0008 D10): batch (one OBJ GRADS message per step): its {mb: tensors} payload gains {'counts': {layer: int64 (E,)}} per mb for the owner's biases; stream_grads (one OBJ GRADS per mb): its ('mb', mb, tensors) payload gains the same dict; wire native (_w_native): one exchange frame per (mb, bias index) of kind exchange.COUNT, codec RAW_I64, shape (E,), validated by exchange.check_frame. On every path the owner folds the vectors by integer add in microbatch order; a vector whose sum differs from T_mb*k, negative, misshapen, duplicated or missing at the step barrier is fatal naming (step, mb, layer, peer); the owner applies moe_bias_update and returns the bias in the existing PARAMS broadcast; shard checkpoints cover the bias; dense payloads byte-identical."
+  },
+  {
+   "id": "BA-455",
+   "what": "Pieces: the int64 count lane and the bias in the small-tensor unit",
+   "where": "src/wantrain/runtime/pieces.py:106 (exchange_units); src/wantrain/runtime/exchange.py:190 (check_frame); src/wantrain/runtime/logical_ckpt.py",
+   "ruling": "New: the bias is a tensor of its block's small-tensor unit, cut like any tensor; its count vector rides the unit's GRADS frame in an int64 lane (RAW_I64) cut at the same boundaries; check_frame refuses a non-int64, misshapen, out-of-rule or negative lane; the logical checkpoint and manifest include the bias."
+  },
+  {
+   "id": "BA-456",
+   "what": "Expert exchange units",
+   "where": "src/wantrain/runtime/pieces.py:106 (exchange_units)",
+   "ruling": "New: one unit per projection over the E native experts (released when the W computing its last expert completes); under HF v5 the two 3-D banks are units produced in B (dW in B), released when W(mb) starts."
+  },
+  {
+   "id": "BA-457",
+   "what": "Identity manifest sections for MoE",
+   "where": "src/wantrain/validation/state.py:46 (build_manifest), :99 (distributed_manifest), :221 (diff_manifests)",
+   "ruling": "New: an aux section [step, mb, layer, hex] sorted, gathered from every slot's checkpoint (a triple twice or missing fails the comparison); every selection bias in the sha256 state as a weight."
+  },
+  {
+   "id": "BA-458",
+   "what": "Planner charges of MoE stages",
+   "where": "src/wantrain/scheduler/partition.py:164 (layer_costs); zero_bubble.py:540, :602; admission.py; exchange_sim.py",
+   "ruling": "Rebuilt (SCHEDULER-I21): compute at active parameters, bytes and memory at total; the count lane L*E*8 bytes per microbatch per peer; the HF bank gradients' hold m_BW*b_m*P_bank in mem_b and freed in mem_w."
+  },
+  {
+   "id": "BA-459",
+   "what": "HF expert banks: dW in B and the held bank gradients",
+   "where": "transformers 5.19.0 MixtralExperts/Qwen*Experts gate_up_proj, down_proj (3-D)",
+   "ruling": "Carried in B: the 3-D banks are never SplitLinear (their dW runs in B, pending W 0); the bank gradients' bytes held from B(mb)'s end to W(mb)'s start are b_m*E*3hf per MoE layer, measured in model-families (F3, HF part) and charged by the planner."
+  },
+  {
+   "id": "BA-460",
+   "what": "Wave manifest with files beside state.pt",
+   "where": "src/wantrain/fault_tolerance/checkpoint.py:412-448 (commit_wave writes [_file_entry(state.pt)] only), :173-201 (manifest entries), :206-211 (_check_files refuses an unlisted file); callers stage.py:1538-1545 (_commit_wave) for whole-tensor and logical waves",
+   "ruling": "Rebuilt (I-15): commit_wave(out_dir, tag, rank, peer, step, save_fn, keep=WAVE_KEEP, extra_files=None) writes each extra file into the temp directory, fsyncs it and lists it after state.pt; names validated before anything is written (no separator or NUL, not '', '.', '..', wave.json or state.pt); extra_files None or {} gives a manifest byte-identical to today's; a held wave of the same step whose listed extras differ is refused naming the file; readers unchanged (they already verify every listed file). Only hf slots pass extras."
+  },
+  {
+   "id": "BA-461",
+   "what": "Plan-mode model keys and the builder child's pins",
+   "where": "src/wantrain/scheduler/fleetplan.py:36-63 (MODEL_KEYS: no hf_config, hf_impl or moe_*), :70-77 (model_config copies only MODEL_KEYS), :140 (build_spec); src/wantrain/coordinator/coordinator.py:1060 (build_spec caller)",
+   "ruling": "Rebuilt (I-14, round-2 finding 4): MODEL_KEYS gains hf_config, hf_impl and every moe_* field of SPEC-model §2; a plan dict carrying hf_buffers, hf_census or hf_code is refused naming the key (never caller-trusted); model_config(job, hf_pins=None) and build_spec(fleet, allow_pieces=False, hf_pins=None) take the builder child's {hf_buffers, hf_census, hf_code, fields} (plan-wire); the coordinator's plan-mode _setup builds them once and passes them (control-m4); after every plan-mode build_spec the coordinator refuses a spec whose model differs from the plan dict in arch, hf_config (canonical sha256), hf_impl or any moe_* key, naming the key (plan_model_mismatch, control-m4), so a dropped key is a refusal, never a dense run."
+  },
+  {
+   "id": "BA-462",
+   "what": "MoE records and recipe under the HF class swap",
+   "where": "src/wantrain/model/arch.py (take_moe_records, moe_forward); src/wantrain/model/hfm.py (SUBSTITUTE swap over HFUnits windows of one shared tree)",
+   "ruling": "Rebuilt (I-11, round-2 finding 8): every module that calls moe_forward (MoEMLP or a SUBSTITUTE subclass) carries moe_layer (native: its index in build_layers; HF: the decoder-layer index from the unit map, set by hfm when it applies the swap); records are kept on that module; take_moe_records(layers) walks each given layer's modules() and returns records sorted by (moe_layer, call); an HF row's recipe comes from the row's recipe(hf_config) (E, k, router dtype, norm, shared expert and gate; gamma 0) with the lbl and z coefficients from the run's GPTConfig moe_* fields (router_aux_loss_coef never mapped); output_router_logits true without aux fields, and a block attribute moe_forward does not read (e.g. router_jitter_noise > 0), are refused naming it. Mechanism model-core, rows and proofs model-families."
+  },
+  {
+   "id": "BA-463",
+   "what": "HF tests on a platform without a TORCH_RECORDS entry",
+   "where": "hfm.TORCH_RECORDS (macOS arm64 entry only until Q-1); SPEC-model §3 fingerprint (the torch RECORDs must equal the platform's entry); CI runs on Linux",
+   "ruling": "Per platform, never skipped (round-2 finding 9): hfm.platform_admitted() says whether this platform tag and torch version have an entry; the gate computes its comparison on every platform and reports the fingerprint refusal separately; a test through the gate's verdict, run_local, the agent's GATE or the coordinator asserts the comparison fields everywhere and, where the platform is not admitted, asserts the FP-TORCH-RECORDS refusal naming the platform tag (strict). Recorded as D-9 for the human."
+  },
+  {
+   "id": "BA-464",
+   "what": "Operator entries that start an hf or MoE spec without the coordinator",
+   "where": "src/wantrain/cli.py:36-51 (cmd_stage), cmd_local (wantrain local -> launch/local.py run_local)",
+   "ruling": "Refused until armed: cmd_local and cmd_stage read the spec JSON's model before JobSpec.load and, for arch 'hf' or moe_experts > 0, refuse with coordinator.m4_unarmed_reason(model_dict) (I-16; control-m4 defines it, agent-hf calls it at call time, arm-m4 tests and lifts it); with only some legs in, `wantrain local` of an MoE spec would train with no bias update on both the stages and the --compare oracle, and of a split-tied hf spec without the relay, both silently. The run_local and run_baseline Python APIs stay callable for the tests; `wantrain stage` of an hf spec stays refused permanently (BA-445)."
+  },
+  {
+   "id": "BA-465",
+   "what": "New GPTConfig fields inside dense pins and baseline digests",
+   "where": "src/wantrain/runtime/spec.py:395 (pins: asdict(self.model)), src/wantrain/launch/local.py:37 (recipe_digest: asdict(spec.model)); src/wantrain/runtime/spec.py:461 (first_pin_difference)",
+   "ruling": "Rebuilt: pins()['model'] and recipe_digest's model dict omit every hf_* field of a non-hf model and every moe_* field of a model with moe_experts == 0, so dense pins and digests stay byte-identical to 3b0d2f8's (golden tests in stage-m4 and oracle-m4) and a pre-M4 dense wave still resumes; an hf or MoE model pins every field (spec.py: stage-m4; local.py: oracle-m4)."
+  },
+  {
+   "id": "BA-466",
+   "what": "The planner's refusal of wide candidates of an arch it has no exchange-unit model for",
+   "where": "src/wantrain/scheduler/planner.py:722-740 (_arch_priced: anything but the builtin block is unpriced), :807 (ctx.arch), :946-947 (every wide candidate of such an arch refused 'unpriced')",
+   "ruling": "Ruled per arch. arch 'hf': kept. Every wide hf candidate stays refused 'unpriced' (no exchange-unit model of HF units in M4), so plan mode emits hf plans at width 1; ZeRO-1 and pieces over HF units are reachable in spec mode only (BA-434, HANDOUT D-10); SCHEDULER-I21's HF-bank term of SCHEDULER-I16's device-memory condition is built and tested in admission (scheduler-m4) and is reached by the planner only once a later change prices wide hf candidates. MoE (moe_experts > 0): _arch_priced judges the non-MoE part of the block as today and the planner prices the block with SCHEDULER-I17's MoE unit model (router, one unit per expert projection, the shared expert, the small-tensor unit with the selection biases and the count lane), never with the dense block's units: a MoE config whose dense fields match the builtin block is no longer silently priced as dense, and a MoE config with any other dense part stays 'unpriced'. plan-wire proves the planner's MoE units equal pieces.exchange_units of the runtime's chunk."
+  },
+  {
+   "id": "BA-467",
+   "what": "Rollback per piece (SPEC-model task 4: 4a its own rollback target; SPEC-runtime task 7: 7a/7b/7c/7d revert by task id; ADR-0009 round6.md section 4)",
+   "where": "The pieces are fused into plan tasks by the 2-wave and one-owner-per-file-per-wave rules: 4a, 4b and ADR-0008's HF rows (6a) in model-core/model-families; 7a, 7b, 7c in stage-m4/stage-wire; scheduler task 6 in scheduler-m4/plan-wire; control task 6 in control-m4/agent-hf/agent-wire/arm-m4; 7d in oracle-m4/identity-m4; transport section 2 in transport-tied",
+   "ruling": "New: one revertible unit per piece. src/wantrain/model/rollback.py (model-core; no imports) holds ROLLED_BACK: frozenset[str] = frozenset() and PIECES mapping each piece id to its round6 target: 'scheduler-6', 'runtime-7a', 'runtime-7b' -> 'tied-split-refused'; 'runtime-7c', 'runtime-7d', 'model-4b', 'control-6' -> 'model-4a'; 'model-3-6a' -> 'moe-from-scratch'; target(piece) -> str | None. Reverting piece X is the one-line edit adding X to ROLLED_BACK, independently of every other piece. Each target is enforced at one place: 'model-4a' by GPTConfig.validate() refusing arch 'hf' naming the piece (model-core), so every hf entry (spec, plan, coordinator, oracle, resume of a wave carrying hf_buffers.json) is refused before it starts; 'tied-split-refused' by JobSpec.finalize refusing a split tied hf plan and tied_relay() returning False, so any TIED received is fatal (stage-wire), and by the planner marking split tied hf candidates not admitted (plan-wire); 'moe-from-scratch' by hfm ignoring the SUBSTITUTE rows, so HF MoE is refused MOE-NO-ROW while native MoE runs (model-core builds it, model-families tests it on the real rows). Transport section 2 (round6 #4, the TIED type id) is its own task: reverting transport-tied's two files unassigns the type. 4a (round6 #8) is never a target. Each target has a test that sets ROLLED_BACK by monkeypatch."
+  },
+  {
+   "id": "BA-468",
+   "what": "The HF and MoE arms of the oracle and identity rungs (SPEC-runtime task 7: tiny llama, gemma2 tied, granite, qwen3 in the oracle and identity rungs; ADR-0008's validation plan for MoE)",
+   "where": "agents-architetura/tools/gates/rungs.json (oracle: uv run pytest -q tests/oracle; rest); agents-architetura/tools/verify/identity.json (corpus tests/oracle/**/test_*.py); agents-architetura/tools/wf/lib/project.js:120 (HARNESS_DIRS: tests/oracle/ is no workstream's, so no plan task may own a file there)",
+   "ruling": "Rebuilt through owned paths: identity-corpus (control, which owns tests/helpers/) writes tests/helpers/test_m4_identity_hf.py and tests/helpers/test_m4_identity_moe.py with tests/oracle/test_state_identity.py's three-mode protocol (FACTORY_REFERENCE=1, FACTORY_FEATURES=off, production with every admitted feature on and emulated WAN links; each mode writes $FACTORY_IDENTITY_OUT/state/<arm>.json); corpus-wiring (integrate; both files are HOT_FILES) adds 'tests/helpers/test_m4_identity_*.py' to identity.json's corpus and a tests/helpers step to the oracle rung, and makes the rest rung ignore tests/helpers. The identity rung then compares the reference, feature-off and production runs of every arm by sha256, and GATES-M4 pins the content of both config files and a run that must write every arm's state."
+  }
+ ],
+ "tripwires": [
+  {
+   "id": "m4-unarmed",
+   "flag": "coordinator.M4_ARMED = False: unarmed_reason(job) makes Coordinator.run_job refuse every job whose model arch is 'hf' or whose moe_experts > 0, before any agent request, independently of PIECES_ARMED (the production entry point). The same decision, coordinator.m4_unarmed_reason(model_dict) (I-16), also refuses the operator entries `wantrain local` and `wantrain stage` for an hf or MoE spec (cli.py, BA-464). The run_local and run_baseline Python APIs, used by the tests, and hfm's gate stay possible behind their own guard and gate; `wantrain stage` refuses hf permanently (BA-445). With only some legs in, a production run would be silently wrong: a tied table split across stages without the fold and relay, a unit chain launched without the gate, buffers rebuilt per node, a heal onto another device class, a plan charging a 2-byte cut, a plan-mode MoE job planned dense, an MoE bias updated without its counts or an aux never replayed.",
+   "legs": [
+    "control-m4",
+    "model-core",
+    "stage-m4",
+    "transport-tied",
+    "scheduler-m4",
+    "agent-hf"
+   ],
+   "arm": "arm-m4",
+   "test": "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+  }
+ ],
+ "tasks": [
+  {
+   "id": "hf-pin",
+   "title": "Pin transformers==5.19.0 with hashes in the hf extra",
+   "objective": "Add transformers==5.19.0 to the hf extra, lock it with hashes offline from the uv cache without moving any locked package, and install it additively into this checkout's .venv.",
+   "workstream": "integrate",
+   "deps": [],
+   "scope": [
+    "pyproject.toml",
+    "uv.lock"
+   ],
+   "acceptance": [
+    "pyproject.toml: [project.optional-dependencies] hf = [\"safetensors>=0.4\", \"transformers==5.19.0\"]; nothing else in [project] changes.",
+    "uv.lock: transformers is 5.19.0 with its py3-none-any wheel and a sha256 hash; every added package carries hashes (the verify's second lock command checks every wheel and sdist of every package in the lock carries a sha256 hash); no package already in the lock changes version (checked by the verify's baseline command: the 63 (name, version) pairs of uv.lock on 3b0d2f8, sha256 896b43ff40cb... of their sorted 'name==version' lines, are written into the command, and for every name among them the new lock holds exactly the baseline's versions, so a moved or added version of an existing package such as torch or numpy exits 1; the coder also lists the added packages in its journal). A version move is a STOP with a recorded spec conflict.",
+    "Resolution is offline (uv lock --offline); a distribution missing from the uv cache STOPS the task with a recorded spec conflict naming it; no network fetch without the human.",
+    "Install: `uv sync --all-extras --locked --offline --inexact` through a test slot, once, after the lock check passes. --inexact makes it additive (no package is removed or moved), so siblings running `uv run --no-sync` against .venv during the wave keep their environment. Afterwards `import transformers` gives 5.19.0 and none of the probed packages is importable.",
+    "mypy keeps checking src/wantrain fully; only if `uv run mypy` analyses transformers' own sources is a [[tool.mypy.overrides]] for [\"transformers\", \"transformers.*\"] with follow_imports = \"skip\" added; no other tool setting changes."
+   ],
+   "verify": [
+    "uv lock --check --offline",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label hf-pin --wait 3600 -- uv run --no-sync --offline python -c \"import importlib.util as u, transformers; assert transformers.__version__ == '5.19.0', transformers.__version__; bad = [n for n in ('kernels', 'flash_attn', 'fla', 'mamba_ssm', 'causal_conv1d', 'liger_kernel', 'mambapy', 'unsloth') if u.find_spec(n)]; assert not bad, bad\"",
+    "uv run --no-sync --offline python -c \"import tomllib; d = tomllib.load(open('uv.lock', 'rb')); p = [x for x in d['package'] if x['name'] == 'transformers']; assert len(p) == 1 and p[0]['version'] == '5.19.0', p; w = p[0].get('wheels', []); assert w and all(x.get('hash', '').startswith('sha256:') for x in w), w; bad = [(x['name'], x['version']) for x in d['package'] for a in x.get('wheels', []) + ([x['sdist']] if 'sdist' in x else []) if not a.get('hash', '').startswith('sha256:')]; assert not bad, bad\"",
+    "uv run --no-sync --offline python -c \"import tomllib; B = {tuple(s.split('==')) for s in 'ast-serialize==0.12.1 certifi==2026.7.22 cffi==2.1.1 charset-normalizer==3.5.2 colorama==0.4.6 cryptography==50.0.2 cuda-bindings==13.4.3 cuda-pathfinder==1.8.3 cuda-toolkit==13.0.3.0 exceptiongroup==1.3.1 filelock==4.0.12 fsspec==2026.9.0 hypothesis==6.168.5 idna==3.20 iniconfig==2.3.1 jinja2==3.1.6 librt==0.16.0 markupsafe==3.0.4 mpmath==1.3.0 mypy==2.4.0 mypy-extensions==1.1.0 networkx==3.4.2 networkx==3.6.1 networkx==3.7 numpy==2.2.6 numpy==2.4.6 numpy==2.5.3 nvidia-cublas==13.1.1.3 nvidia-cuda-cupti==13.0.85 nvidia-cuda-nvrtc==13.0.88 nvidia-cuda-runtime==13.0.96 nvidia-cudnn-cu13==9.24.0.43 nvidia-cufft==12.0.0.61 nvidia-cufile==1.15.1.6 nvidia-curand==10.4.0.35 nvidia-cusolver==12.0.4.66 nvidia-cusparse==12.6.3.3 nvidia-cusparselt-cu13==0.8.1 nvidia-nccl-cu13==2.30.7 nvidia-nvjitlink==13.4.92 nvidia-nvshmem-cu13==3.4.5 nvidia-nvtx==13.0.85 packaging==26.3 pathspec==1.1.1 pluggy==1.6.0 pycparser==3.0 pygments==2.21.0 pytest==9.1.1 regex==2026.9.29 requests==2.34.2 ruff==0.16.10 safetensors==0.8.0 setuptools==84.0.0 sortedcontainers==2.4.0 sympy==1.14.0 tiktoken==0.14.0 tomli==2.5.0 torch==2.14.1 triton==3.8.0 typing-extensions==4.16.0 urllib3==2.8.0 wantrain==0.1.0 zstandard==0.25.0'.split()}; names = {n for n, _ in B}; d = tomllib.load(open('uv.lock', 'rb')); N = {(x['name'], x['version']) for x in d['package'] if x['name'] in names}; assert N == B, sorted(N ^ B)\""
+   ],
+   "rungs": [
+    "build",
+    "syntax",
+    "types",
+    "security"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-440"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "corpus-wiring",
+   "title": "Wire the M4 identity corpus into the oracle and identity rungs",
+   "objective": "Make the identity rung's corpus and the oracle rung include the HF and MoE identity arms identity-corpus writes under tests/helpers, since no plan task may own tests/oracle.",
+   "workstream": "integrate",
+   "deps": [],
+   "scope": [
+    "agents-architetura/tools/verify/identity.json",
+    "agents-architetura/tools/gates/rungs.json"
+   ],
+   "acceptance": [
+    "identity.json: \"corpus\" becomes [\"tests/oracle/**/test_*.py\", \"tests/helpers/test_m4_identity_*.py\"]; every other key and value stays exactly as on 3b0d2f8 (every 1, max 40, the a, b and exact commands, normalize true, baseRev origin/main, timeoutSec 600). The verify compares the whole parsed file with that literal.",
+    "rungs.json: the oracle rung gains a second step {\"when\": [\"tests/helpers\"], \"cmd\": \"uv run pytest -q tests/helpers\", \"timeoutSec\": 3600, \"naExitCodes\": [5], \"naReason\": \"no identity-corpus tests under tests/helpers\"} after its tests/oracle step; the rest rung's command gains --ignore=tests/helpers (the oracle rung runs it); no other rung, key or step changes.",
+    "Before identity-corpus lands, both changes are inert: the glob matches no file, and pytest on tests/helpers collects nothing (exit 5, N/A).",
+    "The ladder's own tests still accept the shipped rungs.json (agents-architetura/tools/gates/test/ladder.test.mjs, 'the shipped rungs.json is valid').",
+    "No product file and no other factory file changes; GATES-M4's guarded-harness-unchanged entry pins the resulting content of both files (HANDOUT D-4)."
+   ],
+   "verify": [
+    "uv run --no-sync --offline python -c \"import json; d = json.load(open('agents-architetura/tools/verify/identity.json')); want = {'corpus': ['tests/oracle/**/test_*.py', 'tests/helpers/test_m4_identity_*.py'], 'every': 1, 'max': 40, 'a': 'FACTORY_FEATURES=off uv run pytest -q -p no:randomly {test}', 'b': 'FACTORY_REFERENCE=1 uv run pytest -q -p no:randomly {test}', 'exact': {'cmd': 'uv run pytest -q -p no:randomly {test}', 'state': ['state/**']}, 'normalize': True, 'baseRev': 'origin/main', 'timeoutSec': 600}; assert d == want, d\"",
+    "uv run --no-sync --offline python -c \"import json; R = {r['id']: r for r in json.load(open('agents-architetura/tools/gates/rungs.json'))['rungs']}; o = R['oracle']['steps']; assert [s['cmd'] for s in o] == ['uv run pytest -q tests/oracle', 'uv run pytest -q tests/helpers'], o; assert o[1]['when'] == ['tests/helpers'] and o[1]['naExitCodes'] == [5], o[1]; assert '--ignore=tests/helpers' in R['rest']['steps'][0]['cmd'], R['rest']\"",
+    "node --test agents-architetura/tools/gates/test/ladder.test.mjs"
+   ],
+   "rungs": [
+    "factory",
+    "oracle",
+    "identity"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-468"
+   ],
+   "risk": "medium"
+  },
+  {
+   "id": "determinism-pins",
+   "title": "House fix: setup_determinism assigns its pins and reads every flag back",
+   "objective": "Make setup_determinism assign its numeric pins (refusing a pre-set differing value) and read every determinism flag back, allow_tf32 included, with its own tests.",
+   "workstream": "runtime",
+   "deps": [],
+   "scope": [
+    "src/wantrain/runtime/determinism.py",
+    "tests/unit/test_user_model_precision.py"
+   ],
+   "acceptance": [
+    "setup_determinism(seed) assigns CUBLAS_WORKSPACE_CONFIG=':4096:8' and, on x86 (platform.machine), ATEN_CPU_CAPABILITY='avx2' and MKL_ENABLE_INSTRUCTIONS='AVX2'; a pre-set value equal to the pin passes; a pre-set different value raises DeterminismError (a ValueError subclass) naming the variable, the pre-set value and the pin, before any torch flag changes.",
+    "PYTORCH_CUDA_ALLOC_CONF stays a default (os.environ.setdefault): allocator only, it moves no bit; the docstring says why it is not a pin.",
+    "It sets, unconditionally: random.seed, torch.manual_seed, torch.set_num_threads(1), torch.use_deterministic_algorithms(True, warn_only=False), torch.set_float32_matmul_precision('highest'), both allow_tf32 False, cudnn.deterministic True, cudnn.benchmark False; then calls check_determinism().",
+    "check_determinism() -> None reads back every flag above and, on x86, the ATen CPU capability: torch.backends.cpu.get_cpu_capability() must equal the pinned 'AVX2' (case-insensitive), else DeterminismError naming the variable, the pin and the capability ATen reports (a pin assigned after ATen cached its dispatch). It raises DeterminismError naming the first flag that differs (I-8). MKL has no read-back API in torch: the docstring says so and HANDOUT R-9 records the residual.",
+    "Tests named test_determinism_*, each with 'covers: RUNTIME-I19' and a WOULD-FAIL-IF line: x86 simulated by monkeypatching platform.machine with ATEN_CPU_CAPABILITY='avx512' pre-set raises (WOULD-FAIL-IF: a pre-set ATEN_CPU_CAPABILITY survives); allow_tf32 forced True before setup is False after (WOULD-FAIL-IF: allow_tf32 is True after setup); each read-back flag forced wrong after setup makes check_determinism raise naming it; the old setdefault body, kept in the test as a deliberately wrong implementation, fails the first two tests; the ladder's environment sets no differing pin (a clean subprocess calls setup_determinism and exits 0).",
+    "ISA read-back test (test_determinism_isa_*): on a simulated x86 (platform.machine monkeypatched), torch.backends.cpu.get_cpu_capability monkeypatched to return 'AVX512' makes setup_determinism and check_determinism raise DeterminismError naming ATEN_CPU_CAPABILITY and 'AVX512' (WOULD-FAIL-IF: the ISA pin is assigned after ATen cached the capability and nobody reads it back); on arm64 no capability is required.",
+    "Every test restores os.environ and the torch flags it touched (fixture).",
+    "No dense run's bits change: the existing tests in tests/unit/test_user_model_precision.py still pass.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_user_model_precision.py exits 1 unless at least one test whose name matches test_determinism_ carries a `covers:` line for each of RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label determinism-pins --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_user_model_precision.py -k determinism",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label determinism-pins --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_user_model_precision.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_user_model_precision.py 'test_determinism_' RUNTIME-I19"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "RUNTIME-I19"
+   ],
+   "binding": [
+    "BA-431",
+    "BA-432"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "model-core",
+   "title": "hfm (HF modules windowed per unit, guard, skeleton, trace, loader, gate, fingerprint) and the exact MoE block (SPEC-model 4a+4b, task 3)",
+   "objective": "Build src/wantrain/model/hfm.py (ADR-0009 D1-D9) and ADR-0008's exact MoE block in arch.py, route arch 'hf' and moe_experts > 0 through them, and delete the native HF loader.",
+   "workstream": "model",
+   "deps": [],
+   "scope": [
+    "src/wantrain/model/hfm.py",
+    "src/wantrain/model/rollback.py",
+    "src/wantrain/model/hf.py",
+    "src/wantrain/model/gpt.py",
+    "src/wantrain/model/wgrad.py",
+    "src/wantrain/model/arch.py",
+    "tests/unit/test_finetune.py"
+   ],
+   "acceptance": [
+    "4a: hf.py keeps checkpoint_digest only (plus a private safetensors header reader if hfm needs one); config_from_hf, load_into, build_layers and every _LLAMA_* map are deleted; the old HF tests in test_finetune.py are replaced; LoRA and flush_iter tests in the file are untouched and pass.",
+    "gpt.py implements I-1 exactly: GPTConfig.hf_config, hf_buffers, hf_census, hf_code, hf_impl and the moe_* fields of SPEC-model §2 (defaults dense: moe_experts 0); validate()'s hf and MoE rules (each refusal names the field); call_layer(layer, x, ids=None); build_layers(cfg, seed, span=None): arch 'hf' -> hfm.build(cfg, seed, span) converted by wgrad.convert with the units' exclusion set; MoE configs go through arch's general path (_uses_general_arch true when moe_experts > 0), each MoEMLP with moe_layer = its layer index (I-11). call_layer exists for the arch 'hf' branches of the stage, oracle, profile and fit only; no dense call site uses it (BA-407). gpt.py never imports transformers at import or in validate().",
+    "wgrad.convert(module, exclude=frozenset()) leaves every Linear in exclude, every tied Linear and every MoE router as nn.Linear; with an empty exclude the builtin, general and user archs convert exactly what they convert today (existing deferred-dW tests unchanged).",
+    "hfm.py implements I-2, I-3, I-4, I-10 exactly (names, signatures, dict keys, CLI subcommands gate, record, census, torch-records): HFRefused(cause) with the handout's cause tokens; guard_environment checks, never sets; check_config refuses auto_map, is_encoder_decoder, a model_type outside the pinned MODEL_FOR_CAUSAL_LM_MAPPING, dropout > 0, dynamic or longrope rope past original_max_position_embeddings, a foreign forward, lora_rank > 0, a boundary dtype other than fp32. SUBSTITUTE is the empty dict here (model-families fills its rows in wave 2), but the swap mechanism is built here: hfm.build and skeleton class-swap every module whose (class, '5.19.0') has a row, admit router and experts rows only under a block with a row, set moe_layer from the unit map's decoder-layer index (BA-462), and refuse MOE-NO-ROW otherwise. platform_admitted() -> bool (BA-463). The gate computes its comparison (cuts, first_difference, triggers) on every platform and reports a fingerprint refusal (FP-*) in cause without skipping the comparison.",
+    "skeleton(hf_config) builds the whole ForCausalLM with parameters on meta and buffers on the CPU, eager attention, training mode (root.train()), and draws nothing. build(cfg, seed, span=None): from-config, the seeded full HF build on the CPU (decision 7, span ignored); with cfg.hf_model, the skeleton with only the units in span loaded (strict, MODEL-I4 over them) and every other parameter left on meta (BA-449); in both every buffer overwritten from cfg.hf_buffers and refused on a sha256 mismatch naming the tensor; cfg.hf_buffers None refused.",
+    "trace, units, HFUnits.vanilla, the per-device buffer copies (BA-433) and the D8 classifier as in round 1's acceptance (unique layer ModuleList called in order, every parameterized module placed once but the tie, refusals naming the module, stride-0 NaN stubs, a raising pre-hook at the next unit's entry, only the residual crossing a cut); every forward of the trace, gate and census runs in training mode inside fork_rng (BA-444, BA-405).",
+    "load/export (MODEL-I4 under HF modules): sharded safetensors with an index, read and written by this repository's code; names 1:1 onto the skeleton for the requested units; missing, unused, shape- or dtype-class-mismatched and v5-conversion names refused, naming them; the hub-to-fused map (BA-437) for mixtral, qwen2_moe, qwen3_moe, deepseek_v3 on tiny skeletons round-trips load-export-load keeping every sha256 (distinct bytes, -0, NaN payloads) and equals transformers 5.19.0's own conversion of the same local files bit for bit. Export writes the same names and tied keys and records in the index metadata the sha256 of every tokenizer file found beside the source checkpoint (tokenizer.json, tokenizer.model, tokenizer_config.json, special_tokens_map.json; ADR-0009 D7); no tokenizer is ever loaded.",
+    "gate(hf_config, recipe, device) (MODEL-I10; SPEC-model §3's signature, recipe = I-9's {compute_dtype, seq_len, mb_size}) as in round 1 (tiny config by the shrink table, every cut, fp32 and bf16 autocast, M 1 and 2, deferred W under capture(), recompute, logits, loss hex and every gradient bitwise, causality probe, trigger counts, 64 MB / 30 s caps, fork_rng); fingerprint(model=None) per I-3 (SPEC-model §3's fingerprint(model); None fingerprints the installed environment only, as the agent's GATE and the builder child need) including transformers' RECORD text (gz, base64); hf_code() per I-1; record_diff(recorded_text, other_text) -> str | None names the first differing RECORD path. The CUDA/nvidia arm is N/A under gpu false (recorded, never faked).",
+    "Census shapes (I-10, BA-419, BA-441): unit_census gives each unit dict a 'param_shapes' list [[name, [dims]], ...] of its trainable parameters in the unit module's named_parameters order, a tensor shared by two units listed once at its first unit (as ModuleList.named_parameters gives it), so JobSpec.stage_param_shapes can price pieces for an hf plan without importing transformers; a test checks them against the skeleton's units for llama tied and untied and gemma2 (WOULD-FAIL-IF: a shared table listed twice or a name differing from the unit's).",
+    "Determinism of the CLI children (BA-432): hfm's CLI main() for gate, record and census calls wantrain.runtime.determinism.setup_determinism(seed) before any build or trace (the existing function; once determinism-pins lands it ends with check_determinism, so the children run under the stage's exact flags with no edit here); test_hfm_cli_determinism_* records the call order by monkeypatching the module-level setup_determinism in-process (WOULD-FAIL-IF: a CLI child builds or compares outside the determinism regime).",
+    "MoE (MODEL-I8, native): arch.MoEMLP(cfg), arch.moe_forward(cfg, view, x), arch.take_moe_records(layers) (walks each layer's modules(), returns records sorted by (moe_layer, call); BA-462) and arch.moe_bias_update(layers, counts, global_tokens) per I-11 and SPEC-model §2 (every recipe row of ADR-0008 derivation §3: softmax, softmax_k, sigmoid scores; score, logit, score_bias selection; groups; renormalization; scaling; input or output weighting; clamped SwiGLU; shared expert and gate; lbl per layer or sequence, z; selection bias).",
+    "Tests named test_hfm_* (covers MODEL-I4, MODEL-I9 or MODEL-I10) on tiny llama (tie off and on), qwen3, gemma2 (tied, softcap, sliding window) and granite (the four families SPEC-runtime task 7 names): unit chain equals vanilla bitwise at every cut, fp32 and bf16, M 1 and 2, deferred W, recompute; refusals/divergences: to_empty buffers, sdpa, dropout 0.1, dynamic rope, auto_map, lora_rank 1, boundary bf16, an in-place stub write, exit one unit late, tied use dropped, eval mode set before the gate (refused), tiny mixtral with hfm.SUBSTITUTE monkeypatched to {} (MOE-NO-ROW; valid before and after model-families adds the row), bert; the skeleton draws nothing; a tampered buffer refused; strict-load refusals; a sharded checkpoint built with span=(1, 3) holds only units 1-2 off meta and equals the full load on them; export round trip; guard and fingerprint tests in a subprocess with and without -X pycache_prefix, with LD_PRELOAD, with a stub mambapy on PYTHONPATH, and with one edited transformers file in a symlinked copy of the site directory under tmp_path (never .venv); record_diff on two RECORD texts differing in one line names that path; a gate test asserts the comparison fields on every platform and, where hfm.platform_admitted() is False, the FP-TORCH-RECORDS cause naming the platform tag (BA-463, never a skip).",
+    "Tests named test_moe_* (covers MODEL-I8), ADR-0008 E1: selection on crafted keys (ties, +-0, subnormals, +-inf, group ties) equals the lowest-index rule and a NaN key is fatal; torch.topk monkeypatched to raise is never called; group refusals (E 8 with G 8, G 3, k > G_top*E/G); dispatch, combine and fan-out backward equal their written folds; an unrouted expert's gradient is all +0 (no sign bit) on the immediate path and from the deferred store, and flush yields it; under capture() each expert Linear records one (X, dY) per call with exactly its rows and its deferred dW equals the immediate dW for 0, 1 and many rows; the block draws nothing and its recompute gives the same output, aux and counts; moe_bias_update moves each bias by exactly +gamma, -gamma or 0 for any summation order of the counts; native routed pending-W bytes equal T*k*(2h+3f)*b per layer for any skew (F3 native).",
+    "Rollback per piece (BA-467; SPEC-model task 4, SPEC-runtime task 7, ADR-0009 round6.md section 4): src/wantrain/model/rollback.py, importing nothing, defines ROLLED_BACK: frozenset[str] = frozenset(), PIECES = {'scheduler-6': 'tied-split-refused', 'runtime-7a': 'tied-split-refused', 'runtime-7b': 'tied-split-refused', 'runtime-7c': 'model-4a', 'runtime-7d': 'model-4a', 'model-4b': 'model-4a', 'control-6': 'model-4a', 'model-3-6a': 'moe-from-scratch'} and target(piece) -> str | None (KeyError naming an unknown piece). GPTConfig.validate() refuses arch 'hf' while any piece whose target is 'model-4a' is in ROLLED_BACK, naming the piece and 'model-4a' (rollback reads the module attribute at call time, so a monkeypatch takes effect); hfm's SUBSTITUTE lookup treats the table as empty while 'model-3-6a' is in ROLLED_BACK (MOE-NO-ROW names the rollback). Tests test_hfm_rollback_* (covers: MODEL-I10): each of the four 'model-4a' pieces, set alone by monkeypatch, makes validate() refuse a tiny llama hf config naming that piece, and an empty ROLLED_BACK admits it; 'model-3-6a' with a monkeypatched one-row SUBSTITUTE makes the swap refuse MOE-NO-ROW naming the rollback, while a native moe_experts > 0 config still validates and builds (WOULD-FAIL-IF: a rolled-back piece stays reachable, or a rollback disables an unrelated piece).",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "Every test process stays under 1 GB RSS and the file's hfm and moe tests under 5 minutes on this Mac.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Tripwire m4-unarmed (leg): this task never lifts the coordinator's refusal of arch 'hf' and of moe_experts > 0. Its verify includes the tripwire test, which control-m4 (the first leg) writes in this wave; that line is evidence only when it exits 0. Exit 5 (no test collected) means the first leg has not landed: the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_finetune.py exits 1 unless at least one test whose name matches test_hfm_ carries a `covers:` line for each of MODEL-I4, MODEL-I9, MODEL-I10, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_finetune.py exits 1 unless at least one test whose name matches test_moe_ carries a `covers:` line for each of MODEL-I8, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-core --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k 'hfm or moe'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-core --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-core --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k hfm_rollback",
+    "uv run --no-sync --offline --with transformers==5.19.0 python -c \"import wantrain.model.hfm as h, wantrain.model.arch as a; from wantrain.model.gpt import call_layer, GPTConfig; assert isinstance(h.SUBSTITUTE, dict) and callable(h.record_diff) and callable(h.platform_admitted) and callable(a.moe_forward); GPTConfig().validate()\"",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_finetune.py 'test_hfm_' MODEL-I4 MODEL-I9 MODEL-I10",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_finetune.py 'test_moe_' MODEL-I8",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants",
+    "security"
+   ],
+   "invariants": [
+    "MODEL-I4",
+    "MODEL-I8",
+    "MODEL-I9",
+    "MODEL-I10"
+   ],
+   "binding": [
+    "BA-401",
+    "BA-402",
+    "BA-403",
+    "BA-404",
+    "BA-405",
+    "BA-412",
+    "BA-419",
+    "BA-432",
+    "BA-433",
+    "BA-437",
+    "BA-438",
+    "BA-439",
+    "BA-443",
+    "BA-444",
+    "BA-448",
+    "BA-449",
+    "BA-450",
+    "BA-451",
+    "BA-452",
+    "BA-453",
+    "BA-462",
+    "BA-463",
+    "BA-467"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "stage-m4",
+   "title": "Stage runtime for HF units, tied tables across stages and MoE (aux replay, bias update, count transport)",
+   "objective": "Make StageRuntime run HF units and MoE layers byte-identically to the oracle: determinism asserts, ids on every stage, the row-sparse tied fold and TIED relay, buffer records in every wave, the MoE aux record and replay check, the selection-bias update and its count transport under ZeRO-1 and pieces, and the one-slot refusal of hf specs.",
+   "workstream": "runtime",
+   "deps": [],
+   "scope": [
+    "src/wantrain/runtime/stage.py",
+    "src/wantrain/runtime/accumulate.py",
+    "src/wantrain/runtime/spec.py",
+    "src/wantrain/runtime/pieces.py",
+    "src/wantrain/runtime/exchange.py",
+    "src/wantrain/runtime/logical_ckpt.py",
+    "src/wantrain/worker/stage_main.py",
+    "tests/unit/test_runtime_spec.py"
+   ],
+   "acceptance": [
+    "HF start (code; proven in stage-wire): for arch 'hf' StageRuntime.__init__ runs setup_determinism, hfm.guard_environment(), build_layers(spec.model, seed, span=(a, b)) for a checkpoint run (the full build from-config), then check_determinism() and asserts _attn_implementation 'eager', every dropout 0, HF gradient checkpointing off, use_cache False, every unit module in training mode and hfm.hf_code() equal to spec.model.hf_code; a failure is fatal naming the flag. Dense archs: no new call.",
+    "engine_supplies_autocast(model) is true for arch 'hf' with an autocast recipe; for every non-hf arch _layers keeps layer(x) byte for byte, and only the arch 'hf' branch calls gpt.call_layer(layer, x, ids), imported at call time (BA-407), with ids from make_batch on this stage's device for F and for B's rebuild; the last unit's logits give loss_fn(logits.float(), targets).",
+    "accumulate.TiedRowFold implements I-6 bit for bit against the stock fold on random cases with 1, 2, 3 and 6 microbatches pending, distinct ids, repeated ids and an empty T_i; untouched rows come out as acc + (h_i + 0.0); a per-use fold (sum of h, then of e) differs (control).",
+    "JobSpec (I-7): device_classes; tied_relay(); finalize refuses an hf plan whose split tied table has any stage from stage 0 to the Head at width > 1 (BA-419, BA-447) and a boundary dtype other than fp32; finalize refuses tie_embeddings with the Embed and the Head on different stages for every other arch, naming layers.0.tok.weight (BA-446); pins() adds device_classes for arch 'hf' only, and pins()['model'] omits every hf_* field of a non-hf model and every moe_* field of a model with moe_experts == 0 (BA-465), so a dense spec's pins() JSON is byte-identical to 3b0d2f8's and a pre-M4 dense wave still resumes; stage_param_shapes for arch 'hf' reads cfg.hf_census's param_shapes (I-10) and never imports hfm or transformers (BA-419, BA-441: finalize runs in the coordinator and planner processes), and for MoE includes the bias buffers.",
+    "Tied relay (RUNTIME-I19) as in round 1: the Head owns the table, its AdamW state and TiedRowFold; stage 0 holds the step's rows (NaN elsewhere) out of self.params, the optimizer, the fold and the checkpoint; TIED-SPARSE on a nonzero or -0 outside T_i; TIED(t, i) after B_i; TIED(t+1, k) = R_k after AdamW only when step t+1 runs in this attempt (never after the run's last step or after the step on which a checkpoint-and-stop, re-plan or restart ends the attempt; stage 0 never waits for rows of a step it will not run, and END finds no TIED frame in flight); F_k waits for R_0..R_k; intermediate (width 1) stages forward fragments from the reader thread; a resume sends R_k before step 1. Receipt checks: a TIED frame out of sequence, misshapen, duplicated, missing, or under a plan with no relay is fatal before its payload is used; the main dispatch raises on any frame type it does not handle.",
+    "Waves (RUNTIME-I17 format unchanged for dense): every hf slot's wave, whole-tensor and logical, lists hf_buffers.json through commit_wave(..., extra_files={'hf_buffers.json': canonical JSON bytes}) (I-15, BA-460; the keyword is passed only for hf slots, so dense commits call commit_wave exactly as today); _resume and _resume_logical load it, compare each tensor's sha256 with spec.model.hf_buffers and refuse naming the tensor; a resume whose device_classes differ is refused naming the slot.",
+    "MoE (RUNTIME-I18): the slot owning a microbatch records each MoE layer's aux hex and counts from F (arch.take_moe_records) once per (step, mb, layer) and keeps them in its checkpoint ('moe_aux', I-12); B's rebuild recomputes them and a difference is fatal (MOE-REPLAY naming step, mb, layer); after AdamW the bias owner applies arch.moe_bias_update from the step's int64 counts folded in microbatch order; width 1 local; zero1 (BA-454, on each of the three gradient paths): biases appended to the ownership list after the trainable parameters; the count vectors ride the batch OBJ message ({mb: ..., 'counts'}), the stream_grads OBJ message per microbatch, or, under wire native, one RAW_I64 exchange frame of kind exchange.COUNT per (mb, bias index) validated by exchange.check_frame; the owner folds them by integer add in microbatch order and returns the bias in its PARAMS broadcast; every malformed, duplicated or missing vector fatal naming (step, mb, layer, peer); dense payloads byte-identical; pieces: the bias in its block's small-tensor unit, the count lane RAW_I64 on the unit's GRADS frame validated by exchange.check_frame (BA-455), the logical checkpoint includes the bias; expert exchange units per projection (native) and per 3-D bank (HF) in pieces.exchange_units (BA-456).",
+    "One-slot launch (BA-445): stage_main.main without --launcher refuses a spec whose JSON model.arch is 'hf', read before JobSpec.load (extend refuse_unchecked_pieces or add its sibling), printing WT_REFUSED and exiting 2.",
+    "Wave-1 tests (self-contained), named test_m4_stage_* in tests/unit/test_runtime_spec.py, each with covers: RUNTIME-I19, RUNTIME-I18 or RUNTIME-I15 and a WOULD-FAIL-IF line: TiedRowFold vs stock and the per-use control; the non-hf tied split refused by finalize (dense GPTConfig, 2 stages) and the same-stage tie admitted; stage_main's hf refusal from a JSON file; exchange.check_frame on count lanes (non-int64, wrong shape, negative, missing, doubled refused; a valid lane accepted); the integer count fold equal for every summation order and the zero1 sum rule (T_mb*k) refusing a short vector; the count payload of each ZeRO-1 path (batch dict, stream ('mb', ...) tuple, native COUNT frame) built from crafted vectors validates at the owner and each malformed, duplicated or missing vector is refused naming it; commit_wave is called with extra_files only for an hf slot (a dense slot's call unchanged, checked with a recording fake of the module-level name, not a stub of behaviour); the MOE-REPLAY comparator naming (step, mb, layer); the dispatch raising on an unhandled type id; the TIED send predicate (no TIED(t+1) after the attempt's last step, for the final step and for a checkpoint-and-stop step); a dense spec's pins() JSON equal to the literal the coder records from the pre-change tree before editing (golden; WOULD-FAIL-IF: a new GPTConfig field leaks into dense pins); stage_param_shapes of an hf spec with piece_bounds from a crafted census, run in a subprocess whose meta-path finder raises on any import of transformers or wantrain.model.hfm (WOULD-FAIL-IF: finalize imports transformers in the coordinator). HF-config and real-MoE-module behaviour is stage-wire's and identity-m4's (wave 2).",
+    "Dense runs are unchanged: the existing tests in tests/unit/test_runtime_spec.py pass.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Tripwire m4-unarmed (leg): this task never lifts the coordinator's refusal of arch 'hf' and of moe_experts > 0. Its verify includes the tripwire test, which control-m4 (the first leg) writes in this wave; that line is evidence only when it exits 0. Exit 5 (no test collected) means the first leg has not landed: the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_runtime_spec.py exits 1 unless at least one test whose name matches test_m4_stage_ carries a `covers:` line for each of RUNTIME-I15, RUNTIME-I18, RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label stage-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k m4_stage",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label stage-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+    "uv run --no-sync --offline python -c \"import wantrain.runtime.stage, wantrain.runtime.spec, wantrain.runtime.pieces, wantrain.runtime.exchange, wantrain.worker.stage_main; from wantrain.runtime.accumulate import TiedRowFold\"",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_runtime_spec.py 'test_m4_stage_' RUNTIME-I15 RUNTIME-I18 RUNTIME-I19",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "RUNTIME-I19",
+    "RUNTIME-I18",
+    "RUNTIME-I15"
+   ],
+   "binding": [
+    "BA-406",
+    "BA-407",
+    "BA-408",
+    "BA-409",
+    "BA-410",
+    "BA-411",
+    "BA-412",
+    "BA-413",
+    "BA-414",
+    "BA-416",
+    "BA-417",
+    "BA-418",
+    "BA-419",
+    "BA-434",
+    "BA-435",
+    "BA-441",
+    "BA-444",
+    "BA-445",
+    "BA-446",
+    "BA-447",
+    "BA-448",
+    "BA-449",
+    "BA-452",
+    "BA-453",
+    "BA-454",
+    "BA-455",
+    "BA-456",
+    "BA-460",
+    "BA-465"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "oracle-m4",
+   "title": "The HF and MoE oracle, the state manifest and the local launcher (code; wave-1 tests self-contained)",
+   "objective": "Give arch 'hf' and MoE their oracle (vanilla HF on one device class, the unit chain on a mixed map one host holds; aux hex and the bias update), their state manifest sections, and a local launcher that builds the record once, runs the gate and starts every HF process in the guarded environment.",
+   "workstream": "runtime",
+   "deps": [],
+   "scope": [
+    "src/wantrain/validation/reference.py",
+    "src/wantrain/validation/state.py",
+    "src/wantrain/launch/local.py",
+    "tests/integration/test_engine_bitwise.py"
+   ],
+   "acceptance": [
+    "run_baseline for arch 'hf' (SPEC-runtime §2 Oracle): one device class: HFUnits.vanilla(ids) in one process; a mixed map one host holds: the unit chain in one process; any other map refused naming the classes (a pure helper oracle_mode(device_classes) -> 'vanilla' | 'chain' | refusal); parameters and buffers from the run's record; the units' parameters in unit order to AdamW; the autocast region; loss_fn(logits.float(), targets); recompute through checkpoint(call_layer, layer, x, ids, use_reentrant=False), call_layer imported at call time in the hf branch only (dense call sites keep layer(x), BA-407); every module in training mode (asserted). Start order (BA-406), as the stage's: setup_determinism(seed), then hfm.guard_environment() and the build, then check_determinism() and the HF asserts (eager attention, every dropout 0, HF gradient checkpointing off, use_cache False, training mode, hfm.hf_code() equal to spec.model.hf_code), each fatal naming the flag; check_determinism and hfm are imported at call time in the hf branch only.",
+    "run_baseline for MoE: records every (step, mb, layer) aux hex (arch.take_moe_records) and applies arch.moe_bias_update after AdamW, as the stage does.",
+    "state.py: for hf, names from the skeleton's units; a split tied table's bytes from the Head's checkpoint under every name the oracle's state_dict gives it; stage 0's working copy never read; buffers from the record. For MoE: the aux section [step, mb, layer, hex] sorted, gathered from every slot's checkpoint key 'moe_aux' (I-12), diff_manifests failing on a triple twice or missing; every selection bias in the weights. Dense manifests byte-identical to today's.",
+    "run_local for arch 'hf': builds the record, census, hf_code and RECORD text once in a child (python -X pycache_prefix=<fresh> -m wantrain.model.hfm record) under hfm.stage_env, pins them and the mirrored fields in the spec (refusing a pre-filled mirror that differs), keeps the RECORD text in the run directory, runs the gate child on the CPU and on each non-CPU device of the map and refuses on a failed report (naming the cause), fills spec.device_classes, starts every stage and the reference child with the -X flag and the HF environment and passes --launcher local, removes every prefix directory after its child exits; a local resume never rebuilds the record and refuses an installed RECORD that differs from the kept text, naming the first differing path (hfm.record_diff); recipe_digest covers the device map and hf_code for hf only, and its model dict omits every hf_* field of a non-hf model and every moe_* field of a model with moe_experts == 0 (BA-465), so dense digests are byte-identical to 3b0d2f8's.",
+    "Wave-1 tests (self-contained), named test_m4_oracle_* in tests/integration/test_engine_bitwise.py, each with covers: RUNTIME-I19 or RUNTIME-I18 and a WOULD-FAIL-IF line: oracle_mode on crafted class maps (one class, mixed held by one host, refused); the aux section builder and diff_manifests on crafted manifests (sorted order, a duplicated and a missing triple fail, a selection-bias difference fails); the child runner's prefix directory is fresh and removed after a trivial child exits, also when it fails; dense goldens (test_m4_oracle_dense_golden_*, WOULD-FAIL-IF: a dense digest, manifest or baseline changes): recipe_digest of two fixed dense specs (builtin and general), the build_manifest bytes' sha256 of a fixed dense state and loss list, and an in-process run_baseline of the tiny dense test config for 2 steps (its losses hex and manifest sha256) each equal a literal the coder records from the pre-change tree before editing. These run in seconds in one process, so the fast verify fails if this task breaks the dense oracle, manifest or digest; the existing multi-process tests run in the post-wave ladder. The HF and MoE end-to-end oracle arms are identity-m4's (wave 2).",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/integration/test_engine_bitwise.py exits 1 unless at least one test whose name matches test_m4_oracle_ carries a `covers:` line for each of RUNTIME-I18, RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label oracle-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k m4_oracle",
+    "uv run --no-sync --offline python -c \"import wantrain.validation.reference, wantrain.validation.state, wantrain.launch.local\"",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/integration/test_engine_bitwise.py 'test_m4_oracle_' RUNTIME-I18 RUNTIME-I19"
+   ],
+   "rungs": [
+    "integration",
+    "types",
+    "lint",
+    "fmt"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-406",
+    "BA-407",
+    "BA-409",
+    "BA-410",
+    "BA-411",
+    "BA-420",
+    "BA-421",
+    "BA-422",
+    "BA-423",
+    "BA-424",
+    "BA-442",
+    "BA-444",
+    "BA-448",
+    "BA-452",
+    "BA-453",
+    "BA-457",
+    "BA-465"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "transport-tied",
+   "title": "TIED frame type and typed decode of frame types",
+   "objective": "Add the TIED frame type (I-5) and make recv_frame refuse any frame type outside the defined set before reading its payload.",
+   "workstream": "transport",
+   "deps": [],
+   "scope": [
+    "src/wantrain/transport/framing.py",
+    "tests/unit/test_transport.py"
+   ],
+   "acceptance": [
+    "framing.TIED == 7 and FRAME_TYPES == frozenset({FWD, BWD, END, GRADS, PARAMS, LOSS, HELLO, TIED}); every existing type id keeps its value, and an FWD frame's header bytes are unchanged (golden bytes in the test).",
+    "recv_frame raises FrameError on a type byte outside FRAME_TYPES after the header and before reading the payload (no allocation of paylen); send_frame raises ValueError on one.",
+    "A TIED frame must carry codec RAW_F32, ndim 2 and paylen == shape[0]*shape[1]*4, else FrameError at receipt; its fragments reassemble to the exact payload in any order (TRANSPORT-I2); MAX_PAYLOAD applies unchanged (TRANSPORT-I3).",
+    "Tests named test_tied_frame_* and test_unknown_frame_type_*, each with a covers: line and a WOULD-FAIL-IF line (an unknown type accepted; a TIED frame with another codec or a short payload accepted; a fragment order changes bytes); at least one covers TRANSPORT-I2 (fragments reassemble a TIED payload exactly in any order) and at least one TRANSPORT-I3 (an over-MAX_PAYLOAD TIED frame refused).",
+    "The existing tests in tests/unit/test_transport.py pass. The fuzz rung's wire targets still treat an unknown type as a FrameError, never a crash: the verify runs tests/fuzz/test_wire_fuzz.py's garbage-stream, segmentation and reassembly properties under the dev Hypothesis profile through a test slot. tests/fuzz is the harness's (HARNESS_DIRS; GATES-M4 pins its hash): this task never edits it, and a failure there is a recorded spec conflict for wan-fuzz, never a change to the target.",
+    "Tripwire m4-unarmed (leg): this task never lifts the coordinator's refusal of arch 'hf' and of moe_experts > 0. Its verify includes the tripwire test, which control-m4 (the first leg) writes in this wave; that line is evidence only when it exits 0. Exit 5 (no test collected) means the first leg has not landed: the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_transport.py exits 1 unless at least one test whose name matches test_(tied_frame|unknown_frame_type)_ carries a `covers:` line for each of TRANSPORT-I2, TRANSPORT-I3, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label transport-tied --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_transport.py -k 'tied_frame or unknown_frame_type'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label transport-tied --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_transport.py",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label transport-tied --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/fuzz/test_wire_fuzz.py -k 'garbage_streams or segmentation or reassembly'",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_transport.py 'test_(tied_frame|unknown_frame_type)_' TRANSPORT-I2 TRANSPORT-I3",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "fuzz",
+    "types",
+    "lint",
+    "fmt"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-415"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "scheduler-m4",
+   "title": "Plans charge what HF and MoE stages move and hold (SCHEDULER-I21, SCHEDULER-I22)",
+   "objective": "Price arch 'hf' plans from the builder's census (fp32 cut, tied bytes and Delta T_tied on the chain, tied memory, eager attention) and MoE stages at active compute and total bytes and memory, with SCHEDULER-I21's and I22's refusals.",
+   "workstream": "scheduler",
+   "deps": [],
+   "scope": [
+    "src/wantrain/scheduler/planner.py",
+    "src/wantrain/scheduler/autoconfig.py",
+    "src/wantrain/scheduler/zero_bubble.py",
+    "src/wantrain/scheduler/partition.py",
+    "src/wantrain/scheduler/admission.py",
+    "src/wantrain/scheduler/exchange_sim.py",
+    "tests/unit/test_scheduler.py",
+    "tests/unit/test_zero_bubble.py"
+   ],
+   "acceptance": [
+    "Pure cost functions over explicit inputs (I-13), read by layer_costs, analytic_costs and stage_memory_model through cfg (getattr of the I-1 fields): hf_unit_costs(census, seq_len, mb_size, compute_dtype), delta_t_tied(t_s, t_F, t_B, rows_T, rows_R, hops, latency_s, bandwidth_Bps) -> dict with the five terms of docs/research/adr-0009/round5.md §8 and their sum, moe_layer_costs(moe, d_model, seq_len, mb_size) (active compute, total bytes and memory, count lane L*E*8 per microbatch per peer, HF bank hold m_BW*b_m*E*3hf).",
+    "SCHEDULER-I22: 4 bytes per element at every hf cut, a narrower declared boundary refused naming it; tied bytes on every chain hop between stage 0 and the Head and Delta T_tied in the step; the tied memory of stage 0 and the Head; any stage from stage 0 to the Head at width > 1 under a split tied table refused naming it (BA-447); eager attention b*H*S^2*s per layer (s 4 fp32, 6 autocast, +2/+4 softcap); an hf config without a census refused naming it; SCHEDULER-I22's 'and in S1 for sharded plans' is unreachable by ruling: BA-447 refuses width > 1 on every stage from stage 0 to the Head, which under a split tied table is every stage, so no sharded plan carries tied bytes (a test asserts such a plan refused before S1 is evaluated); the once-counted table at planner.py:194-199 and :769 replaced by these charges.",
+    "BA-446: tie_embeddings with the Embed and the Head on different stages is refused by the planner for every arch but 'hf', naming tok.weight. The check runs before _refusals_before_pricing's width-1 early return (planner.py:928-931), so a width-1 candidate with S > 1 is refused too (today only wide pieces candidates reach the check, planner.py:940); a refused candidate is marked not admitted with that reason, as pieces candidates are today, never raised for the whole plan, so test_scheduler.py's tied 7B plan (line 1063) keeps its contract through its S 1 candidates. Test test_m4_plan_hf_ba446_w1_* (covers: SCHEDULER-I22; WOULD-FAIL-IF: the width-1 return still skips the tied check).",
+    "BA-466 (the 'unpriced' refusal, planner.py:946-947): wide candidates of an arch 'hf' config stay refused 'unpriced', so a plan of an hf config is width 1 (test test_m4_plan_hf_wide_unpriced_*: every wide candidate not admitted with 'unpriced', the chosen candidate w 1; WOULD-FAIL-IF: a wide hf candidate is priced with the builtin block's units). For moe_experts > 0, _arch_priced judges the non-MoE fields as today and the stage's units come from SCHEDULER-I17's MoE unit model (router, one unit per expert projection, shared expert, the small-tensor unit holding the selection biases with the count lane's L*E*8 bytes per microbatch per peer); test test_m4_plan_moe_units_* on a MoE config with builtin dense fields: its unit list holds the per-projection expert units and the bias unit with hand-computed bytes, and a MoE config with another dense part is refused 'unpriced' (WOULD-FAIL-IF: a MoE config is priced with the dense block's fc1/fc2 units).",
+    "SCHEDULER-I21: per MoE block, its attention, router, k experts and shared expert in compute; all E experts in P_s, the working copy, the state and every memory and host bound; the pending-W term from SPEC-model §2's MoE count; experts of one projection as one exchange unit; the count lane in the small-tensor unit's gradient bytes; the HF bank gradients charged in mem_b and freed in mem_w; the rationale names rho_s for every stage pieces are refused for.",
+    "SCHEDULER-I21's remaining clauses (finding 5): (a) SCHEDULER-I16's device-memory condition (admission.device_terms / device_memory, admission.py:407-446) gains the HF-bank term m_BW,k*b_m*P_bank,s, with m_BW,k the most of peer k's microbatches between B's end and W's start in the emitted order (M_k before an order is solved), 0 for a stage without 3-D banks; test test_m4_plan_moe_i16_bank_* on a crafted wide stage with a bank: the term equals the hand value for m_BW,k 1 and 2 and pushes a peer over its budget into a MEM refusal that the same stage without the term passes (WOULD-FAIL-IF: the bank hold is left out of the device-memory condition). (b) SPEC-scheduler section 2.3, precision admission: for arch 'hf' autoconfig prices exactly one LADDER rung, HF's residual dtype under the recipe (fp32 under fp32 parameters with autocast), and refuses a declared boundary_dtype other than it naming it; test test_m4_plan_hf_ladder_* (covers: SCHEDULER-I22): the priced rungs of an hf config are ['fp32'] and a dense config's are all five (WOULD-FAIL-IF: bf16 or an fp8 rung is priced for an hf model).",
+    "The rationale names the boundary dtype, the tied hops and Delta T_tied with its five terms.",
+    "Wave-1 tests, named test_m4_plan_hf_* in tests/unit/test_scheduler.py (covers: SCHEDULER-I22) and test_m4_plan_moe_* in tests/unit/test_zero_bubble.py (covers: SCHEDULER-I21), each with a WOULD-FAIL-IF line, on a census fixture and MoE dims written in the tests (no transformers import, no GPTConfig field of I-1 needed): the fp32 cut bytes; a bf16 boundary refused; tied hop bytes and Delta T_tied against a hand-computed value for the round5 example; the eager term; the width refusals at stage 0, the Head and a middle stage; a dense tied split refused; MoE active vs total (compute uses k of E, bytes all E); the count lane bytes; the HF bank hold for m_BW 1 and 2; dense plans unchanged (an existing golden plan test passes). Planning a GPTConfig hf or MoE job end to end is plan-wire's (wave 2).",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Tripwire m4-unarmed (leg): this task never lifts the coordinator's refusal of arch 'hf' and of moe_experts > 0. Its verify includes the tripwire test, which control-m4 (the first leg) writes in this wave; that line is evidence only when it exits 0. Exit 5 (no test collected) means the first leg has not landed: the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_scheduler.py exits 1 unless at least one test whose name matches test_m4_plan_hf_ carries a `covers:` line for each of SCHEDULER-I22, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_zero_bubble.py exits 1 unless at least one test whose name matches test_m4_plan_moe_ carries a `covers:` line for each of SCHEDULER-I21, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label scheduler-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_scheduler.py -k m4_plan_hf",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label scheduler-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k m4_plan_moe",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label scheduler-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_scheduler.py tests/unit/test_zero_bubble.py -k 'm4_plan_hf_ba446_w1 or m4_plan_hf_wide_unpriced or m4_plan_hf_ladder or m4_plan_moe_units or m4_plan_moe_i16_bank'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label scheduler-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_scheduler.py tests/unit/test_zero_bubble.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_scheduler.py 'test_m4_plan_hf_' SCHEDULER-I22",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_zero_bubble.py 'test_m4_plan_moe_' SCHEDULER-I21",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "SCHEDULER-I21",
+    "SCHEDULER-I22"
+   ],
+   "binding": [
+    "BA-430",
+    "BA-446",
+    "BA-447",
+    "BA-458",
+    "BA-459",
+    "BA-466"
+   ],
+   "risk": "medium"
+  },
+  {
+   "id": "agent-hf",
+   "title": "Agent GATE request, HF child processes, HF-aware PROFILE and FIT, one-slot CLI refusal",
+   "objective": "Serve GATE in the agent (I-9), start every HF stage, PROFILE, FIT and gate child with the -X pycache_prefix flag in hfm's scrubbed environment and remove its prefix at exit, call units with ids in profile and fit, and refuse an hf spec in `wantrain stage`.",
+   "workstream": "control",
+   "deps": [],
+   "scope": [
+    "src/wantrain/worker/agent.py",
+    "src/wantrain/resources/profile.py",
+    "src/wantrain/resources/fit.py",
+    "src/wantrain/cli.py",
+    "tests/unit/test_resources.py"
+   ],
+   "acceptance": [
+    "The agent handles GATE (I-9): validate_gate_request(req, own_devices) -> list[str] (kind, run_id, hf_config a dict under 256 KiB, recipe keys, devices among its own); runs `python -X pycache_prefix=<fresh dir> -m wantrain.model.hfm gate --in <req> --out <rep>` per device in hfm.stage_env(os.environ) with a 300 s timeout; replies GATE_REPORT with the reports, the fingerprint and the device classes, bounded at 1 MiB; a malformed request or an oversized child output is answered with an error naming the reason, never an agent crash. GATE runs off the reader thread like PROBE, MEASURE, FIT and PROFILE (agent.py:360-364), so PING and ABORT are served while a gate child runs; ABORT kills the gate children and removes their prefixes.",
+    "For a spec whose model arch is 'hf', every stage (ASSIGN), PROFILE and FIT child starts with hfm.interpreter_args(prefix) and hfm.stage_env(self._env()); the prefix is a fresh directory per child under the run dir, removed when the child exits (also on failure or timeout) by one helper run_child(args, env, prefix_root, timeout); non-hf children start exactly as today.",
+    "For arch 'hf' profile.py and fit.py call units through gpt.call_layer (imported at call time, BA-407) with ids from make_batch on the slot's device, inside compute_autocast, with every module in training mode; for moe_experts > 0 MoE records are taken off after each call (arch.take_moe_records, imported at call time); dense and native calls keep layer(x); dense profiles unchanged.",
+    "cli.py cmd_stage refuses a spec whose JSON model.arch is 'hf' before JobSpec.load, naming the reason (BA-445), as it refuses shard 'pieces'. Operator entries under the tripwire (BA-464): cmd_local and cmd_stage read the spec JSON's model before JobSpec.load and, when its arch is 'hf' or its moe_experts > 0, call coordinator.m4_unarmed_reason(model_dict) (I-16, imported at call time in that branch only) and refuse with exit 2 and its reason while it is not None; every other spec starts exactly as today. The refusal's tests are arm-m4's (they need control-m4's function).",
+    "Wave-1 tests (self-contained), named test_m4_agent_* in tests/unit/test_resources.py with covers: CONTROL-I24 and a WOULD-FAIL-IF line: validate_gate_request on each malformed field; the reply bound on an oversized report; run_child's prefix fresh and removed after a trivial child (exit 0, exit 1, timeout); `wantrain stage` on an hf spec JSON exits 2 with the reason and never imports wantrain.runtime.spec (subprocess). The environment builder with hfm, a GATE served end to end and an hf PROFILE/FIT are agent-wire's (wave 2).",
+    "The existing tests in tests/unit/test_resources.py pass.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Tripwire m4-unarmed (leg): this task never lifts the coordinator's refusal of arch 'hf' and of moe_experts > 0. Its verify includes the tripwire test, which control-m4 (the first leg) writes in this wave; that line is evidence only when it exits 0. Exit 5 (no test collected) means the first leg has not landed: the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_resources.py exits 1 unless at least one test whose name matches test_m4_agent_(?!wire_) carries a `covers:` line for each of CONTROL-I24, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label agent-hf --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_resources.py -k m4_agent",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label agent-hf --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_resources.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_resources.py 'test_m4_agent_(?!wire_)' CONTROL-I24",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "security"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-407",
+    "BA-409",
+    "BA-423",
+    "BA-428",
+    "BA-429",
+    "BA-442",
+    "BA-444",
+    "BA-445",
+    "BA-464"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "control-m4",
+   "title": "Coordinator launch gate, record built once, decision 8 and the RECORD check at every admission; the m4-unarmed tripwire (CONTROL-I24)",
+   "objective": "Refuse arch 'hf' and MoE jobs until armed, and give the coordinator the hf launch: build and pin the record, census, hf_code and RECORD text once, GATE before placement, and admit fingerprints, device-class maps and RECORDs by CONTROL-I24 at launch, heal, restart, rebalance and resume.",
+   "workstream": "control",
+   "deps": [],
+   "scope": [
+    "src/wantrain/coordinator/coordinator.py",
+    "src/wantrain/fault_tolerance/replacement.py",
+    "tests/unit/test_control_admission.py"
+   ],
+   "acceptance": [
+    "First leg of tripwire m4-unarmed: M4_ARMED = False; unarmed_reason(job) returns \"arch 'hf' is not armed: every leg of the m4 tripwire must land first\" for a job whose model arch is 'hf' and the same with \"moe_experts > 0\" for an MoE job (read through getattr / the plan dict), independently of PIECES_ARMED (the early return at coordinator.py:1773 no longer skips it); the decision is the pure m4_unarmed_reason(model: dict) -> str | None (I-16) over a model dict ({'arch', 'moe_experts', ...}), which unarmed_reason calls and cli.py's local and stage commands call (BA-464); run_job refuses it before any agent request; tests named test_m4_unarmed_* prove it for spec-mode and plan-mode jobs (the MoE case sets moe_experts on a GPTConfig instance by setattr until model-core lands the field; the refusal reads it with getattr).",
+    "hf_admission(reports, fingerprints, builder, slot_map, pool, *, torch_records, record_diff, recorded=None) -> list[str] (pure, I-9; round-2 finding 1: the two hfm inputs are explicit arguments, so the wave-1 tests need no sibling) implements CONTROL-I24: every report ok; transformers RECORD sha256 and version equal on every node; torch version and git_version equal; each node's torch RECORD sha256 equal to its platform's torch_records entry; native sets equal within (platform tag, device class); the builder admitted as a node; a device map whose classes no single node of the pool holds refused naming the classes; with recorded (the run's hf_code and RECORD text) a node whose transformers RECORD differs is refused naming the path record_diff returns, and one whose torch RECORD differs from its slot's is refused; each reason names the node and the cause. The coordinator passes hfm.TORCH_RECORDS and hfm.record_diff, imported at call time inside the hf branch.",
+    "_setup for arch 'hf' (code; end to end in arm-m4): after selection and before _plan, _profile and _fit, the first launch builds record, census, hf_code and RECORD text in a child (python -X pycache_prefix=<fresh> -m wantrain.model.hfm record, hfm.stage_env), sends GATE to every selected node and spare, admits by hf_admission, pins cfg.hf_buffers, hf_census, hf_code, the mirrored fields and spec.device_classes, keeps the RECORD text and every fingerprint in the run record; any refusal fails the run before placement, naming node and cause. _resume_spec, _heal, _restart_in_place and _rebalance never rebuild the record and re-run hf_admission with recorded= on the map they would build; find_replacement takes the slot's recorded device class and returns only a spare whose gate report has it; a heal that fails admission fails cleanly with nothing relaunched. In plan mode the hf branch takes hf_config from fleetplan.model_config(job), builds the record once, and calls fleetplan.build_spec(fleet, allow_pieces=..., hf_pins=<builder output>) (I-14; the keyword is plan-wire's and is passed only for hf jobs). After every plan-mode build_spec, plan_model_mismatch(plan_job: dict, model) -> list[str] (pure) compares arch, hf_config (canonical sha256), hf_impl and every moe_* key the plan dict gives with spec.model and refuses the run naming each differing key (BA-461), so a key the planner drops is a refusal, never a dense run.",
+    "The coordinator process never imports transformers: a subprocess test installs a sys.meta_path finder that records and raises on any import of transformers or wantrain.model.hfm, imports wantrain.coordinator.coordinator, calls hf_admission and plan_model_mismatch on crafted inputs, and asserts nothing was recorded. It does not depend on whether transformers is installed (WOULD-FAIL-IF: a module-level import of transformers or hfm in the coordinator).",
+    "Wave-1 tests (self-contained), named test_m4_admission_* in tests/unit/test_control_admission.py with covers: CONTROL-I24 and a WOULD-FAIL-IF line, on crafted reports, fingerprints, RECORD texts, a crafted torch_records dict and a crafted record_diff argument (hfm's own record_diff is model-core's test): each refusal of hf_admission; a map of two CPU capabilities no node holds refused; find_replacement refusing another class and admitting the same class; a resume admission with a node whose RECORD text differs in one line refused naming that path; plan_model_mismatch on crafted plan dicts and GPTConfig objects (a dropped moe_experts named, an hf_config whose canonical sha256 differs named, a corpus vocab_size change not flagged, equal passes); the tripwire tests above. The builder-once and GATE-before-placement flow end to end is arm-m4's (wave 2).",
+    "The existing tests in tests/unit/test_control_admission.py pass.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own files, code already on the tree and transformers 5.19.0 through the overlay command (`uv run --no-sync --offline --with transformers==5.19.0`); a sibling's new symbol (handout, Interfaces) is imported only inside the arch 'hf' or MoE code path, at call time, so every module of this task imports and every existing test passes before any sibling lands. Behaviour that needs a sibling is proven by the wave-2 task the handout names for it, never by a stub, skip or xfail here.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_control_admission.py exits 1 unless at least one test whose name matches test_m4_(admission|unarmed)_ carries a `covers:` line for each of CONTROL-I24, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label control-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k 'm4_admission or m4_unarmed'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label control-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_control_admission.py 'test_m4_(admission|unarmed)_' CONTROL-I24",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants",
+    "security"
+   ],
+   "invariants": [
+    "CONTROL-I24"
+   ],
+   "binding": [
+    "BA-424",
+    "BA-425",
+    "BA-426",
+    "BA-427",
+    "BA-441",
+    "BA-442",
+    "BA-448",
+    "BA-461",
+    "BA-464"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "wave-files",
+   "title": "Wave manifests list extra files beside state.pt (hf_buffers.json)",
+   "objective": "Let commit_wave write and list extra files beside state.pt in wave.json, each checked by sha256 and size like state.pt, with dense manifests byte-identical.",
+   "workstream": "control",
+   "deps": [],
+   "scope": [
+    "src/wantrain/fault_tolerance/checkpoint.py",
+    "tests/unit/test_fault_tolerance.py"
+   ],
+   "acceptance": [
+    "commit_wave(out_dir, tag, rank, peer, step, save_fn, keep=WAVE_KEEP, extra_files=None) (I-15, BA-460): each extra (name -> bytes) is written into the temp directory before wave.json, fsynced and listed after state.pt as {name, sha256, bytes}; a name that is empty, '.', '..', wave.json or state.pt, or contains '/', '\\\\' or NUL raises ValueError naming it before anything is written; extra_files None or {} writes a manifest byte-identical to today's (golden bytes in the test).",
+    "A slot already holding a valid wave of the step returns committed=False only when the held wave's listed extras equal the requested ones by name and sha256; otherwise it raises naming the file (an old buffer file never mixes with a new commit).",
+    "validate_wave, committed_waves and export_wave verify and carry every listed extra exactly like state.pt (size, sha256, regular file); an extra edited after commit, deleted, or an unlisted file in the wave directory is refused naming it; an exported wave with an extra validates at its destination.",
+    "Tests named test_wave_extra_* in tests/unit/test_fault_tolerance.py, each with covers: CONTROL-I23 (and CONTROL-I10 where a resume reads the wave) and a WOULD-FAIL-IF line (an extra not listed; an edited extra accepted; a dense manifest's bytes changed; a held wave with different extras accepted).",
+    "The existing tests in tests/unit/test_fault_tolerance.py pass.",
+    "Wave-1 isolation (handout, Wave order): this task's tests exercise only its own file and code already on the tree; it uses no sibling symbol.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_fault_tolerance.py exits 1 unless at least one test whose name matches test_wave_extra_ carries a `covers:` line for each of CONTROL-I23, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label wave-files --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k wave_extra",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label wave-files --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_fault_tolerance.py 'test_wave_extra_' CONTROL-I23"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "security"
+   ],
+   "invariants": [],
+   "binding": [
+    "BA-436",
+    "BA-460"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "model-families",
+   "title": "The mandatory per-family parity gate (12 families), E2 controls, E6 drift, the census CLI, and the HF-MoE class-swap rows with their parity (F8)",
+   "objective": "Prove the launch gate on the 12 families the human named and ADR-0009 E1's extras (logits and every gradient bitwise against vanilla transformers 5.19.0 at every cut) with E2's controls and E6's drift arms, and fill hfm.SUBSTITUTE with the Mixtral, Qwen2-MoE and Qwen3-MoE class swaps proven equal to MoEMLP (F8), fixing hfm.py and arch.py where a family fails.",
+   "workstream": "model",
+   "deps": [
+    "model-core"
+   ],
+   "scope": [
+    "src/wantrain/model/hfm.py",
+    "src/wantrain/model/rollback.py",
+    "src/wantrain/model/arch.py",
+    "src/wantrain/model/gpt.py",
+    "src/wantrain/model/wgrad.py",
+    "src/wantrain/model/hf.py",
+    "tests/unit/test_finetune.py"
+   ],
+   "acceptance": [
+    "MANDATORY families (the human's list), each a tiny config from its pinned config class: llama, mistral, qwen2, qwen3, gemma, gemma2, gemma3 (model_type gemma3_text, the causal-LM text model; gemma3 maps to the multimodal class, out of scope), phi3, olmo2, granite, gpt_neox, starcoder2; tied on and off where the class has tie_word_embeddings. For each, hfm.gate on the CPU passes: the unit chain equals vanilla transformers bitwise (logits, loss hex, every parameter gradient) at every cut, fp32 and bf16 autocast, M 1 and 2, deferred W, recompute, and the causality probe holds (MODEL-I9, MODEL-I10). A mandatory family that fails is a defect fixed in hfm.py, never an exemption.",
+    "ADR-0009 E1's other arms through the same gate: llama with llama3 rope, yarn and short longrope; cohere, gpt2, minicpm3, falcon_h1, mamba (dt_proj kept out of SplitLinear by the exclusion set). A non-mandatory family the gate refuses for a documented cause is recorded with the cause.",
+    "E2 must-fail or refused, each recording its trigger count first (a control whose trigger never fires is resized, not passed): to_empty buffers; granite through inputs_embeds; tied use dropped; exit one unit late; layer_types indexed locally; dropout 0.1; sdpa on gemma2; kernels importable; dynamic rope per layer type; longrope past its length; zero prologue stubs; threaded state (ADR-0009 E2, research ctrl_thread: NaN stubs caught; a replay on independent ids refused); mamba's read-elsewhere Linear converted; phimoe's RNG router; a split alias; bert; llama4_text, gpt_oss, deepseek_v3, jamba (MOE-NO-ROW); an in-place stub write; LoRA on hf; eval mode; mamba, falcon_h1 and rwkv admitted by the classifier; Mixtral with its block row removed (hfm.SUBSTITUTE monkeypatched) refused MOE-NO-ROW; a swapped block subclass that runs the experts' F.linear inline instead of calling its experts module refused by the trace (TRACE-UNPLACED; the evidence for the seam rule). Recorded, not judged (R13): where(isinf(x).any(), a, b) on the prologue output.",
+    "E6 drift on a symlinked copy of the site directory under tmp_path (never .venv): an edited modeling_llama.py, activations.py, utils/generic.py; an added file; a planted __pycache__ .pyc with the source's mtime and size under transformers and under torch nn/functional; a sourceless .pyc; a local mambapy stub; LD_PRELOAD; a torch native library loaded from a copy elsewhere; a monkeypatch; auto_map; kernels; two test TORCH_RECORDS entries admitted and a RECORD outside them refused; two fingerprints whose OS-object (native) sets differ compare unequal on 'native' (the admission refusal of that pair is control-m4's hf_admission test); a drifted record builder (the record child run on an edited site) whose fingerprint differs from the clean nodes' is refused by the same comparison; each refused naming the cause, the clean site admitted; the fresh-prefix compile time written to the JSON report labelled MEASURED (local Mac: chip, command).",
+    "Census CLI: `python -m wantrain.model.hfm census --out <json>` runs every model type of the pinned MODEL_FOR_CAUSAL_LM_MAPPING through the gate, 10 types per subprocess, counting parameters on meta first and recording a type above 20M parameters after shrinking as SKIP; the tests run it on a 3-type subset (the full census is a GATES-M4 entry).",
+    "HF-MoE seam (ADR-0008 decisions 9, 11; MODEL-I8 last bullet; BA-438, BA-459): SUBSTITUTE rows for all nine classes of SPEC-model §3's table at 5.19.0: the blocks MixtralSparseMoeBlock, Qwen2MoeSparseMoeBlock, Qwen3MoeSparseMoeBlock, the routers MixtralTopKRouter, Qwen2MoeTopKRouter, Qwen3MoeTopKRouter and the experts MixtralExperts, Qwen2MoeExperts, Qwen3MoeExperts, each a class swap to a registered subclass, a router or experts row admitted only under a block with a row; the block subclass's forward calls arch.moe_forward, which calls the `gate` child once (the router GEMM, in the router subclass's forward) and the `experts` child once (dispatch and the per-expert GEMMs over the byte-mapped banks: one unbind(0) per bank, one chunk(2) per expert view, one F.linear per expert on exactly its routed rows, in the experts subclass's forward), both as modules, so the unit trace sees every parameter-holding module and transformers' own experts forward never runs (a test makes the original MixtralExperts.forward and Qwen3MoeExperts.forward raise and the swapped models still run; WOULD-FAIL-IF: only the block is swapped and HF's 2f-wide experts GEMM with index_add_ runs); the gate's reference carries the same swap and D8 injection. Tests test_moe_hf_* (covers: MODEL-I8): tiny Mixtral, Qwen2-MoE and Qwen3-MoE built by transformers 5.19.0 and swapped: the decoder layer runs on the one-tensor contract; output, aux values and every gradient (sign of zero included) equal MoEMLP's bit for bit, fp32 and bf16, 0, 1 and many rows per expert (F8); must-fail: gate and up by two index slices with a constructed -0 diverges; the routed experts' pending W is 0 and the bank gradients held between B and W are b_m*E*3hf per MoE layer for m_BW 1 and 2 (F3, HF part); the gate admits the swapped tiny Mixtral and Qwen3-MoE. Each row's subclass has recipe(hf_config) -> dict of SPEC-model §2's moe_* fields (E from num_local_experts or num_experts, k from num_experts_per_tok, norm from norm_topk_prob, router dtype per row, Qwen2-MoE's shared expert and sigmoid gate, gamma 0), the lbl and z coefficients taken from the run's GPTConfig (router_aux_loss_coef never mapped, BA-462), tested per row against hand-written dicts; output_router_logits true without aux fields and router_jitter_noise > 0 (a block attribute moe_forward does not read) are refused naming the field. Records under HFUnits (BA-462, E2-HF's 'oracle vs a 2-stage capture path over the HF layer list'): a tiny Mixtral split into two unit spans run in one process through call_layer under capture(), F, B and W per span, take_moe_records per span returns one record per (decoder layer, call) keyed by the HF layer index, and the aux hex, counts and every gradient equal the swapped vanilla model's.",
+    "DeepSeek-V3 (the human's item 2; ADR-0008 decision 9): its native recipe row (sigmoid score, score_bias selection, groups 4/2, renormalization and scaling, fp32 router, the bias update) is exact against its single-process oracle (test_moe_deepseek_*); its selected expert sets on tie-free keys equal transformers 5.19.0's DeepseekV3 router's on a tiny DeepseekV3Config (fidelity, not identity); arch 'hf' deepseek_v3 stays refused (MLA, no SUBSTITUTE row).",
+    "ADR-0009 E7 (test_hf_e7_*, covers: MODEL-I9, marked slow): saved bytes per b*H*S^2 of eager attention measured from the autograd graph (4 fp32, 6 autocast, +2 with a softcap; exact, asserted in every run); allocator bytes during stubs (0, asserted); c_glue, c_pass and unit-window F+B per layer at 4 and 32 layers of a tiny llama against the vanilla forward and a user-wrapped flat list (A0''), median of 20, 1 thread; the timings are written to the test's JSON report labelled MEASURED (local Mac: chip, command), and the F7 bounds (c_glue <= 1 ms, c_pass <= 10 us, HF host <= 1.5x native) are asserted only when FACTORY_E7_BOUNDS=1, which the GATES-M4 entry sets on a quiet machine.",
+    "ADR-0008 E7 (test_moe_e7_*, covers: MODEL-I8, marked slow), CPU 1 thread, (h 256, f 384, E 16, k 2) and (E 32, k 8), T 1024, median of 20: E7a MoEMLP F+B+W against a copy of docs/research/adr-0008/scripts/probe3.py's v4-style block kept in the test file (the research script is byte-pinned, never imported); E7b the swapped Mixtral forward F+B against transformers 5.19.0's own MixtralSparseMoeBlock plus the measured cost of 3E 0-row F.linear calls; numbers to the JSON report labelled MEASURED; the F6 bound (<= 1.15x) asserted only under FACTORY_E7_BOUNDS=1 (GATES-M4).",
+    "Rollback of ADR-0008's HF rows (BA-467, round6 #9): test test_moe_hf_rollback_* (covers: MODEL-I8): with 'model-3-6a' in rollback.ROLLED_BACK (monkeypatch), the tiny Mixtral, Qwen2-MoE and Qwen3-MoE built through hfm are refused MOE-NO-ROW naming the rollback, while the native MoEMLP recipe of the same dims still trains exactly against its oracle; with ROLLED_BACK empty the swapped models admit (WOULD-FAIL-IF: the rows stay live after their rollback, or the rollback disables native MoE). rollback.py is model-core's; this task edits it only to fix a defect a test exposes.",
+    "Linux disposition (BA-463): every gate test asserts the comparison fields on every platform and, where hfm.platform_admitted() is False, the FP-TORCH-RECORDS refusal naming the platform tag; never a skip.",
+    "E8 (gates nothing): the gate on MPS for llama and gemma2 is a test marked mps, skipped with 'no MPS device' where none exists; never a gate input.",
+    "Tests named test_hf_family_*, test_hf_e2_*, test_hf_e6_*, test_moe_hf_*, test_moe_deepseek_*, test_hf_e7_*, test_moe_e7_*, each with covers: MODEL-I8, MODEL-I9 or MODEL-I10 and a WOULD-FAIL-IF line; parametrized so `-k 'hf_family and llama'` runs one family.",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "hfm.py, arch.py and rollback.py are imported by stage-wire, identity-m4, identity-corpus, plan-wire, agent-wire and arm-m4, which run in this wave: every edit keeps them importable and never changes interfaces I-1..I-4, I-10, I-11 or I-17.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_finetune.py exits 1 unless at least one test whose name matches test_(hf_family|hf_e2|hf_e6|hf_e7|moe_hf|moe_deepseek|moe_e7)_ carries a `covers:` line for each of MODEL-I8, MODEL-I9, MODEL-I10, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k 'hf_family and (llama or gemma2 or qwen3 or granite or phi3)'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k 'moe_hf or moe_deepseek'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k moe_hf_rollback",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k 'hf_e2 or hf_e6'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k 'hf_e7 or moe_e7'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py -k hf_family",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label model-families --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_finetune.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_finetune.py 'test_(hf_family|hf_e2|hf_e6|hf_e7|moe_hf|moe_deepseek|moe_e7)_' MODEL-I8 MODEL-I9 MODEL-I10"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "MODEL-I8",
+    "MODEL-I9",
+    "MODEL-I10"
+   ],
+   "binding": [
+    "BA-438",
+    "BA-459",
+    "BA-462",
+    "BA-463",
+    "BA-467"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "stage-wire",
+   "title": "Stage wiring proven on real HF units and MoE blocks: start asserts, TIED receipt, buffer pins, hf JobSpec rules, checkpoint slice build",
+   "objective": "Prove, on real hfm units, MoE blocks and TIED frames, the stage behaviour stage-m4 coded against sibling interfaces, fixing stage.py and spec.py where a test exposes a defect.",
+   "workstream": "runtime",
+   "deps": [
+    "stage-m4",
+    "model-core",
+    "transport-tied",
+    "determinism-pins",
+    "wave-files"
+   ],
+   "scope": [
+    "src/wantrain/runtime/stage.py",
+    "src/wantrain/runtime/spec.py",
+    "src/wantrain/runtime/accumulate.py",
+    "src/wantrain/runtime/pieces.py",
+    "src/wantrain/runtime/exchange.py",
+    "src/wantrain/runtime/logical_ckpt.py",
+    "src/wantrain/runtime/determinism.py",
+    "src/wantrain/worker/stage_main.py",
+    "tests/unit/test_runtime_spec.py"
+   ],
+   "acceptance": [
+    "Tests named test_m4_wire_* in tests/unit/test_runtime_spec.py, each with covers: RUNTIME-I19, RUNTIME-I18 or RUNTIME-I15 and a WOULD-FAIL-IF line, using tiny hf configs (hfm.tiny_config) with a record built by hfm.buffer_record in-process:",
+    "the stage-start asserts with each flag forced wrong in turn (deterministic algorithms off, fp32 matmul precision, sdpa, a dropout 0.1 module, HF gradient checkpointing on, use_cache True, one module in eval mode, an hf_code that differs from the installed one) are fatal naming the flag;",
+    "TIED receipt validation with framing.TIED: out-of-sequence, misshapen, duplicated, missing, and TIED under a plan with no relay are fatal before use; TIED-SPARSE on a crafted e_i with a -0 outside T_i;",
+    "the buffer pin check on a wave committed through commit_wave(..., extra_files) with one edited tensor refused naming it, for a whole-tensor and a logical wave; a resume with a different device_classes map refused naming the slot; an hf_code change refused by the pin check;",
+    "JobSpec for hf: finalize refuses a split tied table with stage 0, the Head or a middle stage at width > 1, naming it; tied_relay() true only for a split tied hf plan; pins() add device_classes and carry hf_code for hf only (dense pins byte-identical); stage_param_shapes for hf, read from the census's param_shapes, equal the skeleton's units' shapes (llama tied and untied, gemma2), and finalize of an hf spec with piece_bounds succeeds in a subprocess whose meta-path finder raises on any import of transformers or wantrain.model.hfm (BA-441);",
+    "engine_supplies_autocast for an hf config with autocast; the checkpoint build of a stage holds only its units off meta (span), equal by sha256 to the same units of a full load;",
+    "MoE on real blocks in one process: StageRuntime-level helpers record aux and counts once per (step, mb, layer) and a perturbed rebuild raises MOE-REPLAY naming them; a zero1 ownership list with the biases appended after the trainable parameters; the count payload of each ZeRO-1 gradient path (batch, stream_grads, wire native COUNT frame) built from a real MoE chunk's records validates at the owner, and a vector dropped or sent twice is fatal; exchange_units of a native MoE chunk gives one unit per projection.",
+    "the intermediate stage's TIED forwarding (finding 9; RUNTIME-I19 'forwarded cut-through by intermediate stages'): test_m4_wire_tied_forward_* drives the middle stage's reader-thread forwarding in one process over socketpairs, with framing.TIED fragments of two microbatches split at random fragment sizes: every fragment leaves on the next socket byte for byte and in arrival order before the stage's own F of that microbatch completes, and an out-of-sequence or misshapen fragment is fatal at the middle stage naming (step, mb) (WOULD-FAIL-IF: a middle stage reassembles, reorders or drops a TIED fragment); the 3-stage gemma2 chain that runs this path end to end is identity-m4's arm hf_identity[gemma2-tied-chain3], pinned in GATES-M4 hf-identity-x2;",
+    "rollback (BA-467): test_m4_wire_rollback_* sets rollback.ROLLED_BACK by monkeypatch to each of {'runtime-7a'}, {'runtime-7b'}, {'scheduler-6'}: JobSpec.finalize refuses a split tied hf plan (gemma2, 2 stages) naming the piece and 'tied-split-refused', tied_relay() is False for it, and a TIED frame received by a stage of such a spec is fatal; an untied hf spec and a same-stage tie are unaffected; with ROLLED_BACK empty the split plan finalizes (WOULD-FAIL-IF: a rolled-back relay still sends or accepts TIED). spec.py and stage.py read rollback at call time.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_runtime_spec.py exits 1 unless at least one test whose name matches test_m4_wire_ carries a `covers:` line for each of RUNTIME-I15, RUNTIME-I18, RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label stage-wire --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k m4_wire",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label stage-wire --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k 'm4_wire_tied_forward or m4_wire_rollback'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label stage-wire --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_runtime_spec.py 'test_m4_wire_' RUNTIME-I15 RUNTIME-I18 RUNTIME-I19"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "RUNTIME-I19",
+    "RUNTIME-I18",
+    "RUNTIME-I15"
+   ],
+   "binding": [
+    "BA-416",
+    "BA-417",
+    "BA-418",
+    "BA-419",
+    "BA-441",
+    "BA-449",
+    "BA-454",
+    "BA-455",
+    "BA-456",
+    "BA-460",
+    "BA-465",
+    "BA-467"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "identity-m4",
+   "title": "Pipeline byte-exactness: HF families and MoE vs the single-device oracle (sha256 of weights, optimizer, RNG, biases; every loss and aux hex)",
+   "objective": "Prove HF families and MoE models byte-identical to the single-device oracle as real multi-process CPU pipelines, across cuts, WAN emulation, recompute, ZeRO-1, pieces, tied tables split across stages, checkpoints and a resume, fixing the oracle and launcher where an arm exposes a defect.",
+   "workstream": "runtime",
+   "deps": [
+    "model-core",
+    "stage-m4",
+    "oracle-m4",
+    "transport-tied",
+    "scheduler-m4",
+    "determinism-pins",
+    "wave-files"
+   ],
+   "scope": [
+    "src/wantrain/validation/reference.py",
+    "src/wantrain/validation/state.py",
+    "src/wantrain/launch/local.py",
+    "tests/integration/test_engine_bitwise.py"
+   ],
+   "acceptance": [
+    "HF oracle (test_hf_oracle_*, single-process, no stage started): on a tiny llama the vanilla oracle equals the unit-chain oracle bitwise (losses and manifest), fp32 and bf16 autocast; a recipe the gate refuses (dropout 0.1) makes run_local refuse before any stage starts; a spec whose hf_buffers has one tensor edited is refused naming it; a local resume whose kept RECORD text differs in one line refused naming the path; recipe_digest for hf covers the device map and hf_code; the oracle's start asserts (BA-406) with sdpa, a dropout 0.1 module, one eval-mode module and an hf_code that differs from the installed one each fatal naming the flag. MoE oracle (test_moe_oracle_*, single-process): every (step, mb, layer) aux hex recorded once and the bias update applied after AdamW from int64 counts, equal to a hand fold on a 1-layer recipe.",
+    "HF identity (test_hf_identity_*), families model-core proves (llama, qwen3, gemma2 tied, granite): a 2-stage localhost CPU run_and_compare (gemma2 with the embedding and the head on different stages) gives losses hex equal to the oracle's and diff_manifests == {} (weights, AdamW m, v, step, RNG), 3 steps, M 4, fp32; additionally 3- and 4-stage chains under WAN emulation (40 ms one-way, 1 Gbps), recompute, W fill, bf16 autocast, a ZeRO-1 width-2 middle stage (untied llama and granite only, BA-447), no prefix directory surviving a run, a resume from a wave, the gemma2 split arm ending its last step with no TIED frame in flight and a clean END drain (and likewise after a checkpoint-and-stop step; F30), a wave whose hf_buffers.json has one tensor edited refused naming it, one pieces arm (llama, wire native, shard pieces, width-2 middle stage), and a checkpoint arm: a sharded tiny gemma2 written by hfm.write_safetensors, the tied table split across 2 stages, each stage loading only its units, the oracle loading the same checkpoint (BA-449).",
+    "E4 tied arms A1-A4 (two vocabulary regimes, S 3-4, M 8-16, L 0-40 ms): the table's sha256 equal to the oracle's; each arm's exposed tied time and Delta T_tied from its measured terms written to the test's report labelled SIMULATED (the max(20%, 2 ms) bound is a GATES-M4 entry on a quiet machine).",
+    "MoE identity (test_moe_identity_*, ADR-0008 E2, E3, E4, E6 on native MoEMLP, one arm per recipe row in the sweep): sha256 of the state (selection biases included), every CE hex and every aux hex per (step, mb, layer) equal the oracle's at depths 1, 2, 4, zero-bubble orders with W fill, recompute, ZeRO-1 widths 1 and 2 (a bias whose owner runs no microbatch) on each gradient path (batch, stream_grads, wire native; BA-454), M2b pieces widths 1, 2, 3, fp32 and bf16; skew arms (an all-tie router, a hot expert; ties and unrouted (layer, mb) recorded first); must-fails (ADR-0008 E4, all of them) each recording its trigger first: topk on the stage path only, skipped unrouted experts, reverse combine at k 3, descending token rows, one W GEMM over microbatches m and m+1, aux as alpha/M, a bias from float means, a bias from one peer's counts, group ties by topk, pieces off Q_t, the count lane dropped or sent twice, a fold from zeros with a constructed -0, and up storing its own X, which must fire the native pending-W byte check (F3: 416 -> 480 values per routed row at E1's sizes, +15.4%); E6 frame classes per peer and step equal F4's formulas on native MoE, and a dense model's frame tables are unchanged (F4's last clause).",
+    "Written here, parametrized and marked slow, and pinned as GATES-M4 entries: the full 12-family identity sweep; the HF-MoE adapter arms (Mixtral and Qwen3-MoE through the swap rows model-families adds in this wave, with the hub-to-fused round trip, ADR-0008 E2-HF); ADR-0008 E6's HF v5 arm (2 expert units, fp32, Q_t per §HF; F4 frame classes); and ADR-0008 F7 (test_moe_identity_f7_*): a 2-stage native MoE run's WT_TELEM compute per stage divided by its analytic c_s (scheduler-m4's moe_layer_costs) written to the JSON report labelled SIMULATED, the >= 0.9 bound asserted only under FACTORY_E7_BOUNDS=1. None is cited from this task's fast verify.",
+    "Parametrization ids (finding 9; the GATES-M4 collect checks grep them, so an arm left out fails the gate): test_hf_identity_* uses the ids chain2-<family> for llama, qwen3, granite and gemma2-tied (the embedding and the head on different stages), chain3-wan and chain4-wan (llama; 40 ms one-way, 1 Gbps), gemma2-tied-chain3 (the middle stage forwards TIED), recompute, wfill, bf16, zero1-mid (untied llama and granite, a width-2 middle stage; BA-447), pieces-native (llama, wire native, shard pieces, width-2 middle stage), resume, buffers-edited, ckpt-span (BA-449), tied-end (no TIED in flight after the last step and after a checkpoint-and-stop step; F30); test_moe_identity_* uses depth1, depth2, depth4, wfill, recompute, zero1-batch, zero1-stream, zero1-native, pieces-w1, pieces-w2, pieces-w3, bf16, skew-tie, skew-hot, e6-frames, dense-tables, and one mustfail-<name> per ADR-0008 E4 must-fail: topk-stage, skip-unrouted, reverse-combine, descending-rows, merged-w-gemm, aux-alpha-m, bias-float-mean, bias-one-peer, group-topk, pieces-off-qt, count-dropped, count-doubled, fold-neg-zero, up-stores-x; the E4 tied arms are test_e4_tied_* with ids a1..a4; the HF-MoE adapter arms are test_moe_identity_* with ids hf-mixtral and hf-qwen3-moe.",
+    "Where each acceptance item is verified (finding 9): the single-process oracle arms run in this task's fast verify. Every multi-process arm (3- and 4-stage chains under WAN emulation, the gemma2 tied chain3 whose middle stage forwards TIED, recompute, W fill, bf16, the HF ZeRO-1 width-2 middle stage, the HF pieces arm, resume, the checkpoint arm, the E4 tied arms, every MoE depth, ZeRO-1 path, pieces width, skew arm and must-fail) runs stage.py and spec.py, whose wave-2 fix owner stage-wire runs concurrently, so none is in this task's fast verify (HANDOUT, Within wave 2). They are verified by the post-wave fail-fast ladder's integration rung (tests/integration whole) and by GATES-M4's hf-identity-x2 and moe-identity-x2, 2 repetitions each, whose collect checks require every id above. The coder's last commands run one HF and one MoE arm as journal evidence for its tree only.",
+    "Multi-process arms (every hf_identity, moe_identity and E4 arm) run real stages over stage.py and spec.py, whose wave-2 fix owner is stage-wire (concurrent), so they are not in this task's fast verify (round-2 finding 3). The coder runs `-k 'hf_identity and chain2 and llama'` and `-k 'moe_identity and depth2 and softmax'` once as its last commands and records the result in its journal as evidence for that tree only, naming the owner of any failing file. tests/integration runs whole in the ladder's integration rung (rungs.json: no marker deselection), so every arm runs in the post-wave fail-fast ladder, whose fixer may edit any file, and again in GATES-M4.",
+    "Linux disposition (BA-463): on a platform where hfm.platform_admitted() is False every arm through run_local asserts the FP-TORCH-RECORDS refusal naming the platform tag (strict, never a skip); HANDOUT D-9.",
+    "Tests carry covers: RUNTIME-I19, RUNTIME-I18 (and RUNTIME-I15 for resume arms) and a WOULD-FAIL-IF line; parametrized so `-k 'hf_identity and llama and chain2'` runs one arm; slow arms marked slow.",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/integration/test_engine_bitwise.py exits 1 unless at least one test whose name matches test_(hf_oracle|hf_identity|moe_oracle|moe_identity|e4_tied)_ carries a `covers:` line for each of RUNTIME-I15, RUNTIME-I18, RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label identity-m4 --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k 'hf_oracle or m4_oracle or moe_oracle'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label identity-m4 --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly --collect-only tests/integration/test_engine_bitwise.py -k 'hf_identity or moe_identity or e4_tied'",
+    "uv run --no-sync --offline python -c \"import wantrain.validation.reference, wantrain.validation.state, wantrain.launch.local\"",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/integration/test_engine_bitwise.py 'test_(hf_oracle|hf_identity|moe_oracle|moe_identity|e4_tied)_' RUNTIME-I15 RUNTIME-I18 RUNTIME-I19"
+   ],
+   "rungs": [
+    "integration",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "RUNTIME-I19",
+    "RUNTIME-I18"
+   ],
+   "binding": [
+    "BA-406",
+    "BA-434",
+    "BA-436",
+    "BA-454",
+    "BA-457",
+    "BA-463"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "identity-corpus",
+   "title": "HF and MoE arms in the oracle and identity rungs (three-mode identity corpus under tests/helpers)",
+   "objective": "Write the tiny HF and MoE arms SPEC-runtime task 7 and ADR-0008 put in the oracle and identity rungs, as identity-corpus files with tests/oracle/test_state_identity.py's three-mode protocol, in tests/helpers (the only test directory a workstream may own for it).",
+   "workstream": "control",
+   "deps": [
+    "model-core",
+    "stage-m4",
+    "oracle-m4",
+    "transport-tied",
+    "determinism-pins",
+    "wave-files"
+   ],
+   "scope": [
+    "tests/helpers/test_m4_identity_hf.py",
+    "tests/helpers/test_m4_identity_moe.py"
+   ],
+   "acceptance": [
+    "Two files, each following tests/oracle/test_state_identity.py's protocol: MODE from the environment (FACTORY_REFERENCE=1 the single-device reference; FACTORY_FEATURES=off the distributed path with every optional mechanism off; neither: the production path with every mechanism the arm's spec admits on and the emulated links of LINKS_ON, latency 10 ms, jitter 15 ms, 80 Mbps); each test asserts its state equals the reference's (diff_manifests == [] and equality) and, when FACTORY_IDENTITY_OUT is set, writes it to $FACTORY_IDENTITY_OUT/state/<arm>.json. Features an arm's plan refuses (a wide stage under a split tied table, BA-447) are listed in the test with the BA that refuses them, never silently dropped.",
+    "tests/helpers/test_m4_identity_hf.py, arms (tiny configs from hfm.tiny_config, 2 stages, 3 steps, M 4, fp32): hf_llama, hf_qwen3, hf_gemma2_tied (the embedding and the head on different stages, TIED relay), hf_granite, hf_mixtral (the HF-MoE swap rows model-families adds in this wave), and hf_llama_resumed (stop after 2 of 4 steps, resume from the waves, as test_state_identity's 'resumed'). Each arm runs through run_local, which builds the record, runs the gate and pins hf_code (oracle-m4).",
+    "tests/helpers/test_m4_identity_moe.py, arms (native MoEMLP, no transformers import): moe_native (2 stages, ZeRO-1 width 2 on the last stage in the production mode, every CE and aux hex and the selection biases in the state) and moe_native_resumed.",
+    "Platforms without a TORCH_RECORDS entry (BA-463, HANDOUT D-9): where hfm.platform_admitted() is False every HF arm asserts the FP-TORCH-RECORDS refusal naming the platform tag, strictly, and writes state/<arm>.refused.json holding the cause token and the tag in every mode, so the three modes still compare equal; never a skip or xfail. On this Mac every arm writes state/<arm>.json and no .refused.json (GATES-M4 m4-identity-corpus-x2 checks it).",
+    "Budget: each file runs in at most 400 s per mode on this Mac (HYPOTHESIS; identity.json gives a side 600 s). Falsified when a mode exceeds it: the arms are then split into more files matching tests/helpers/test_m4_identity_*.py, which the corpus glob already covers, never trimmed.",
+    "Every test is named test_m4_identity_* and carries `# covers: RUNTIME-I19` (HF arms) or `# covers: RUNTIME-I18` (MoE arms and hf_mixtral), RUNTIME-I15 on the resumed arms, and a `# WOULD-FAIL-IF:` line (a mechanism on the production path or under emulated WAN links changes one bit of a weight, an AdamW moment, the RNG state, a loss, an aux hex or a selection bias, or a resume drops part of the state).",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1.",
+    "tests/helpers/exact.py, cluster.py, wanproxy.py, ports.py and tests/conftest.py are pinned by GATES-M4's guarded-harness-unchanged entry: this task imports them and never edits them.",
+    "Wave-2 integration: every arm runs run_local, the oracle and real stages, whose wave-2 fix owners (identity-m4 for reference.py, state.py and local.py; stage-wire for stage.py and spec.py; model-families for the HF-MoE rows) run concurrently, so the fast verify is collection and the own-test coverage check (HANDOUT, Within wave 2). The coder runs `-k 'm4_identity and hf_llama'` once in each of the three modes (FACTORY_REFERENCE=1, FACTORY_FEATURES=off, production) as its last commands and records the results in its journal, evidence for its tree only. The identity and oracle rungs of the post-wave fail-fast ladder (after corpus-wiring) and GATES-M4 run every arm.",
+    "Own-test coverage (HANDOUT D-5): the verify's inline ast checks exit 1 unless the tests named test_m4_identity_* in each file carry the covers: lines above and a WOULD-FAIL-IF line each."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label identity-corpus --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly --collect-only tests/helpers/test_m4_identity_hf.py tests/helpers/test_m4_identity_moe.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/helpers/test_m4_identity_hf.py 'test_m4_identity_' RUNTIME-I15 RUNTIME-I18 RUNTIME-I19",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/helpers/test_m4_identity_moe.py 'test_m4_identity_' RUNTIME-I15 RUNTIME-I18"
+   ],
+   "rungs": [
+    "oracle",
+    "identity",
+    "lint",
+    "fmt"
+   ],
+   "invariants": [
+    "RUNTIME-I18",
+    "RUNTIME-I19"
+   ],
+   "binding": [
+    "BA-468"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "plan-wire",
+   "title": "Plan GPTConfig hf and MoE jobs end to end; fleetplan adopts an HF checkpoint's config",
+   "objective": "Wire scheduler-m4's cost functions to GPTConfig's hf and MoE fields through plan_job and fleetplan, adopting an HF checkpoint's config.json into cfg.hf_config, and prove planning never imports transformers.",
+   "workstream": "scheduler",
+   "deps": [
+    "scheduler-m4",
+    "model-core",
+    "stage-m4"
+   ],
+   "scope": [
+    "src/wantrain/scheduler/fleetplan.py",
+    "src/wantrain/scheduler/planner.py",
+    "src/wantrain/scheduler/autoconfig.py",
+    "src/wantrain/scheduler/zero_bubble.py",
+    "src/wantrain/scheduler/partition.py",
+    "src/wantrain/scheduler/admission.py",
+    "src/wantrain/scheduler/exchange_sim.py",
+    "tests/unit/test_schedule.py"
+   ],
+   "acceptance": [
+    "fleetplan (I-14, BA-461): MODEL_KEYS gains hf_config, hf_impl and every moe_* field of SPEC-model §2; a plan dict carrying hf_buffers, hf_census or hf_code is refused naming the key; model_config(job, hf_pins=None) adopts an HF checkpoint's config.json into cfg.hf_config and its digest through hf.checkpoint_digest (config_from_hf is gone) and, with hf_pins (the builder child's {hf_buffers, hf_census, hf_code, fields}), sets the pins and the mirrored fields, refusing a plan-dict mirror that differs; build_spec(fleet, allow_pieces=False, hf_pins=None) passes them through; the corpus-vocab check compares against the census fields and an hf plan without hf_pins is refused naming the census.",
+    "plan_job on a GPTConfig arch 'hf' with a census fixture charges SCHEDULER-I22's terms (same numbers as scheduler-m4's pure functions on the same inputs); without a census it is refused naming it; a GPTConfig with moe_experts > 0 charges SCHEDULER-I21's terms; a plan-mode MoE job dict through build_spec gives a spec whose model has moe_experts > 0 and every moe_* key equal to the dict's (WOULD-FAIL-IF: MODEL_KEYS drops a moe_* key and the run trains dense); dense plans unchanged.",
+    "Planning an hf job never imports transformers: a subprocess test installs a sys.meta_path finder that records and raises on any import of transformers or wantrain.model.hfm, plans a GPTConfig hf job from a census fixture through plan_job and build_spec(hf_pins=...), and asserts nothing was recorded; it does not depend on whether transformers is installed (WOULD-FAIL-IF: the planner or finalize imports transformers).",
+    "SCHEDULER-I21's rationale clause (finding 5): a plan of a GPTConfig with moe_experts > 0 records, for every MoE stage, its analytic c_s = 8*P^F_s*T_mb/F next to its profiled per-microbatch time (rationale keys 'c_s_analytic' and 't_profiled', both in seconds), and names rho_s = P_s/P^F_s for every stage pieces are refused for; test test_m4_plan_wire_moe_rationale_* (covers: SCHEDULER-I21; WOULD-FAIL-IF: the rationale drops a stage's c_s or its profiled time).",
+    "BA-466 on real configs: test test_m4_plan_wire_moe_units_* builds a native MoE GPTConfig (model-core) whose dense fields are the builtin block's and asserts the planner's units for one layer equal pieces.exchange_units of the same layer built by gpt.build_layers (stage-m4's per-projection expert units, the bias in the small-tensor unit), names and byte sizes, and that the plan of an hf GPTConfig with a census fixture is width 1 with every wide candidate refused 'unpriced' (HANDOUT D-10) (covers: SCHEDULER-I21; WOULD-FAIL-IF: the planner's MoE units drift from the runtime's).",
+    "Rollback (BA-467): test test_m4_plan_wire_rollback_*: with 'scheduler-6' (and, separately, 'runtime-7a' and 'runtime-7b') in rollback.ROLLED_BACK by monkeypatch, plan_job on a tied hf config (gemma2 census fixture) marks every candidate that splits the table not admitted, naming the piece and 'tied-split-refused', and plans it on one stage when one fits; with ROLLED_BACK empty the split candidates are priced with SCHEDULER-I22's tied terms (covers: SCHEDULER-I22; WOULD-FAIL-IF: a rolled-back relay is still planned). planner.py reads rollback at call time.",
+    "Tests named test_m4_plan_wire_* in tests/unit/test_schedule.py with covers: SCHEDULER-I21 or SCHEDULER-I22 and a WOULD-FAIL-IF line.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_schedule.py exits 1 unless at least one test whose name matches test_m4_plan_wire_ carries a `covers:` line for each of SCHEDULER-I21, SCHEDULER-I22, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label plan-wire --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_schedule.py -k m4_plan_wire",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label plan-wire --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_schedule.py -k 'm4_plan_wire_moe_rationale or m4_plan_wire_moe_units or m4_plan_wire_rollback'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label plan-wire --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_schedule.py tests/unit/test_scheduler.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_schedule.py 'test_m4_plan_wire_' SCHEDULER-I21 SCHEDULER-I22"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "invariants"
+   ],
+   "invariants": [
+    "SCHEDULER-I21",
+    "SCHEDULER-I22"
+   ],
+   "binding": [
+    "BA-402",
+    "BA-441",
+    "BA-458",
+    "BA-461",
+    "BA-466",
+    "BA-467"
+   ],
+   "risk": "medium"
+  },
+  {
+   "id": "agent-wire",
+   "title": "Agent end to end on real hfm: the HF environment, a GATE served on this Mac's CPU, hf and MoE PROFILE/FIT",
+   "objective": "Prove the agent's HF children on real hfm code: the scrubbed environment and interpreter flag, a GATE served end to end on a tiny llama, and PROFILE and FIT of tiny hf and MoE slots, fixing the agent, profile and fit where a test exposes a defect.",
+   "workstream": "control",
+   "deps": [
+    "agent-hf",
+    "model-core",
+    "stage-m4",
+    "determinism-pins"
+   ],
+   "scope": [
+    "src/wantrain/worker/agent.py",
+    "src/wantrain/resources/profile.py",
+    "src/wantrain/resources/fit.py",
+    "src/wantrain/cli.py",
+    "tests/unit/test_resources.py"
+   ],
+   "acceptance": [
+    "Tests named test_m4_agent_wire_* in tests/unit/test_resources.py with covers: CONTROL-I24 and a WOULD-FAIL-IF line:",
+    "the child environment from hfm.stage_env: LD_PRELOAD, LD_LIBRARY_PATH and DYLD_* removed, HF_ENV set, -X pycache_prefix present, the prefix fresh and removed after exit;",
+    "a GATE served end to end on a tiny llama on this Mac's CPU returns an ok GateReport with the fingerprint and device class, and a GATE for a dropout 0.1 config returns the refusal with its cause; a PING sent while a GATE child runs is answered before the GATE_REPORT, and an ABORT during a GATE kills the child and leaves no prefix directory (WOULD-FAIL-IF: GATE runs on the reader thread);",
+    "a PROFILE of a tiny hf llama slot and of a tiny native MoE slot returns F, B and W times, and a FIT of each returns its memory; MoE records do not accumulate across calls.",
+    "Linux disposition (BA-463): where hfm.platform_admitted() is False the GATE test asserts the comparison fields and the FP-TORCH-RECORDS cause naming the platform tag (strict, never a skip).",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_resources.py exits 1 unless at least one test whose name matches test_m4_agent_wire_ carries a `covers:` line for each of CONTROL-I24, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label agent-wire --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_resources.py -k m4_agent_wire",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label agent-wire --wait 3600 -- uv run --no-sync --offline --with transformers==5.19.0 pytest -q -p no:randomly tests/unit/test_resources.py",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_resources.py 'test_m4_agent_wire_' CONTROL-I24"
+   ],
+   "rungs": [
+    "unit",
+    "types",
+    "lint",
+    "fmt",
+    "security"
+   ],
+   "invariants": [
+    "CONTROL-I24"
+   ],
+   "binding": [
+    "BA-429",
+    "BA-463"
+   ],
+   "risk": "high"
+  },
+  {
+   "id": "arm-m4",
+   "title": "Arm arch 'hf' and MoE in production after every leg; coordinator end to end, heal and resume",
+   "objective": "Lift the coordinator's refusal of arch 'hf' and MoE once every leg has landed, and prove the production path (record child, GATE, PROFILE, launch, heal, resume) byte-identical to the oracle on a local cluster.",
+   "workstream": "control",
+   "deps": [
+    "determinism-pins",
+    "model-core",
+    "stage-m4",
+    "oracle-m4",
+    "transport-tied",
+    "scheduler-m4",
+    "agent-hf",
+    "control-m4",
+    "wave-files"
+   ],
+   "scope": [
+    "src/wantrain/coordinator/coordinator.py",
+    "src/wantrain/fault_tolerance/replacement.py",
+    "src/wantrain/fault_tolerance/checkpoint.py",
+    "tests/unit/test_control_admission.py",
+    "tests/integration/test_coordinator.py"
+   ],
+   "acceptance": [
+    "M4_ARMED = True, for spec-mode and plan-mode jobs. The m4_unarmed tests keep proving the refusal by monkeypatching M4_ARMED to False (the tripwire command still exits 0); new tests named test_m4_armed_* assert an hf job and an MoE job pass unarmed_reason once armed and that PIECES_ARMED changes neither answer. Operator entries (BA-464): tests named test_m4_unarmed_cli_* run, in a subprocess that sets coordinator.M4_ARMED = False before calling cli.main, `wantrain local --spec` and `wantrain stage --spec` on a tiny native MoE spec JSON and `wantrain local` on an hf spec JSON, and assert exit 2 naming the tripwire before any child starts (WOULD-FAIL-IF: an operator entry trains an MoE or hf spec on a tree with only some legs in); test_m4_armed_cli_* asserts m4_unarmed_reason returns None for both once armed. The arming lands in wave 2, beside the proofs; what justifies it is evidence on the final tree: the post-wave fail-fast ladder runs every end-to-end arm below (tests/integration runs whole), and GATES-M4 pins them; the PR leaves draft only on a VERIFIED closeout and the human merges (round-2 findings 3 and 11).",
+    "Coordinator end to end (tests/helpers/cluster.py, agents as subprocesses, localhost CPU): a tiny llama and a tiny gemma2 (tied, split across 2 stages) go through the record child, GATE, PROFILE and launch, and their losses hex and state manifest equal the oracle's (diff_manifests == {}); the run record holds every fingerprint, the builder's and the RECORD text; exactly one builder child runs per run; a native MoE job (ZeRO-1 width 2) through the coordinator equals its oracle with aux hex, in spec mode and in plan mode (a plan dict with moe_experts > 0: the spec keeps every moe_* key, BA-461); a plan-mode tiny llama job goes through model_config, the builder child and build_spec(hf_pins=...).",
+    "A stage killed mid-run heals onto a spare of the same device class from the common wave and the healed run's manifest equals the oracle's; no builder child runs again.",
+    "A resume whose kept RECORD text is edited in one line (standing for another transformers build) is refused before any slot launches, naming that path (CONTROL-I24); an unedited resume admits.",
+    "The end-to-end arms (test_m4_coordinator_*) run through agent.py, profile.py and fit.py (fix owner agent-wire), stage.py and spec.py (stage-wire) and fleetplan.py (plan-wire), all concurrent, so they are not in this task's fast verify. The coder runs `-k 'm4_coordinator and llama'` once as its last command and records the result in its journal as evidence for that tree only, naming the owner of any failing file; the post-wave fail-fast ladder and GATES-M4 run them all.",
+    "Linux disposition (BA-463): where hfm.platform_admitted() is False the end-to-end arms assert the run refused before placement with FP-TORCH-RECORDS naming the platform tag (strict, never a skip).",
+    "Tests named test_m4_coordinator_* with covers: CONTROL-I24 and RUNTIME-I19 (RUNTIME-I18 for the MoE arms) and a WOULD-FAIL-IF line; marked slow (the marker documents cost; the integration rung still runs them).",
+    "No network and no model download anywhere: every HF model is built from a tiny config of its pinned config class (hfm.tiny_config, or the config class itself) or loaded from safetensors written by this repository's writer; tests run with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1; from_pretrained, save_pretrained and the hub are never called.",
+    "Wave-2 integration: this task depends on the wave-1 tasks whose code it wires and tests; it is the wave-2 fix owner of the wave-1 files in its scope (HANDOUT, Who fixes what in wave 2) and edits one only to fix a defect a test exposes (the fix keeps the frozen interfaces); a defect in a file another task owns is recorded as a spec conflict naming that task and handed to the post-wave review and fail-fast ladder, whose fixers may edit any file; it is never worked around.",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/unit/test_control_admission.py exits 1 unless at least one test whose name matches test_m4_(armed|unarmed_cli) carries a `covers:` line for each of CONTROL-I24, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Own-test coverage (HANDOUT D-5): the verify line that runs the inline ast check over tests/integration/test_coordinator.py exits 1 unless at least one test whose name matches test_m4_coordinator_ carries a `covers:` line for each of CONTROL-I24, RUNTIME-I18, RUNTIME-I19, and every such test carries a WOULD-FAIL-IF line; it reads only this task's own tests, so it fails on this task's omission whatever other files cover (the global invariants.mjs report is milestone-level and lives in GATES-M4).",
+    "Every new test carries `# covers: <ID>` and `# WOULD-FAIL-IF: <regression>`; at least one test per acceptance item is checked against a deliberately wrong implementation (LESSONS); expected values are distinct, never one constant."
+   ],
+   "verify": [
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label arm-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k 'm4_armed or m4_admission'",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label arm-m4 --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py",
+    "uv run --no-sync --offline python -c \"import wantrain.coordinator.coordinator as c; assert c.M4_ARMED is True\"",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/unit/test_control_admission.py 'test_m4_(armed|unarmed_cli)' CONTROL-I24",
+    "uv run --no-sync --offline python -c \"import ast,re,sys;f,p,*ids=sys.argv[1:];L=open(f).read().split(chr(10));T=ast.parse(chr(10).join(L));up=lambda a:up(a-1) if a>0 and L[a-1].strip().startswith('#') else a;own=[chr(10).join(L[up(min([n.lineno]+[d.lineno for d in n.decorator_list])-1):n.end_lineno]) for n in ast.walk(T) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.match(p,n.name)];bad=[i for i in ids if not any(re.search(r'covers:.*(?<![\\w-])'+re.escape(i)+r'(?![\\w-])',c) for c in own)];nw=sum('WOULD-FAIL-IF:' not in c for c in own);print(f,p,'own tests:',len(own),'ids without a covers: line:',bad,'tests without WOULD-FAIL-IF:',nw);sys.exit(1 if bad or nw or not own else 0)\" tests/integration/test_coordinator.py 'test_m4_coordinator_' CONTROL-I24 RUNTIME-I18 RUNTIME-I19",
+    "node agents-architetura/tools/verify/machine-lock.mjs run --slot --label m4-unarmed --wait 3600 -- uv run --no-sync --offline pytest -q -p no:randomly tests/unit/test_control_admission.py -k m4_unarmed"
+   ],
+   "rungs": [
+    "unit",
+    "integration",
+    "types",
+    "lint",
+    "fmt"
+   ],
+   "invariants": [
+    "CONTROL-I24"
+   ],
+   "binding": [
+    "BA-427",
+    "BA-436",
+    "BA-461",
+    "BA-463",
+    "BA-464"
+   ],
+   "risk": "high"
+  }
+ ]
+}

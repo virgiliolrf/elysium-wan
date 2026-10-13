@@ -1,0 +1,12 @@
+{
+  "name": "wan-factory-tools",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node test.mjs",
+    "build:wf": "node wf/build.mjs",
+    "check:wf": "node wf/build.mjs --check",
+    "ladder": "node gates/ladder.mjs"
+  }
+}

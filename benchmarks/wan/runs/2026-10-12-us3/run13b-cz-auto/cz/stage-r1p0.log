@@ -1,0 +1,165 @@
+WT_PHASE train
+WT_STAGE rank=1 peer=0 device=cuda partition=[[0, 19], [19, 36]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET listen {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_METRIC {"step": 0, "loss": 11.056196212768555, "t": 1791846884.9854405}
+WT_OPT overlap layers=17 params=195
+WT_TELEM {"v": 1, "step": 0, "rank": 1, "peer": 0, "step_ms": 11222.177220974118, "emit_us": 0.0, "ops": {"F": {"n": 32, "med_ms": 55.858534295111895}, "B": {"n": 32, "med_ms": 214.69140495173633}, "W": {"n": 32, "med_ms": 22.899494506418705}, "OPT": {"n": 1, "med_ms": 131.8086599931121}}, "stall_ms": 1341.479909606278, "hops": {"prev0": {"frames": 256, "bytes": 250550722, "busy_ms": 3925.415473524481}}}
+WT_MEM step=0 alloc=47.57 peak=67.14 reserved=68.99
+WT_STEP 0
+WT_METRIC {"step": 1, "loss": 15.767799377441406, "t": 1791846930.2681906}
+WT_TELEM {"v": 1, "step": 1, "rank": 1, "peer": 0, "step_ms": 45179.131203796715, "emit_us": 2076.9317634403706, "ops": {"F": {"n": 32, "med_ms": 58.38777241297066}, "B": {"n": 32, "med_ms": 216.41536941751838}, "W": {"n": 32, "med_ms": 18.665746320039034}, "OPT": {"n": 1, "med_ms": 2.4565900675952435}}, "stall_ms": 34176.46252689883, "hops": {"prev0": {"frames": 256, "bytes": 245035232, "busy_ms": 275.2405907958746}}}
+WT_MEM step=1 alloc=47.57 peak=67.14 reserved=69.31
+WT_STEP 1
+WT_METRIC {"step": 2, "loss": 11.484028816223145, "t": 1791846943.6596901}
+WT_TELEM {"v": 1, "step": 2, "rank": 1, "peer": 0, "step_ms": 13379.83883311972, "emit_us": 2624.3100874125957, "ops": {"F": {"n": 32, "med_ms": 54.076267406344414}, "B": {"n": 32, "med_ms": 218.77608122304082}, "W": {"n": 32, "med_ms": 17.737759510055184}, "OPT": {"n": 1, "med_ms": 2.5181607343256474}}, "stall_ms": 3916.955087799579, "hops": {"prev0": {"frames": 224, "bytes": 227273290, "busy_ms": 997.6872112601995}}}
+WT_MEM step=2 alloc=47.57 peak=67.14 reserved=69.62
+WT_STEP 2
+WT_METRIC {"step": 3, "loss": 9.71821117401123, "t": 1791846957.3115046}
+WT_TELEM {"v": 1, "step": 3, "rank": 1, "peer": 0, "step_ms": 13521.03050565347, "emit_us": 2636.3469660282135, "ops": {"F": {"n": 32, "med_ms": 57.03183705918491}, "B": {"n": 32, "med_ms": 217.46997442096472}, "W": {"n": 32, "med_ms": 19.330428214743733}, "OPT": {"n": 1, "med_ms": 2.7975523844361305}}, "stall_ms": 4185.01712474972, "hops": {"prev0": {"frames": 224, "bytes": 229902264, "busy_ms": 709.1462896205485}}}
+WT_MEM step=3 alloc=47.57 peak=67.14 reserved=69.94
+WT_STEP 3
+WT_METRIC {"step": 4, "loss": 9.236808776855469, "t": 1791846970.492544}
+WT_TELEM {"v": 1, "step": 4, "rank": 1, "peer": 0, "step_ms": 13172.489468939602, "emit_us": 2549.4820438325405, "ops": {"F": {"n": 32, "med_ms": 57.79556231573224}, "B": {"n": 32, "med_ms": 215.28781042434275}, "W": {"n": 32, "med_ms": 17.81979901716113}, "OPT": {"n": 1, "med_ms": 1.6681780107319355}}, "stall_ms": 3864.541352726519, "hops": {"prev0": {"frames": 224, "bytes": 227318540, "busy_ms": 796.8422994017601}}}
+WT_MEM step=4 alloc=47.57 peak=67.14 reserved=70.25
+WT_STEP 4
+WT_METRIC {"step": 5, "loss": 7.930956840515137, "t": 1791846983.729293}
+WT_TELEM {"v": 1, "step": 5, "rank": 1, "peer": 0, "step_ms": 13380.703004077077, "emit_us": 1834.35482904315, "ops": {"F": {"n": 32, "med_ms": 58.52568964473903}, "B": {"n": 32, "med_ms": 216.53371024876833}, "W": {"n": 32, "med_ms": 18.105276161804795}, "OPT": {"n": 1, "med_ms": 2.30586901307106}}, "stall_ms": 3927.496951073408, "hops": {"prev0": {"frames": 224, "bytes": 221297452, "busy_ms": 423.0958721600473}}}
+WT_MEM step=5 alloc=47.57 peak=67.14 reserved=70.56
+WT_STEP 5
+WT_METRIC {"step": 6, "loss": 7.575028896331787, "t": 1791846996.864369}
+WT_TELEM {"v": 1, "step": 6, "rank": 1, "peer": 0, "step_ms": 13006.479960866272, "emit_us": 2315.7331161201, "ops": {"F": {"n": 32, "med_ms": 58.93935891799629}, "B": {"n": 32, "med_ms": 217.9433386772871}, "W": {"n": 32, "med_ms": 17.076612450182438}, "OPT": {"n": 1, "med_ms": 2.567760180681944}}, "stall_ms": 3662.6529498025775, "hops": {"prev0": {"frames": 224, "bytes": 222495647, "busy_ms": 212.69747475162148}}}
+WT_MEM step=6 alloc=47.57 peak=67.14 reserved=70.88
+WT_STEP 6
+WT_METRIC {"step": 7, "loss": 6.880982875823975, "t": 1791847010.0948904}
+WT_TELEM {"v": 1, "step": 7, "rank": 1, "peer": 0, "step_ms": 13284.993270877749, "emit_us": 2474.7811257839203, "ops": {"F": {"n": 32, "med_ms": 58.83250315673649}, "B": {"n": 32, "med_ms": 217.03692874871194}, "W": {"n": 32, "med_ms": 18.8557265792042}, "OPT": {"n": 1, "med_ms": 2.559297252446413}}, "stall_ms": 4030.490373726934, "hops": {"prev0": {"frames": 224, "bytes": 224967047, "busy_ms": 215.65315034240484}}}
+WT_MEM step=7 alloc=47.57 peak=67.14 reserved=71.19
+WT_STEP 7
+WT_METRIC {"step": 8, "loss": 6.741240501403809, "t": 1791847023.3393106}
+WT_TELEM {"v": 1, "step": 8, "rank": 1, "peer": 0, "step_ms": 13200.515047181398, "emit_us": 2460.8103558421135, "ops": {"F": {"n": 32, "med_ms": 58.89805406332016}, "B": {"n": 32, "med_ms": 217.44789136573672}, "W": {"n": 32, "med_ms": 17.138316063210368}, "OPT": {"n": 1, "med_ms": 2.09099892526865}}, "stall_ms": 3852.412151172757, "hops": {"prev0": {"frames": 224, "bytes": 226089867, "busy_ms": 198.98848747834563}}}
+WT_MEM step=8 alloc=47.57 peak=67.14 reserved=71.51
+WT_STEP 8
+WT_METRIC {"step": 9, "loss": 6.242841720581055, "t": 1791847036.503325}
+WT_TELEM {"v": 1, "step": 9, "rank": 1, "peer": 0, "step_ms": 13178.766284603626, "emit_us": 2371.1370304226875, "ops": {"F": {"n": 32, "med_ms": 55.77236949466169}, "B": {"n": 32, "med_ms": 215.06996173411608}, "W": {"n": 32, "med_ms": 22.80511357821524}, "OPT": {"n": 1, "med_ms": 1.970549114048481}}, "stall_ms": 4001.7563314177096, "hops": {"prev0": {"frames": 224, "bytes": 223139353, "busy_ms": 1193.2034301571548}}}
+WT_MEM step=9 alloc=47.57 peak=67.14 reserved=71.82
+WT_STEP 9
+WT_METRIC {"step": 10, "loss": 6.366597652435303, "t": 1791847049.7824085}
+WT_TELEM {"v": 1, "step": 10, "rank": 1, "peer": 0, "step_ms": 13200.442073866725, "emit_us": 2041.30494967103, "ops": {"F": {"n": 32, "med_ms": 57.91169754229486}, "B": {"n": 32, "med_ms": 212.90177409537137}, "W": {"n": 32, "med_ms": 22.379284957423806}, "OPT": {"n": 1, "med_ms": 1.7286380752921104}}, "stall_ms": 3912.6914921216667, "hops": {"prev0": {"frames": 224, "bytes": 224732982, "busy_ms": 346.3693303056061}}}
+WT_MEM step=10 alloc=47.57 peak=67.14 reserved=72.14
+WT_STEP 10
+WT_METRIC {"step": 11, "loss": 6.302319526672363, "t": 1791847062.864046}
+WT_TELEM {"v": 1, "step": 11, "rank": 1, "peer": 0, "step_ms": 13091.873204801232, "emit_us": 1795.9289252758026, "ops": {"F": {"n": 32, "med_ms": 57.82058509066701}, "B": {"n": 32, "med_ms": 212.01076917350292}, "W": {"n": 32, "med_ms": 22.468528943136334}, "OPT": {"n": 1, "med_ms": 2.201783936470747}}, "stall_ms": 3794.9739042669535, "hops": {"prev0": {"frames": 224, "bytes": 223816500, "busy_ms": 452.5311072356999}}}
+WT_MEM step=11 alloc=47.57 peak=67.14 reserved=72.45
+WT_STEP 11
+WT_METRIC {"step": 12, "loss": 6.554617881774902, "t": 1791847076.4347255}
+WT_TELEM {"v": 1, "step": 12, "rank": 1, "peer": 0, "step_ms": 13602.523374836892, "emit_us": 2280.151005834341, "ops": {"F": {"n": 32, "med_ms": 58.06831154040992}, "B": {"n": 32, "med_ms": 218.49268465302885}, "W": {"n": 32, "med_ms": 17.213225830346346}, "OPT": {"n": 1, "med_ms": 2.2678920067846775}}, "stall_ms": 4267.001991625875, "hops": {"prev0": {"frames": 224, "bytes": 214069844, "busy_ms": 186.80200818926096}}}
+WT_MEM step=12 alloc=47.57 peak=67.14 reserved=72.77
+WT_STEP 12
+WT_METRIC {"step": 13, "loss": 6.5187835693359375, "t": 1791847089.7984762}
+WT_TELEM {"v": 1, "step": 13, "rank": 1, "peer": 0, "step_ms": 13377.585674170405, "emit_us": 2315.2842186391354, "ops": {"F": {"n": 32, "med_ms": 56.690653786063194}, "B": {"n": 32, "med_ms": 218.6669227667153}, "W": {"n": 32, "med_ms": 17.447786405682564}, "OPT": {"n": 1, "med_ms": 2.3080529645085335}}, "stall_ms": 4016.47506095469, "hops": {"prev0": {"frames": 224, "bytes": 215922431, "busy_ms": 206.93207625299692}}}
+WT_MEM step=13 alloc=47.57 peak=67.14 reserved=73.08
+WT_STEP 13
+WT_METRIC {"step": 14, "loss": 5.9813761711120605, "t": 1791847103.2298887}
+WT_TELEM {"v": 1, "step": 14, "rank": 1, "peer": 0, "step_ms": 13473.698902875185, "emit_us": 2575.832884758711, "ops": {"F": {"n": 32, "med_ms": 56.47177551873028}, "B": {"n": 32, "med_ms": 217.96600241214037}, "W": {"n": 32, "med_ms": 17.61619350872934}, "OPT": {"n": 1, "med_ms": 3.5892738960683346}}, "stall_ms": 4051.3298735022545, "hops": {"prev0": {"frames": 224, "bytes": 214489184, "busy_ms": 199.5493397116661}}}
+WT_MEM step=14 alloc=47.57 peak=67.14 reserved=73.40
+WT_STEP 14
+WT_METRIC {"step": 15, "loss": 6.210369110107422, "t": 1791847116.6772099}
+WT_TELEM {"v": 1, "step": 15, "rank": 1, "peer": 0, "step_ms": 13417.382184881717, "emit_us": 3237.8509640693665, "ops": {"F": {"n": 32, "med_ms": 57.74356983602047}, "B": {"n": 32, "med_ms": 218.3750511612743}, "W": {"n": 32, "med_ms": 18.115749582648277}, "OPT": {"n": 1, "med_ms": 2.339269034564495}}, "stall_ms": 4016.236200928688, "hops": {"prev0": {"frames": 223, "bytes": 213312695, "busy_ms": 217.58054103702307}}}
+WT_MEM step=15 alloc=47.57 peak=67.14 reserved=73.71
+WT_STEP 15
+WT_METRIC {"step": 16, "loss": 6.236746788024902, "t": 1791847130.0166092}
+WT_TELEM {"v": 1, "step": 16, "rank": 1, "peer": 0, "step_ms": 14047.507658135146, "emit_us": 3062.307834625244, "ops": {"F": {"n": 32, "med_ms": 56.504038628190756}, "B": {"n": 32, "med_ms": 214.39976058900356}, "W": {"n": 32, "med_ms": 22.18209160491824}, "OPT": {"n": 1, "med_ms": 1.8310919404029846}}, "stall_ms": 4783.697587903589, "hops": {"prev0": {"frames": 224, "bytes": 214099934, "busy_ms": 866.9073502533138}}}
+WT_MEM step=16 alloc=47.57 peak=67.14 reserved=74.02
+WT_STEP 16
+WT_METRIC {"step": 17, "loss": 6.460646629333496, "t": 1791847144.2174494}
+WT_TELEM {"v": 1, "step": 17, "rank": 1, "peer": 0, "step_ms": 13388.319668825716, "emit_us": 2034.5663651823997, "ops": {"F": {"n": 32, "med_ms": 62.45746184140444}, "B": {"n": 32, "med_ms": 200.65874909050763}, "W": {"n": 32, "med_ms": 22.309647873044014}, "OPT": {"n": 1, "med_ms": 1.758502796292305}}, "stall_ms": 4118.618272710592, "hops": {"prev0": {"frames": 224, "bytes": 215919901, "busy_ms": 92.54387812688947}}}
+WT_MEM step=17 alloc=47.57 peak=67.14 reserved=74.34
+WT_STEP 17
+WT_METRIC {"step": 18, "loss": 5.897897720336914, "t": 1791847157.8207564}
+WT_TELEM {"v": 1, "step": 18, "rank": 1, "peer": 0, "step_ms": 13613.139300607145, "emit_us": 1701.5887424349785, "ops": {"F": {"n": 32, "med_ms": 70.28312003239989}, "B": {"n": 32, "med_ms": 204.5399972703308}, "W": {"n": 32, "med_ms": 19.962782505899668}, "OPT": {"n": 1, "med_ms": 1.6801259480416775}}, "stall_ms": 4332.835205364972, "hops": {"prev0": {"frames": 223, "bytes": 216418365, "busy_ms": 99.15486164391041}}}
+WT_MEM step=18 alloc=47.57 peak=67.14 reserved=74.65
+WT_STEP 18
+WT_METRIC {"step": 19, "loss": 5.96914529800415, "t": 1791847171.0475361}
+WT_TELEM {"v": 1, "step": 19, "rank": 1, "peer": 0, "step_ms": 13318.732840940356, "emit_us": 2368.1027814745903, "ops": {"F": {"n": 32, "med_ms": 52.37072869203985}, "B": {"n": 32, "med_ms": 217.72397379390895}, "W": {"n": 32, "med_ms": 17.520554829388857}, "OPT": {"n": 1, "med_ms": 2.0872028544545174}}, "stall_ms": 3916.732985060662, "hops": {"prev0": {"frames": 224, "bytes": 215520916, "busy_ms": 188.60647222027183}}}
+WT_MEM step=19 alloc=47.57 peak=67.14 reserved=74.97
+WT_STEP 19
+WT_METRIC {"step": 20, "loss": 6.4153900146484375, "t": 1791847184.3442717}
+WT_TELEM {"v": 1, "step": 20, "rank": 1, "peer": 0, "step_ms": 13245.175024028867, "emit_us": 2091.5200002491474, "ops": {"F": {"n": 32, "med_ms": 41.08232352882624}, "B": {"n": 32, "med_ms": 220.75466974638402}, "W": {"n": 32, "med_ms": 17.38905836828053}, "OPT": {"n": 1, "med_ms": 2.232450991868973}}, "stall_ms": 3910.5452923104167, "hops": {"prev0": {"frames": 224, "bytes": 213273745, "busy_ms": 229.92388205602765}}}
+WT_MEM step=20 alloc=47.57 peak=67.14 reserved=75.28
+WT_STEP 20
+WT_METRIC {"step": 21, "loss": 5.984565258026123, "t": 1791847197.6972463}
+WT_TELEM {"v": 1, "step": 21, "rank": 1, "peer": 0, "step_ms": 13375.259344931692, "emit_us": 2357.4880324304104, "ops": {"F": {"n": 32, "med_ms": 43.373453663662076}, "B": {"n": 32, "med_ms": 218.5359625145793}, "W": {"n": 32, "med_ms": 17.361463978886604}, "OPT": {"n": 1, "med_ms": 3.359051886945963}}, "stall_ms": 3969.702344853431, "hops": {"prev0": {"frames": 223, "bytes": 216267756, "busy_ms": 515.9557089209557}}}
+WT_MEM step=21 alloc=47.57 peak=67.14 reserved=75.60
+WT_STEP 21
+WT_METRIC {"step": 22, "loss": 6.0024518966674805, "t": 1791847211.1937842}
+WT_TELEM {"v": 1, "step": 22, "rank": 1, "peer": 0, "step_ms": 13477.474045008421, "emit_us": 2604.5660488307476, "ops": {"F": {"n": 32, "med_ms": 57.2666646912694}, "B": {"n": 32, "med_ms": 217.29617635719478}, "W": {"n": 32, "med_ms": 17.23983744159341}, "OPT": {"n": 1, "med_ms": 3.420292865484953}}, "stall_ms": 4137.854589615017, "hops": {"prev0": {"frames": 224, "bytes": 219760101, "busy_ms": 205.75563330203295}}}
+WT_MEM step=22 alloc=47.57 peak=67.14 reserved=75.91
+WT_STEP 22
+WT_METRIC {"step": 23, "loss": 6.193885803222656, "t": 1791847224.3905494}
+WT_TELEM {"v": 1, "step": 23, "rank": 1, "peer": 0, "step_ms": 13185.72751712054, "emit_us": 2952.9863968491554, "ops": {"F": {"n": 32, "med_ms": 50.655507016927004}, "B": {"n": 32, "med_ms": 214.4445893354714}, "W": {"n": 32, "med_ms": 20.264220889657736}, "OPT": {"n": 1, "med_ms": 2.502813935279846}}, "stall_ms": 3954.0632371790707, "hops": {"prev0": {"frames": 224, "bytes": 222429345, "busy_ms": 524.8296065256}}}
+WT_MEM step=23 alloc=47.57 peak=67.14 reserved=76.22
+WT_STEP 23
+WT_METRIC {"step": 24, "loss": 6.395026206970215, "t": 1791847237.4480028}
+WT_TELEM {"v": 1, "step": 24, "rank": 1, "peer": 0, "step_ms": 13064.00249991566, "emit_us": 2893.0669650435448, "ops": {"F": {"n": 32, "med_ms": 57.74774611927569}, "B": {"n": 32, "med_ms": 215.06024454720318}, "W": {"n": 32, "med_ms": 20.17045160755515}, "OPT": {"n": 1, "med_ms": 3.1691989861428738}}, "stall_ms": 3715.9299021586776, "hops": {"prev0": {"frames": 223, "bytes": 220184694, "busy_ms": 233.80175791680813}}}
+WT_MEM step=24 alloc=47.57 peak=67.14 reserved=76.54
+WT_STEP 24
+WT_METRIC {"step": 25, "loss": 5.940903186798096, "t": 1791847250.6573436}
+WT_TELEM {"v": 1, "step": 25, "rank": 1, "peer": 0, "step_ms": 13210.531726945192, "emit_us": 2861.328888684511, "ops": {"F": {"n": 32, "med_ms": 60.000138357281685}, "B": {"n": 32, "med_ms": 214.61340552195907}, "W": {"n": 32, "med_ms": 19.843399059027433}, "OPT": {"n": 1, "med_ms": 3.197841811925173}}, "stall_ms": 3852.176922839135, "hops": {"prev0": {"frames": 224, "bytes": 221376400, "busy_ms": 326.3841075822711}}}
+WT_MEM step=25 alloc=47.57 peak=67.14 reserved=76.85
+WT_STEP 25
+WT_METRIC {"step": 26, "loss": 6.23187780380249, "t": 1791847264.2141192}
+WT_TELEM {"v": 1, "step": 26, "rank": 1, "peer": 0, "step_ms": 13530.593970790505, "emit_us": 3174.9680638313293, "ops": {"F": {"n": 32, "med_ms": 54.31094625964761}, "B": {"n": 32, "med_ms": 219.22770631499588}, "W": {"n": 32, "med_ms": 18.344203010201454}, "OPT": {"n": 1, "med_ms": 3.360745031386614}}, "stall_ms": 4195.772427134216, "hops": {"prev0": {"frames": 224, "bytes": 221179124, "busy_ms": 222.8859281167388}}}
+WT_MEM step=26 alloc=47.57 peak=67.14 reserved=77.17
+WT_STEP 26
+WT_METRIC {"step": 27, "loss": 6.223068714141846, "t": 1791847277.4310155}
+WT_TELEM {"v": 1, "step": 27, "rank": 1, "peer": 0, "step_ms": 13212.619876023382, "emit_us": 2779.2477048933506, "ops": {"F": {"n": 32, "med_ms": 54.42377598956227}, "B": {"n": 32, "med_ms": 216.1349339876324}, "W": {"n": 32, "med_ms": 19.86519293859601}, "OPT": {"n": 1, "med_ms": 1.9152583554387093}}, "stall_ms": 3878.817663528025, "hops": {"prev0": {"frames": 224, "bytes": 221218836, "busy_ms": 213.5481066070497}}}
+WT_MEM step=27 alloc=47.57 peak=67.14 reserved=77.48
+WT_STEP 27
+WT_METRIC {"step": 28, "loss": 6.037809371948242, "t": 1791847290.7759593}
+WT_TELEM {"v": 1, "step": 28, "rank": 1, "peer": 0, "step_ms": 13330.475174821913, "emit_us": 1991.1108538508415, "ops": {"F": {"n": 32, "med_ms": 56.80466629564762}, "B": {"n": 32, "med_ms": 214.0051475726068}, "W": {"n": 32, "med_ms": 21.948857931420207}, "OPT": {"n": 1, "med_ms": 1.879584975540638}}, "stall_ms": 4005.924856290221, "hops": {"prev0": {"frames": 224, "bytes": 221584760, "busy_ms": 156.60727489739656}}}
+WT_MEM step=28 alloc=47.57 peak=67.14 reserved=77.80
+WT_STEP 28
+WT_METRIC {"step": 29, "loss": 6.029835224151611, "t": 1791847303.9938366}
+WT_TELEM {"v": 1, "step": 29, "rank": 1, "peer": 0, "step_ms": 13182.72534897551, "emit_us": 1933.7651319801807, "ops": {"F": {"n": 32, "med_ms": 55.50129758194089}, "B": {"n": 32, "med_ms": 215.33731650561094}, "W": {"n": 32, "med_ms": 22.011226508766413}, "OPT": {"n": 1, "med_ms": 1.856951043009758}}, "stall_ms": 3904.2667760513723, "hops": {"prev0": {"frames": 224, "bytes": 221694137, "busy_ms": 154.6022300608456}}}
+WT_MEM step=29 alloc=47.57 peak=67.14 reserved=78.11
+WT_STEP 29
+WT_METRIC {"step": 30, "loss": 6.334890365600586, "t": 1791847317.057696}
+WT_TELEM {"v": 1, "step": 30, "rank": 1, "peer": 0, "step_ms": 13099.38758192584, "emit_us": 1880.3458660840988, "ops": {"F": {"n": 32, "med_ms": 56.90395273268223}, "B": {"n": 32, "med_ms": 219.24460353329778}, "W": {"n": 32, "med_ms": 18.319072667509317}, "OPT": {"n": 1, "med_ms": 2.735030837357044}}, "stall_ms": 3785.1882688701153, "hops": {"prev0": {"frames": 224, "bytes": 223562536, "busy_ms": 1008.6841247975826}}}
+WT_MEM step=30 alloc=47.57 peak=67.14 reserved=78.43
+WT_STEP 30
+WT_METRIC {"step": 31, "loss": 6.09763240814209, "t": 1791847330.359655}
+WT_TELEM {"v": 1, "step": 31, "rank": 1, "peer": 0, "step_ms": 13321.817905176431, "emit_us": 2951.424103230238, "ops": {"F": {"n": 32, "med_ms": 59.63688809424639}, "B": {"n": 32, "med_ms": 215.02072550356388}, "W": {"n": 32, "med_ms": 19.347287947311997}, "OPT": {"n": 1, "med_ms": 2.7659479528665543}}, "stall_ms": 3980.453973636031, "hops": {"prev0": {"frames": 224, "bytes": 223818633, "busy_ms": 245.6613783724606}}}
+WT_MEM step=31 alloc=47.57 peak=67.14 reserved=78.74
+WT_STEP 31
+WT_METRIC {"step": 32, "loss": 6.07983922958374, "t": 1791847343.6176336}

@@ -1,0 +1,192 @@
+{
+  "milestone": "M2",
+  "consecutive": 2,
+  "rungs": [
+    "factory",
+    "frozen",
+    "build",
+    "syntax",
+    "fmt",
+    "lint",
+    "types",
+    "discipline",
+    "invariants",
+    "claims",
+    "unit",
+    "integration",
+    "multiworker",
+    "oracle",
+    "identity",
+    "chaos",
+    "wan",
+    "full",
+    "static",
+    "security",
+    "fuzz"
+  ],
+  "pinned": [
+    {
+      "id": "guarded-files-unchanged",
+      "cmd": "printf '%s  %s\\n' 9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d tests/helpers/exact.py e7ffb96f5ed60dc2246ca65d8b159055d3a20938364856c51d0c208c0a0328b1 tests/chaos/test_recovery.py 051822a55ad4d154378d28e16f5501faf232e800da2e874a84fdd0a2ef4f7b2a tests/multiworker/test_fleet_state_exact.py 92e20b25f800835f18530b8153c0b7a626eeed17d28c48b56d909113e2251245 tests/helpers/cluster.py 601de810e4871bac9d9390ac2a254090aee0443ba3a1c249db733d39360fb605 tests/oracle/test_state_identity.py | shasum -a 256 -c -",
+      "repeat": 1
+    },
+    {
+      "id": "chaos-dead-worker-loaded",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/chaos/test_recovery.py::test_dead_worker_is_replaced_and_the_run_stays_exact 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^1 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20,
+      "load": {
+        "cmd": "uv run python -c 'sum(i*i for i in range(10**8))'",
+        "copies": 2
+      },
+      "timeoutSec": 900
+    },
+    {
+      "id": "causal-pre-fix-has-symptom",
+      "cmd": "f=.factory/runs/M2/gate-prefix.json; rm -f \"$f\"; test -d .factory/runs/M2/wave-prefix.tree/src || { echo 'PRE_FIX_SNAPSHOT_MISSING'; exit 3; }; while :; do uv run python tests/helpers/wave_experiment.py --base-tree .factory/runs/M2/wave-prefix.tree --until-symptoms 1 --max-runs 60 --expect-symptom --out \"$f\"; s=$?; [ \"$s\" -eq 2 ] || break; done; exit \"$s\"",
+      "repeat": 1,
+      "timeoutSec": 7200
+    },
+    {
+      "id": "causal-fixed-tree-clean",
+      "cmd": "f=.factory/runs/M2/gate-fixed.json; rm -rf \"$f\" .factory/runs/M2/gate-fixed.tree; while :; do uv run python tests/helpers/wave_experiment.py --runs 30 --expect-fixed --out \"$f\"; s=$?; [ \"$s\" -eq 2 ] || break; done; exit \"$s\"",
+      "repeat": 1,
+      "timeoutSec": 7200
+    },
+    {
+      "id": "wave-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_fault_tolerance.py::test_wave_commit_is_immutable_and_wave_json_last tests/unit/test_fault_tolerance.py::test_final_step_is_committed_once tests/unit/test_fault_tolerance.py::test_validate_wave_refuses_every_mislabel tests/unit/test_fault_tolerance.py::test_received_wave_commits_only_when_every_hash_matches tests/unit/test_fault_tolerance.py::test_alias_follows_the_newest_wave tests/unit/test_fault_tolerance.py::test_commit_keeps_the_newest_three_waves tests/unit/test_fault_tolerance.py::test_wave_files_never_match_the_oracle_glob tests/unit/test_fault_tolerance.py::test_alias_writers_never_write_into_a_wave tests/unit/test_fault_tolerance.py::test_every_committed_wave_ships_in_order_under_fast_saves tests/unit/test_fault_tolerance.py::test_ship_logs_each_wave_in_the_experiment_format tests/unit/test_fault_tolerance.py::test_ship_never_opens_the_alias tests/unit/test_fault_tolerance.py::test_store_refuses_a_wave_with_a_mislabeled_manifest_or_file tests/unit/test_fault_tolerance.py::test_ckpt_part_from_another_slots_connection_is_refused tests/unit/test_fault_tolerance.py::test_ckpt_part_of_another_attempt_is_refused tests/unit/test_fault_tolerance.py::test_third_open_step_drops_staged_parts tests/unit/test_fault_tolerance.py::test_oversized_or_duplicate_part_is_refused_and_unlinked tests/unit/test_fault_tolerance.py::test_ship_labels_each_wave_from_its_manifest tests/unit/test_fault_tolerance.py::test_concurrent_ships_never_cross_waves tests/unit/test_fault_tolerance.py::test_restore_writes_the_wave_and_its_alias tests/unit/test_fault_tolerance.py::test_export_wave_writes_each_wave_and_alias tests/unit/test_fault_tolerance.py::test_checkpoint_store_common_step_and_prune tests/unit/test_fault_tolerance.py::test_corrupt_shard_is_refused tests/unit/test_fault_tolerance.py::test_restore_is_refused_while_the_stage_is_alive tests/unit/test_fault_tolerance.py::test_restore_and_ship_never_interleave tests/unit/test_fault_tolerance.py::test_restore_unlinks_the_body_on_every_path tests/unit/test_fault_tolerance.py::test_restored_wave_is_not_reshipped 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^26 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20,
+      "timeoutSec": 900
+    },
+    {
+      "id": "wave-concurrency-amplified",
+      "cmd": "node agents-architetura/tools/verify/amplify.mjs --runs 200 --seed-base 1000 --periods 16,64,256 --timeout 120 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/unit/test_fault_tolerance.py::test_every_committed_wave_ships_in_order_under_fast_saves tests/unit/test_fault_tolerance.py::test_concurrent_ships_never_cross_waves tests/unit/test_fault_tolerance.py::test_restore_and_ship_never_interleave",
+      "repeat": 1,
+      "timeoutSec": 21600
+    },
+    {
+      "id": "wave-concurrency-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 300 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/unit/test_fault_tolerance.py::test_every_committed_wave_ships_in_order_under_fast_saves tests/unit/test_fault_tolerance.py::test_concurrent_ships_never_cross_waves tests/unit/test_fault_tolerance.py::test_restore_and_ship_never_interleave",
+      "repeat": 1,
+      "timeoutSec": 7200
+    },
+    {
+      "id": "resume-and-wave-binding-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_runtime_spec.py::test_checkpoint_commits_a_wave_before_announcing_it tests/unit/test_runtime_spec.py::test_last_step_is_announced_once tests/unit/test_runtime_spec.py::test_saved_waves_are_byte_equal_to_the_alias tests/unit/test_runtime_spec.py::test_resume_drops_waves_of_the_abandoned_timeline tests/unit/test_runtime_spec.py::test_fresh_launch_drops_every_old_wave tests/unit/test_runtime_spec.py::test_checkpoint_writes_through_the_seqlock tests/unit/test_runtime_spec.py::test_resume_refuses_a_wave_whose_manifest_names_another_step tests/unit/test_runtime_spec.py::test_resume_refuses_a_wave_without_a_manifest tests/unit/test_runtime_spec.py::test_resume_refuses_an_unlisted_or_mismatching_file tests/unit/test_runtime_spec.py::test_resume_reads_the_named_wave_not_the_alias tests/unit/test_runtime_spec.py::test_resume_refuses_changed_pins tests/unit/test_runtime_spec.py::test_resume_refuses_a_shard_without_pins tests/unit/test_runtime_spec.py::test_slot_peers_and_resume_step_are_checked 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^13 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20,
+      "timeoutSec": 900
+    },
+    {
+      "id": "wave-heal-integration",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_coordinator.py::test_healed_replacement_holds_the_restored_wave tests/integration/test_coordinator.py::test_relaunch_from_the_final_wave_runs_no_step_and_is_not_restarted tests/integration/test_engine_bitwise.py::test_resume_with_new_ownership_is_byte_identical 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^3 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 3600
+    },
+    {
+      "id": "heal-state-exact-loaded",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/multiworker/test_fleet_state_exact.py::test_a_healed_fleet_is_byte_exact 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^1 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 10,
+      "load": {
+        "cmd": "uv run python -c 'sum(i*i for i in range(10**8))'",
+        "copies": 2
+      },
+      "timeoutSec": 1800
+    },
+    {
+      "id": "heal-state-exact-load6",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 900 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/multiworker/test_fleet_state_exact.py::test_a_healed_fleet_is_byte_exact",
+      "repeat": 1,
+      "timeoutSec": 21600
+    },
+    {
+      "id": "chaos-dead-worker-load6",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 900 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/chaos/test_recovery.py::test_dead_worker_is_replaced_and_the_run_stays_exact",
+      "repeat": 1,
+      "timeoutSec": 21600
+    },
+    {
+      "id": "transport-auth-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_codecs_identity.py::test_handshake_binds_transcript_and_derives_mirrored_keys tests/unit/test_codecs_identity.py::test_reflected_challenge_is_refused tests/unit/test_codecs_identity.py::test_signature_over_another_transcript_is_refused tests/unit/test_codecs_identity.py::test_p2p_and_control_domains_never_cross tests/unit/test_codecs_identity.py::test_roles_must_be_complementary tests/unit/test_codecs_identity.py::test_expect_peer_refuses_another_key tests/unit/test_codecs_identity.py::test_allowlist_refuses_an_unknown_peer tests/unit/test_codecs_identity.py::test_peer_id_is_sha256_without_blake3 tests/unit/test_codecs_identity.py::test_cipher_is_aes_only_when_both_ends_have_it tests/unit/test_codecs_identity.py::test_handshake_refuses_without_ed25519 tests/unit/test_transport.py::test_secure_socket_round_trips_frames_exactly tests/unit/test_transport.py::test_tampered_record_is_refused tests/unit/test_transport.py::test_replayed_or_reordered_record_is_refused tests/unit/test_transport.py::test_nonces_never_repeat_across_rekeys tests/unit/test_transport.py::test_no_plaintext_mode tests/unit/test_transport.py::test_stats_count_every_record tests/unit/test_transport.py::test_token_and_session_macs_never_cross tests/unit/test_transport.py::test_mac_is_bound_to_the_transcript tests/unit/test_transport.py::test_macs_validate_their_input tests/unit/test_transport.py::test_control_dial_refuses_another_coordinator_key tests/unit/test_transport.py::test_sealed_channel_round_trips_messages_and_files tests/unit/test_transport.py::test_sealed_channel_refuses_a_flipped_byte 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^22 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20,
+      "timeoutSec": 900
+    },
+    {
+      "id": "control-auth-arms",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_control_admission.py::test_only_the_worker_holding_the_token_registers tests/unit/test_control_admission.py::test_worker_refuses_a_coordinator_with_another_key tests/unit/test_control_admission.py::test_admitted_worker_cannot_pose_as_the_coordinator tests/unit/test_control_admission.py::test_relayed_hello_cannot_swap_the_worker_key tests/unit/test_control_admission.py::test_worker_refuses_a_downgraded_challenge tests/unit/test_control_admission.py::test_coordinator_refuses_to_start_off_loopback_without_a_token tests/unit/test_control_admission.py::test_session_secret_never_travels_in_clear tests/unit/test_control_admission.py::test_reconnect_from_another_key_is_refused tests/unit/test_control_admission.py::test_sealed_control_channel_runs_a_job tests/unit/test_control_admission.py::test_ckpt_from_another_slots_connection_is_refused tests/unit/test_control_admission.py::test_ckpt_of_another_attempt_is_refused tests/unit/test_control_admission.py::test_forged_result_is_refused tests/unit/test_control_admission.py::test_reply_from_another_worker_is_ignored 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^13 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 1800
+    },
+    {
+      "id": "p2p-rogue-arms",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py::test_chain_intruder_is_refused_and_the_run_completes tests/integration/test_engine_bitwise.py::test_chain_intruder_is_refused_with_two_streams tests/integration/test_engine_bitwise.py::test_chain_silent_socket_does_not_hold_a_real_peers_slot tests/integration/test_engine_bitwise.py::test_mesh_intruder_with_an_unknown_key_is_refused tests/integration/test_engine_bitwise.py::test_mesh_peer_claiming_another_slot_is_refused tests/integration/test_engine_bitwise.py::test_mesh_out_of_range_and_duplicate_hello_are_refused tests/integration/test_engine_bitwise.py::test_silent_socket_does_not_hold_a_real_peers_slot tests/integration/test_engine_bitwise.py::test_p2p_auth_counts_match_the_topology tests/integration/test_engine_bitwise.py::test_every_slot_reports_its_aead_cost 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^9 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 3600
+    },
+    {
+      "id": "p2p-rogue-arms-load6",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 1800 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/integration/test_engine_bitwise.py::test_chain_intruder_is_refused_and_the_run_completes tests/integration/test_engine_bitwise.py::test_chain_intruder_is_refused_with_two_streams tests/integration/test_engine_bitwise.py::test_chain_silent_socket_does_not_hold_a_real_peers_slot tests/integration/test_engine_bitwise.py::test_mesh_intruder_with_an_unknown_key_is_refused tests/integration/test_engine_bitwise.py::test_mesh_peer_claiming_another_slot_is_refused tests/integration/test_engine_bitwise.py::test_mesh_out_of_range_and_duplicate_hello_are_refused tests/integration/test_engine_bitwise.py::test_silent_socket_does_not_hold_a_real_peers_slot tests/integration/test_engine_bitwise.py::test_p2p_auth_counts_match_the_topology tests/integration/test_engine_bitwise.py::test_every_slot_reports_its_aead_cost",
+      "repeat": 1,
+      "timeoutSec": 28800
+    },
+    {
+      "id": "slot-key-pinning",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_coordinator.py::test_launched_spec_pins_each_slots_key tests/integration/test_coordinator.py::test_heal_repins_the_replacement_key tests/integration/test_coordinator.py::test_stage_gets_its_agents_key 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^3 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 1800
+    },
+    {
+      "id": "rebalance-arms",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail -s tests/integration/test_coordinator.py::test_slowed_peer_is_rebalanced_and_the_state_stays_exact tests/integration/test_coordinator.py::test_rebalance_restores_the_common_wave_after_the_abort tests/integration/test_coordinator.py::test_rebalance_and_a_heal_in_one_window_make_one_attempt tests/integration/test_coordinator.py::test_rebalance_after_a_heal_ignores_the_dead_nodes_telemetry tests/integration/test_coordinator.py::test_balanced_fleet_is_never_replanned tests/integration/test_coordinator.py::test_telemetry_window_starts_empty_each_attempt 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^6 passed(, [0-9]+ warnings?)? in ' <<<\"$o\" && grep -qE '^MEASURED_SPEEDUP before=[0-9.eE+-]+ new=[0-9.eE+-]+ ratio=[0-9.eE+-]+ pred_new=[0-9.eE+-]+ gain=[0-9.eE+-]+ pred_gain=[0-9.eE+-]+' <<<\"$o\" && grep -qE '^MEASURED_BIAS before=[0-9.eE+-]+ new=[0-9.eE+-]+' <<<\"$o\" && grep -E '^MEASURED_(SPEEDUP|BIAS|PRED_ERROR) ' <<<\"$o\" && grep -qE '^MEASURED_PRED_ERROR gain_rel=-?[0-9.eE+-]+' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 3600
+    },
+    {
+      "id": "rebalance-failure-load6",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 900 -- uv run pytest -q -p no:randomly -p no:cacheprovider --runxfail tests/integration/test_coordinator.py::test_rebalance_restores_the_common_wave_after_the_abort tests/integration/test_coordinator.py::test_rebalance_and_a_heal_in_one_window_make_one_attempt",
+      "repeat": 1,
+      "timeoutSec": 21600
+    },
+    {
+      "id": "scheduler-and-replan-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_zero_bubble.py::test_tight_budget_degrades_instead_of_refusing tests/unit/test_zero_bubble.py::test_degraded_schedule_fits_every_budget tests/unit/test_zero_bubble.py::test_bubble_never_grows_with_the_budget tests/unit/test_zero_bubble.py::test_below_one_microbatch_refuses_with_the_numbers tests/unit/test_zero_bubble.py::test_measured_budget_is_never_raised_to_the_floor tests/unit/test_zero_bubble.py::test_replan_shifts_microbatches_away_from_a_slow_peer tests/unit/test_zero_bubble.py::test_replan_keeps_a_balanced_fleet tests/unit/test_zero_bubble.py::test_replan_touches_only_ownership_and_order tests/unit/test_zero_bubble.py::test_replan_is_deterministic tests/unit/test_zero_bubble.py::test_replanned_orders_are_valid_for_any_window tests/unit/test_fault_tolerance.py::test_replan_decision_rule tests/unit/test_fault_tolerance.py::test_ownership_patch_pins_everything_else tests/unit/test_fault_tolerance.py::test_resume_spec_pins_everything_but_addresses_and_slot_keys 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^13 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 900
+    },
+    {
+      "id": "aead-throughput-simulated",
+      "cmd": "o=$(uv run python -m wantrain.transport.secure --bench --link-gbps 10); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; J=\"$o\" uv run python -I - <<'PY'\nimport json, os\nd = json.loads(os.environ[\"J\"].strip().splitlines()[-1])\nassert d[\"label\"] == \"SIMULATED\", d\nassert d[\"ok\"] is True, d\nprint(f\"MIN_GBPS={min(float(d['seal_gbps']), float(d['open_gbps'])):.3f}\")\nPY",
+      "repeat": 3,
+      "timeoutSec": 600,
+      "metric": {
+        "pattern": "MIN_GBPS=([0-9]+(?:\\.[0-9]+)?)",
+        "op": ">=",
+        "value": 10
+      }
+    },
+    {
+      "id": "aead-step-cost-simulated",
+      "cmd": "o=$(uv run python -m wantrain.validation.aead_cost --steps 20 --max-frac 1000000); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^OVERLAP_CI chain2 k=[0-9]+ median=-?[0-9.eE+-]+ lo=-?[0-9.eE+-]+ hi=-?[0-9.eE+-]+' <<<\"$o\" || exit 1; grep -qE '^OVERLAP_CI wide_1_2_1 k=[0-9]+ median=-?[0-9.eE+-]+ lo=-?[0-9.eE+-]+ hi=-?[0-9.eE+-]+' <<<\"$o\" || exit 1; grep -qE '^SERIALIZED_COST_FRAC=-?[0-9.eE+-]+' <<<\"$o\" || exit 1; J=\"$o\" uv run python -I - <<'PY'\nimport json, os\nt = os.environ[\"J\"].strip()\ntry:\n    d = json.loads(t)\nexcept ValueError:\n    d = json.loads(t.splitlines()[-1])\nassert d[\"label\"] == \"SIMULATED\", d\nassert d[\"ok\"] is True, d\nassert not d[\"missing\"] and not d[\"invalid\"], d\nassert d[\"per_slot\"], d\nprint(f\"MEASURED OVERLAP_COST_FRAC={float(d['overlap_cost_frac']):.6f} (no bound: the human's decision 2026-10-10, HANDOUT-M2 \\u00a72c)\")\nprint(f\"MEASURED SERIALIZED_COST_FRAC={float(d['serialized_cost_frac']):.6f}\")\nPY",
+      "repeat": 3,
+      "timeoutSec": 1800,
+      "note": "MEASURED, no bound (the human's decision 2026-10-10 ~09:15: accept now, ADR later). Fails only on an invalid measurement (missing slot, unproven swap, fewer than 5 pairs) or missing lines."
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "py-devmode"
+    },
+    {
+      "id": "amplify-chaos"
+    },
+    {
+      "id": "load-chaos"
+    }
+  ],
+  "fuzz": [],
+  "audit": {
+    "bar": "no-open-tier-a"
+  },
+  "mutation": {
+    "changedSince": "6bff9f5"
+  }
+}

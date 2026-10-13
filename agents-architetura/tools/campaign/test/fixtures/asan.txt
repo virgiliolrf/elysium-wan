@@ -1,0 +1,8 @@
+=================================================================
+==9876==ERROR: AddressSanitizer: heap-use-after-free on address 0x602000000010 at pc 0x55d0 bp 0x7ffc sp 0x7ff0
+READ of size 4 at 0x602000000010 thread T0
+    #0 0x55d0 in codec::decode_frame /work/repo/src/codec/frame.rs:120:17
+    #1 0x55d1 in codec::tests::roundtrip /work/repo/src/codec/tests.rs:30:9
+    #2 0x55d2 in __libc_start_main /usr/lib/libc.so.6
+SUMMARY: AddressSanitizer: heap-use-after-free /work/repo/src/codec/frame.rs:120:17 in codec::decode_frame
+/work/repo/src/codec/len.rs:14:20: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'

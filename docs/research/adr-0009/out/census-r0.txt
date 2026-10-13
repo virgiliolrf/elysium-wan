@@ -1,0 +1,186 @@
+afmoe                          ERR RuntimeError: One of the differentiated Tensors does not require grad
+apertus                        EXACT
+arcee                          EXACT
+aria_text                      EXACT
+axk1                           EXACT
+axk2                           ERR RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow
+bamba                          ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: The dimensio
+bart                           ERR RuntimeError: The differentiated Tensor at index 12 appears to not have been used in the graph. Set allo
+bert                           ERR AssertionError: non-embedding prologue module bert.embeddings.LayerNorm on a non-first stage: refused
+bert-generation                ERR AssertionError: non-embedding prologue module bert.embeddings.LayerNorm on a non-first stage: refused
+big_bird                       ERR RuntimeError: The differentiated Tensor at index 69 appears to not have been used in the graph. Set allo
+bigbird_pegasus                ERR RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow
+biogpt                         ERR TypeError: make_stage.<locals>.<lambda>() got an unexpected keyword argument 'position_ids'
+bitnet                         EXACT
+blenderbot                     ERR AssertionError: 
+blenderbot-small               ERR RuntimeError: The differentiated Tensor at index 12 appears to not have been used in the graph. Set allo
+bloom                          ERR AssertionError: non-embedding prologue module transformer.word_embeddings_layernorm on a non-first stage: 
+blt                            TIMEOUT
+camembert                      ERR AssertionError: non-embedding prologue module roberta.embeddings.LayerNorm on a non-first stage: refused
+codegen                        ERR RuntimeError: The size of tensor a (16) must match the size of tensor b (64) at non-singleton dimension 
+cohere                         EXACT
+cohere2                        EXACT
+cohere2_moe                    EXACT
+cohere_compass_text            ERR KeyError: 'full_attention'
+cpmant                         ERR AssertionError: non-embedding prologue module cpmant.position_bias on a non-first stage: refused
+ctrl                           EXACT
+cwm                            EXACT
+data2vec-text                  ERR AssertionError: non-embedding prologue module data2vec_text.embeddings.LayerNorm on a non-first stage: ref
+dbrx                           ERR ValueError: Found unknown kwargs={'_name_or_path': '', 'output_attentions': False}
+deepseek_v2                    ERR TypeError: topk(): argument 'k' must be int, not NoneType
+deepseek_v3                    EXACT
+deepseek_v32                   ERR RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow
+deepseek_v4                    ERR RuntimeError: The differentiated Tensor at index 9 appears to not have been used in the graph. Set allow
+diffllama                      EXACT
+doge                           EXACT
+dots1                          ERR TypeError: empty() takes 1 positional argument but 3 were given
+electra                        ERR AssertionError: non-embedding prologue module electra.embeddings.LayerNorm on a non-first stage: refused
+emu3                           TIMEOUT
+ernie                          ERR AssertionError: non-embedding prologue module ernie.embeddings.LayerNorm on a non-first stage: refused
+ernie4_5                       EXACT
+ernie4_5_moe                   ERR RuntimeError: One of the differentiated Tensors does not require grad
+exaone4                        EXACT
+exaone_moe                     EXACT
+falcon                         EXACT
+falcon_h1                      EXACT
+falcon_mamba                   DIFFER logits=True grads=8/42
+flex_olmo                      EXACT
+fuyu                           TIMEOUT
+gemma                          EXACT
+gemma2                         EXACT
+gemma3                         TIMEOUT
+gemma3_text                    EXACT
+gemma3n                        ERR ImportError: 
+TimmWrapperModel requires the PIL library but it was not found in your environment. You c
+gemma3n_text                   ERR ValueError: 'sliding_attention' is not in list
+gemma4                         TIMEOUT
+gemma4_assistant               ERR AttributeError: 'Gemma4AssistantConfig' object has no attribute 'vocab_size'
+gemma4_text                    ERR ValueError: `per_layer_config` keys must be integer layer indices in the range [0, 4); got [5, 11, 17,
+gemma4_unified                 TIMEOUT
+gemma4_unified_assistant       ERR AttributeError: 'Gemma4UnifiedAssistantConfig' object has no attribute 'vocab_size'
+gemma4_unified_text            ERR ValueError: `per_layer_config` keys must be integer layer indices in the range [0, 4); got [5, 11, 17,
+git                            ERR RuntimeError: The differentiated Tensor at index 4 appears to not have been used in the graph. Set allow
+glm                            EXACT
+glm4                           EXACT
+glm4_moe                       EXACT
+glm4_moe_lite                  EXACT
+glm_moe_dsa                    ERR RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow
+got_ocr2                       ERR AttributeError: 'GotOcr2Config' object has no attribute 'num_hidden_layers'
+gpt-sw3                        EXACT
+gpt2                           EXACT
+gpt_bigcode                    EXACT
+gpt_neo                        EXACT
+gpt_neox                       EXACT
+gpt_neox_japanese              EXACT
+gpt_oss                        EXACT
+gptj                           ERR RuntimeError: The size of tensor a (16) must match the size of tensor b (64) at non-singleton dimension 
+granite                        EXACT
+granite_swa                    EXACT
+granitemoe                     EXACT
+granitemoe_swa                 EXACT
+granitemoehybrid               ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: The dimensio
+granitemoeshared               EXACT
+helium                         EXACT
+hrm_text                       ERR AssertionError: 
+hunyuan_v1_dense               EXACT
+hunyuan_v1_moe                 EXACT
+hy_v3                          EXACT
+hy_v4                          ERR RuntimeError: The differentiated Tensor at index 9 appears to not have been used in the graph. Set allow
+hyperclovax                    EXACT
+inkling_text                   ERR AttributeError: 'InklingTextConfig' object has no attribute 'tie_word_embeddings'
+jais2                          EXACT
+jamba                          DIFFER logits=True grads=8/71
+jetmoe                         EXACT
+kimi_linear                    ERR RuntimeError: selected index k out of range
+laguna                         ERR RuntimeError: One of the differentiated Tensors does not require grad
+lfm2                           EXACT
+lfm2_moe                       ERR TypeError: 'NoneType' object is not subscriptable
+llama                          EXACT
+llama4                         TIMEOUT
+llama4_text                    EXACT
+longcat_flash                  ERR AssertionError: 
+mamba                          DIFFER logits=True grads=8/42
+mamba2                         ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: Inconsistent
+marian                         ERR RuntimeError: shape '[-1, 128]' is invalid for input of size 2788848
+mbart                          ERR RuntimeError: The differentiated Tensor at index 12 appears to not have been used in the graph. Set allo
+megatron-bert                  DIFFER logits=True grads=1/74
+mellum                         EXACT
+mimo_v2_flash                  EXACT
+minicpm3                       EXACT
+minimax                        EXACT
+minimax_m2                     EXACT
+minimax_m3_vl_text             EXACT
+ministral                      EXACT
+ministral3                     EXACT
+mistral                        EXACT
+mixtral                        EXACT
+mllama                         TIMEOUT
+modernbert-decoder             ERR AssertionError: non-embedding prologue module model.embeddings.norm on a non-first stage: refused
+moshi                          EXACT
+mpt                            EXACT
+musicgen                       ERR StrictDataclassFieldValidationError: Validation error for field 'text_encoder':
+    TypeError: Field 'text_encoder' with value 
+musicgen_melody                ERR StrictDataclassFieldValidationError: Validation error for field 'text_encoder':
+    TypeError: Field 'text_encoder' with value 
+mvp                            ERR RuntimeError: The differentiated Tensor at index 12 appears to not have been used in the graph. Set allo
+nanochat                       EXACT
+nemotron                       ERR TypeError: unsupported operand type(s) for //: 'int' and 'NoneType'
+nemotron_h                     ERR AttributeError: 'Pass' object has no attribute 'block_type'
+olmo                           EXACT
+olmo2                          EXACT
+olmo3                          EXACT
+olmo_hybrid                    EXACT
+olmoe                          EXACT
+openai-gpt                     ERR IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C+
+opt                            ERR AssertionError: non-embedding prologue module model.decoder.project_in on a non-first stage: refused
+pegasus                        ERR RuntimeError: One of the differentiated Tensors does not require grad
+persimmon                      EXACT
+phi                            EXACT
+phi3                           EXACT
+phi4_multimodal                ERR RuntimeError: The differentiated Tensor at index 26 appears to not have been used in the graph. Set allo
+phimoe                         DIFFER logits=False grads=46/48
+plbart                         ERR ValueError: embed_dim must be divisible by num_heads (got `embed_dim`: 64 and `num_heads`: 12).
+prophetnet                     ERR RuntimeError: The differentiated Tensor at index 15 appears to not have been used in the graph. Set allo
+qwen2                          EXACT
+qwen2_moe                      EXACT
+qwen3                          EXACT
+qwen3_5                        TIMEOUT
+qwen3_5_moe                    TIMEOUT
+qwen3_5_moe_text               EXACT
+qwen3_5_text                   EXACT
+qwen3_moe                      EXACT
+qwen3_next                     EXACT
+qwen4_exp                      ERR TypeError: unsupported operand type(s) for //: 'NoneType' and 'NoneType'
+qwen4_exp_text                 ERR TypeError: unsupported operand type(s) for //: 'NoneType' and 'NoneType'
+recurrent_gemma                EXACT
+reformer                       ERR AssertionError: If you want to use `ReformerModelWithLMHead` make sure that `is_decoder=True`.
+rembert                        ERR AssertionError: non-embedding prologue module rembert.embeddings.LayerNorm on a non-first stage: refused
+roberta                        ERR AssertionError: non-embedding prologue module roberta.embeddings.LayerNorm on a non-first stage: refused
+roberta-prelayernorm           ERR AssertionError: non-embedding prologue module roberta_prelayernorm.embeddings.LayerNorm on a non-first sta
+roc_bert                       ERR AssertionError: non-embedding prologue module roc_bert.embeddings.map_inputs_layer on a non-first stage: r
+roformer                       ERR RuntimeError: One of the differentiated Tensors does not require grad
+rwkv                           EXACT
+seed_oss                       EXACT
+smollm3                        EXACT
+solar_open                     EXACT
+stablelm                       EXACT
+starcoder2                     EXACT
+trocr                          ERR RuntimeError: The differentiated Tensor at index 14 appears to not have been used in the graph. Set allo
+vaultgemma                     EXACT
+whisper                        ERR ValueError: embed_dim must be divisible by num_heads (got `embed_dim`: 64 and `num_heads`: 6).
+xglm                           EXACT
+xlm                            ERR AssertionError: a non-layer module runs between layers: refused
+xlm-roberta                    ERR AssertionError: non-embedding prologue module roberta.embeddings.LayerNorm on a non-first stage: refused
+xlm-roberta-xl                 DIFFER logits=True grads=1/74
+xlnet                          ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: `d_head` (64
+xlstm                          ERR AssertionError: 
+xmod                           ERR ValueError: Input language unknown. Please call `XmodPreTrainedModel.set_default_language()`
+youtu                          EXACT
+zamba                          ERR ValueError: There is an issue with your definition of `tie_weights_keys` for ^layers.2.shared_transf:^
+zamba2                         ERR RuntimeError: shape '[2, 24, 8, 640]' is invalid for input of size 6144
+zaya                           ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: ZAYA current

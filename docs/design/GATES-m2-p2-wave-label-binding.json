@@ -1,0 +1,90 @@
+{
+  "milestone": "m2-p2-wave-label-binding",
+  "consecutive": 2,
+  "rungs": [
+    "factory",
+    "build",
+    "syntax",
+    "fmt",
+    "lint",
+    "types",
+    "discipline",
+    "invariants",
+    "claims",
+    "unit",
+    "integration",
+    "multiworker",
+    "oracle",
+    "identity",
+    "chaos",
+    "wan",
+    "full",
+    "static",
+    "security",
+    "fuzz"
+  ],
+  "pinned": [
+    {
+      "id": "guarded-tests-unchanged",
+      "cmd": "printf '%s  %s\\n' e7ffb96f5ed60dc2246ca65d8b159055d3a20938364856c51d0c208c0a0328b1 tests/chaos/test_recovery.py 92e20b25f800835f18530b8153c0b7a626eeed17d28c48b56d909113e2251245 tests/helpers/cluster.py 051822a55ad4d154378d28e16f5501faf232e800da2e874a84fdd0a2ef4f7b2a tests/multiworker/test_fleet_state_exact.py | shasum -a 256 -c - || exit 1; x=$(uv run python -I - <<'PY'\nimport ast, hashlib\nsrc = open(\"tests/helpers/exact.py\", \"rb\").read()\nfns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == \"fleet_manifest\"]\nif len(fns) != 1:\n    print(\"no-single-fleet_manifest\")\nelse:\n    f = fns[0]\n    a = min([f.lineno] + [d.lineno for d in f.decorator_list]) - 1\n    lines = src.splitlines(keepends=True)\n    print(hashlib.sha256(b\"\".join(lines[:a] + lines[f.end_lineno:])).hexdigest())\nPY\n) || { echo \"EXACT_REST_ERROR\"; exit 3; }; echo \"EXACT_REST_SHA=$x\"; [ \"$x\" = 606039e9c1a2e5ca2c0d244ad69047cc97953721b37a56fdc218c1cfc6c953d7 ] || exit 1; out=$(grep -rnE --include='*.py' '(^|[^A-Za-z0-9_])(mark[[:space:]]*\\.[[:space:]]*(skip|skipif|xfail|mps)|pytest[[:space:]]*\\.[[:space:]]*(skip|xfail|importorskip|exit)|_pytest|unittest[[:space:]]*\\.[[:space:]]*(skip|skipIf|skipUnless|expectedFailure)|applymarker|add_marker|SkipTest|getattr[[:space:]]*\\([[:space:]]*pytest|pytest_collection_modifyitems|pytest_deselected|collect_ignore)([^A-Za-z0-9_]|$)|from[[:space:]]+(pytest|unittest|_pytest)([[:space:]]|\\.)|import[[:space:]]+(pytest|unittest)[[:space:]]+as' tests); s=$?; [ \"$s\" -le 1 ] || { echo \"GREP_ERROR=$s\"; exit 2; }; norm=$(printf '%s\\n' \"$out\" | sed -E 's/^([^:]+):[0-9]+:[[:space:]]*/\\1:/' | LC_ALL=C sort); printf '%s\\n' \"$norm\"; d=$(printf '%s\\n' \"$norm\" | shasum -a 256 | cut -c1-64); echo \"MARKERS_SHA=$d\"; [ \"$d\" = 9841c3222d276dc6eb87ad45fe0b418fd6d7d580a6f3299e119ca8b2117dbb6d ]",
+      "repeat": 1
+    },
+    {
+      "id": "ship-protocol-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_fault_tolerance.py::test_ship_never_labels_a_newer_shard_with_an_older_step tests/unit/test_fault_tolerance.py::test_concurrent_ships_never_cross_waves tests/unit/test_fault_tolerance.py::test_restore_rewrites_the_sidecar tests/unit/test_fault_tolerance.py::test_export_wave_writes_each_sidecar 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^4 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20
+    },
+    {
+      "id": "resume-binding-unit",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_runtime_spec.py::test_resume_refuses_a_shard_its_sidecar_does_not_name tests/unit/test_runtime_spec.py::test_resume_refuses_a_shard_without_a_sidecar tests/unit/test_runtime_spec.py::test_checkpoint_writes_through_the_seqlock 2>&1); s=$?; printf '%s\\n' \"$o\"; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^3 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20
+    },
+    {
+      "id": "would-fail-mutants",
+      "cmd": "p=$(mktemp -d) || exit 1; trap 'rm -rf \"$p\"' EXIT; cat >\"$p/wf_mutant_p2.py\" <<'PY' || exit 1\nimport os\n\nMODE = os.environ[\"WF_MUTANT\"]\nHIT = os.environ[\"WF_MUTANT_HIT\"]\n\n\ndef _hit():\n    with open(HIT, \"a\") as f:\n        f.write(MODE + \"\\n\")\n\n\nclass _NoLock:\n    def acquire(self, blocking=True, timeout=-1):\n        return True\n\n    def release(self):\n        pass\n\n    def locked(self):\n        return False\n\n    def __enter__(self):\n        return True\n\n    def __exit__(self, *exc):\n        return False\n\n\ndef pytest_sessionstart(session):\n    from wantrain.fault_tolerance import checkpoint\n\n    if MODE in (\"writer-order\", \"stage-bypass\"):\n\n        def invalidate(side):\n            _hit()\n\n        checkpoint.invalidate_sidecar = invalidate\n    elif MODE == \"ship-unlocked\":\n        from wantrain.worker.agent import WorkerAgent\n\n        lock = _NoLock()\n\n        def get(self):\n            _hit()\n            return lock\n\n        WorkerAgent._ship_lock = property(get, lambda self, value: None)\n    elif MODE == \"restore-stale\":\n        from wantrain.worker import agent\n\n        orig = agent.WorkerAgent._on_restore\n\n        def restore(self, msg, path):\n            _hit()\n            real = checkpoint.write_sidecar\n            had = hasattr(agent, \"write_sidecar\")\n            prev = getattr(agent, \"write_sidecar\", None)\n\n            def skip(side, step):\n                pass\n\n            checkpoint.write_sidecar = skip\n            if had:\n                agent.write_sidecar = skip\n            try:\n                return orig(self, msg, path)\n            finally:\n                checkpoint.write_sidecar = real\n                if had:\n                    agent.write_sidecar = prev\n\n        agent.WorkerAgent._on_restore = restore\n    elif MODE == \"resume-trust\":\n        from wantrain.runtime import stage\n\n        def trust(side, shard_step):\n            _hit()\n\n        stage.check_resume_step = trust\n        checkpoint.check_resume_step = trust\n    else:\n        raise RuntimeError(\"unknown WF_MUTANT \" + MODE)\nPY\nbad=0; for m in \"writer-order tests/unit/test_fault_tolerance.py::test_ship_never_labels_a_newer_shard_with_an_older_step\" \"ship-unlocked tests/unit/test_fault_tolerance.py::test_concurrent_ships_never_cross_waves\" \"restore-stale tests/unit/test_fault_tolerance.py::test_restore_rewrites_the_sidecar\" \"resume-trust tests/unit/test_runtime_spec.py::test_resume_refuses_a_shard_its_sidecar_does_not_name\" \"stage-bypass tests/unit/test_runtime_spec.py::test_checkpoint_writes_through_the_seqlock\"; do set -- $m; rm -f \"$p/hit\"; o=$(WF_MUTANT=\"$1\" WF_MUTANT_HIT=\"$p/hit\" PYTHONPATH=\"$p${PYTHONPATH:+:$PYTHONPATH}\" uv run pytest -q --color=no -p no:randomly --runxfail -p wf_mutant_p2 \"$2\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 40; if [ ! -s \"$p/hit\" ]; then v=not-reached; elif [ \"$s\" -ne 1 ] || ! grep -qE '^1 failed(, [0-9]+ warnings?)? in ' <<<\"$o\"; then v=survived; elif ! grep -qE '^E +(AssertionError|assert )' <<<\"$o\" || grep -qE '^E +[A-Za-z_.]*(TypeError|ImportError|ModuleNotFoundError|AttributeError|NameError|KeyError)' <<<\"$o\"; then v=not-an-assertion; else v=caught; fi; echo \"MUTANT $1 $2 $v\"; [ \"$v\" = caught ] || bad=$((bad+1)); done; echo \"MUTANTS_SURVIVING=$bad\"; [ \"$bad\" -eq 0 ]",
+      "repeat": 1,
+      "timeoutSec": 900
+    },
+    {
+      "id": "chaos-dead-worker-loaded",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/chaos/test_recovery.py::test_dead_worker_is_replaced_and_the_run_stays_exact 2>&1); s=$?; printf '%s\\n' \"$o\"; if [ \"$s\" -eq 0 ] && grep -qE '^1 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"; then exit 0; fi; sig=$(grep -oE 'fleet cannot progress|fleet stalled' <<<\"$o\" | head -n 1); if [ -n \"$sig\" ]; then mkdir -p .factory/runs/m2-p2-wave-label-binding || exit 2; printf '%s\\n' \"chaos-dead-worker-loaded: $sig\" >>.factory/runs/m2-p2-wave-label-binding/h1-seen.log || exit 2; echo \"H1_SIGNATURE=$sig\"; fi; grep -q 'mislabeled wave' <<<\"$o\" && echo \"TRIPWIRE=mislabeled wave\"; [ \"$s\" -ne 0 ] && exit \"$s\"; exit 1",
+      "repeat": 20,
+      "load": {
+        "cmd": "uv run python -c 'sum(i*i for i in range(10**8))'",
+        "copies": 2
+      },
+      "timeoutSec": 900
+    },
+    {
+      "id": "chaos-dead-worker-plain",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/chaos/test_recovery.py::test_dead_worker_is_replaced_and_the_run_stays_exact 2>&1); s=$?; printf '%s\\n' \"$o\"; if [ \"$s\" -eq 0 ] && grep -qE '^1 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"; then exit 0; fi; sig=$(grep -oE 'fleet cannot progress|fleet stalled' <<<\"$o\" | head -n 1); if [ -n \"$sig\" ]; then mkdir -p .factory/runs/m2-p2-wave-label-binding || exit 2; printf '%s\\n' \"chaos-dead-worker-plain: $sig\" >>.factory/runs/m2-p2-wave-label-binding/h1-seen.log || exit 2; echo \"H1_SIGNATURE=$sig\"; fi; grep -q 'mislabeled wave' <<<\"$o\" && echo \"TRIPWIRE=mislabeled wave\"; [ \"$s\" -ne 0 ] && exit \"$s\"; exit 1",
+      "repeat": 10,
+      "timeoutSec": 900
+    },
+    {
+      "id": "heal-state-exact-loaded",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/multiworker/test_fleet_state_exact.py::test_a_healed_fleet_is_byte_exact 2>&1); s=$?; printf '%s\\n' \"$o\"; if [ \"$s\" -eq 0 ] && grep -qE '^1 passed(, [0-9]+ warnings?)? in ' <<<\"$o\"; then exit 0; fi; sig=$(grep -oE 'fleet cannot progress|fleet stalled' <<<\"$o\" | head -n 1); if [ -n \"$sig\" ]; then mkdir -p .factory/runs/m2-p2-wave-label-binding || exit 2; printf '%s\\n' \"heal-state-exact-loaded: $sig\" >>.factory/runs/m2-p2-wave-label-binding/h1-seen.log || exit 2; echo \"H1_SIGNATURE=$sig\"; fi; grep -q 'mislabeled wave' <<<\"$o\" && echo \"TRIPWIRE=mislabeled wave\"; [ \"$s\" -ne 0 ] && exit \"$s\"; exit 1",
+      "repeat": 10,
+      "load": {
+        "cmd": "uv run python -c 'sum(i*i for i in range(10**8))'",
+        "copies": 2
+      },
+      "timeoutSec": 900
+    },
+    {
+      "id": "protocol-cost",
+      "cmd": "uv run python -I - <<'PY'\nimport json, os, statistics, tempfile, time\nfrom wantrain.fault_tolerance.checkpoint import save_shard, sidecar_of, read_sidecar\nd = tempfile.mkdtemp()\np = os.path.join(d, \"x_ckpt_rank0p0.pt\")\nblob = os.urandom(1 << 20)\ndef body(tmp):\n    with open(tmp, \"wb\") as f:\n        f.write(blob)\ndef old(step):\n    tmp = p + \".tmp\"\n    body(tmp)\n    os.replace(tmp, p)\n    with open(p[:-3] + \".step.json\", \"w\") as f:\n        json.dump({\"step\": step}, f)\ndef new(step):\n    save_shard(p, step, body)\nfor i in range(20):\n    old(i)\n    new(i)\no, n = [], []\nfor i in range(300):\n    t = time.perf_counter(); old(i); o.append(time.perf_counter() - t)\n    t = time.perf_counter(); new(i); n.append(time.perf_counter() - t)\nassert read_sidecar(sidecar_of(p)) == 299, \"save_shard did not leave the sidecar naming the last step\"\nmo, mn = statistics.median(o) * 1e6, statistics.median(n) * 1e6\nprint(f\"OLD_US={mo:.1f}\")\nprint(f\"NEW_US={mn:.1f}\")\nprint(f\"PROTO_ADDED_US={mn - mo:.1f}\")\nPY",
+      "repeat": 3,
+      "metric": {
+        "pattern": "PROTO_ADDED_US=(-?[0-9]+(?:\\.[0-9]+)?)",
+        "op": "<=",
+        "value": 1000
+      }
+    },
+    {
+      "id": "h1-never-seen",
+      "cmd": "uv run python -I - <<'PY'\nimport json, os, re, sys\nd = \".factory/runs/m2-p2-wave-label-binding\"\nmarker = os.path.join(d, \"h1-seen.log\")\nstamp = os.path.join(d, \"phase-start\")\nreport = \".factory/gates/m2-p2-wave-label-binding.json\"\nSTALL = re.compile(r\"fleet cannot progress|fleet stalled\")\nHEAL = re.compile(r\"tests/chaos/test_recovery\\.py|tests/multiworker/test_fleet_state_exact\\.py\")\nRUNGS = (\"rung:chaos\", \"rung:multiworker\", \"rung:full\")\nONLY_HEAL = (\"rung:chaos\", \"rung:multiworker\")\nTEST_RUNGS = (\"rung:unit\", \"rung:integration\", \"rung:oracle\", \"rung:identity\", \"rung:wan\")\nPINS = (\"pinned:chaos-dead-worker-loaded\", \"pinned:chaos-dead-worker-plain\", \"pinned:heal-state-exact-loaded\")\nif not os.path.isfile(stamp):\n    print(\"H1_ERROR=no \" + stamp + \": the phase precondition did not run\")\n    sys.exit(2)\n\n\ndef complete_elsewhere(det):\n    m = re.search(r\"\\nfailures:\\n(.*?)\\n--- tail ---\", det, re.S)\n    if not m:\n        return False\n    lines = m.group(1).split(\"\\n\")\n    return len(lines) < 40 and any(l.lstrip().startswith(\"FAILED \") for l in lines)\n\n\nseen = []\nif os.path.isfile(report) and os.path.getmtime(report) > os.path.getmtime(stamp):\n    with open(report) as f:\n        r = json.load(f)\n    # A rung that did not run (skipped behind a failing blocking rung, n/a, not run) has not failed and ran no heal test.\n    gates = [(str(g.get(\"id\")), str(g.get(\"detail\", \"\"))) for g in r.get(\"gates\", []) if g.get(\"ok\") is not True]\n    gates = [(gid, det) for gid, det in gates if not gid.startswith(\"rung:\") or det.startswith(\"fail\")]\n    deterministic = [gid for gid, det in gates if gid in PINS and re.match(r\"0/[0-9]+ passed, then fail \", det) and not STALL.search(det)]\n    elsewhere = [gid for gid, _ in gates if gid in TEST_RUNGS]\n    for gid, det in gates:\n        if gid not in RUNGS + PINS:\n            continue\n        m, why = STALL.search(det), None\n        if m:\n            why = m.group(0)\n        elif gid in RUNGS and \"TIMED OUT\" in det:\n            why = \"timed out\"\n        elif gid in PINS and re.match(r\"[0-9]+/[0-9]+ passed, then hang \", det):\n            why = \"killed by its timeout\"\n        elif gid in PINS and re.match(r\"[1-9][0-9]*/[0-9]+ passed, then \", det):\n            why = \"intermittent: earlier repetitions passed on the same tree\"\n        elif gid in deterministic:\n            why = None\n        elif gid in RUNGS and deterministic:\n            why = None\n        elif gid in ONLY_HEAL or HEAL.search(det):\n            why = \"a heal-file test failed\" + (\" (mislabeled wave)\" if \"mislabeled wave\" in det else \"\")\n        elif gid == \"rung:full\" and not complete_elsewhere(det) and not elsewhere:\n            why = \"rung:full failed and its kept output (600 characters) cannot rule out a heal-file test\"\n        if why:\n            seen.append(f\"{gid}: {why} (previous verify, tree {r.get('tree')})\")\nif seen:\n    with open(marker, \"a\") as f:\n        f.write(\"\".join(s + \"\\n\" for s in seen))\nif os.path.exists(marker):\n    with open(marker) as f:\n        lines = f.read().splitlines()\n    print(\"\\n\".join(lines))\n    print(f\"H1_SEEN={len(lines)}\")\n    sys.exit(1)\nprint(\"H1_SEEN=0\")\nPY",
+      "repeat": 1
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+WT_PHASE train
+WT_STAGE rank=1 peer=0 device=cuda partition=[[0, 19], [19, 36]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET listen {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_P2P_BOUND hop=prev0 st=0 pe=0 peer=afce005267d51d49b4f82e7260f8ca70
+WT_METRIC {"step": 0, "loss": 11.056196212768555, "t": 1791844252.0781775}
+WT_OPT overlap layers=17 params=195
+WT_TELEM {"v": 1, "step": 0, "rank": 1, "peer": 0, "step_ms": 280882.7780819847, "emit_us": 0.0, "ops": {"F": {"n": 32, "med_ms": 39.38489203574136}, "B": {"n": 32, "med_ms": 135.51698700757697}, "W": {"n": 32, "med_ms": 45.434274506988004}, "OPT": {"n": 1, "med_ms": 63.82914399728179}}, "stall_ms": 273358.25615841895, "hops": {"prev0": {"frames": 248, "bytes": 242720732, "busy_ms": 8764.514768961817}}}
+WT_MEM step=0 alloc=47.57 peak=70.35 reserved=71.04
+WT_STEP 0
+WT_METRIC {"step": 1, "loss": 15.767799377441406, "t": 1791844544.0093396}
+WT_TELEM {"v": 1, "step": 1, "rank": 1, "peer": 0, "step_ms": 45467.086313990876, "emit_us": 4268.612014129758, "ops": {"F": {"n": 32, "med_ms": 38.39760800474323}, "B": {"n": 32, "med_ms": 157.18819049652666}, "W": {"n": 32, "med_ms": 33.270541520323604}, "OPT": {"n": 1, "med_ms": 2.0005489932373166}}, "stall_ms": 38056.6240651533, "hops": {"prev0": {"frames": 256, "bytes": 245194886, "busy_ms": 5699.379069090355}}}
+WT_MEM step=1 alloc=47.57 peak=70.35 reserved=71.36
+WT_STEP 1
+WT_METRIC {"step": 2, "loss": 11.484028816223145, "t": 1791844559.6764915}
+WT_TELEM {"v": 1, "step": 2, "rank": 1, "peer": 0, "step_ms": 31126.58595701214, "emit_us": 2918.765996582806, "ops": {"F": {"n": 32, "med_ms": 35.84173446870409}, "B": {"n": 32, "med_ms": 141.5842690039426}, "W": {"n": 32, "med_ms": 39.580240001669154}, "OPT": {"n": 1, "med_ms": 1.7390010179951787}}, "stall_ms": 23952.936785062775, "hops": {"prev0": {"frames": 225, "bytes": 227807147, "busy_ms": 3703.8943759398535}}}
+WT_MEM step=2 alloc=47.57 peak=70.35 reserved=71.67
+WT_STEP 2
+WT_METRIC {"step": 3, "loss": 9.71821117401123, "t": 1791844591.5794075}
+WT_TELEM {"v": 1, "step": 3, "rank": 1, "peer": 0, "step_ms": 18392.24395499332, "emit_us": 2597.7249606512487, "ops": {"F": {"n": 32, "med_ms": 41.696765983942896}, "B": {"n": 32, "med_ms": 146.56107701011933}, "W": {"n": 32, "med_ms": 40.008137992117554}, "OPT": {"n": 1, "med_ms": 1.776545017492026}}, "stall_ms": 10911.701417877339, "hops": {"prev0": {"frames": 224, "bytes": 229806043, "busy_ms": 3444.111955119297}}}
+WT_MEM step=3 alloc=47.57 peak=70.35 reserved=72.34
+WT_STEP 3
+WT_METRIC {"step": 4, "loss": 9.236808776855469, "t": 1791844609.0337174}
+WT_TELEM {"v": 1, "step": 4, "rank": 1, "peer": 0, "step_ms": 30119.52587898122, "emit_us": 4206.095996778458, "ops": {"F": {"n": 32, "med_ms": 71.41954998951405}, "B": {"n": 32, "med_ms": 155.49939702032134}, "W": {"n": 32, "med_ms": 37.16652397997677}, "OPT": {"n": 1, "med_ms": 1.6202350379899144}}, "stall_ms": 22063.3600410074, "hops": {"prev0": {"frames": 224, "bytes": 227375957, "busy_ms": 3637.662074121181}}}
+WT_MEM step=4 alloc=47.57 peak=70.35 reserved=72.65
+WT_STEP 4
+WT_METRIC {"step": 5, "loss": 7.930956840515137, "t": 1791844666.0004709}

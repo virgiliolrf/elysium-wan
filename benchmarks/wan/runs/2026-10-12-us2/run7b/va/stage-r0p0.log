@@ -1,0 +1,2 @@
+WT_PHASE train
+WT_STAGE rank=0 peer=0 device=cuda partition=[[0, 9], [9, 16]] compute=bf16 boundary=bf16 codec=planes resume=False

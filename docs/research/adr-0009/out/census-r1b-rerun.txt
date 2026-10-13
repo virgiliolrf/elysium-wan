@@ -1,0 +1,6 @@
+rwkv                           EXACT
+falcon_mamba                   EXACT unconverted=['backbone.layers.0.mixer.dt_proj', 'backbone.layers.1.mixer.dt_proj', 'backbone.layers.2.mixer.dt_proj', 'backbone.layers.3.mixer.dt_proj', 'lm_head']
+gemma                          EXACT unconverted=['lm_head']
+gemma2                         EXACT unconverted=['lm_head']
+flex_olmo                      EXACT
+falcon_h1                      EXACT

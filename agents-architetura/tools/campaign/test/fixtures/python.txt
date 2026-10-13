@@ -1,0 +1,11 @@
+____ test_reorder ____
+Traceback (most recent call last):
+  File "/home/ci/.venv/lib/python3.12/site-packages/_pytest/python.py", line 159, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/work/repo/tests/chaos/test_reorder.py", line 22, in test_reorder
+    run_round(sim)
+  File "/work/repo/src/wan/sync/round.py", line 71, in run_round
+    apply(update)
+  File "/work/repo/src/wan/sync/apply.py", line 15, in apply
+    raise StaleRoundError(f"round {update.round} < {state.round}")
+wan.sync.errors.StaleRoundError: round 41 < 42

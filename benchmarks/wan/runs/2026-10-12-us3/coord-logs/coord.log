@@ -1,0 +1,17 @@
+[coord info] COORDINATOR_ID 8420098b1a830c270f5f85b0881d72a9
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-230945-760108: starting
+[coord info] registered va (9d8da5a6b5) key=afce005267d51d49b4f82e7260f8ca70 203.0.113.19:40424 cuda/NVIDIA H100 NVL 551.187 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered cz (517d6b66e9) key=77a438a11833c2603039ea6e8613b496 203.0.113.12:54967 cuda/NVIDIA H100 NVL 541.122 TFLOPs 92.6 GB region=cz declared=['region']
+[coord info] selection: 2 node(s) in *: va(NVIDIA H100 NVL, 551.19 TFLOPs, 92.6 GB), cz(NVIDIA H100 NVL, 541.12 TFLOPs, 92.6 GB); one device model, so the run stays bit-comparable against itself; WARNING: a previous run measured a hop of this fleet at 15-44 Mbps, RTT 100 ms
+[coord info] probe matrix (Mbps): [[null, 16.0], [16.0, null]]
+[coord info] link va->cz: fwd 17.1 rev 40.57 bidir 16.26+41.58 Mbps, RTT 103.31 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 119.2 Mbps, link is 17.1 Mbps. Expect residual stall -- WARNING: estimated 146.03 GB per stage exceeds the 92.6 GB budget
+[coord info] zero-bubble schedule: predicted 16.100 s/step, bubble 47.0%; F/B/W ms per stage [[66.095, 140.162, 63.024], [66.089, 137.396, 61.009]], hop comm ms [3835.793], peer weights [[1.0], [1.0]]
+[coord info] fit rank 0: peak 62.57 GiB of 78.69 GiB budget
+[coord info] fit rank 1: peak 69.03 GiB of 78.72 GiB budget
+[coord info] placement: [['va(cuda/NVIDIA H100 NVL)'], ['cz(cuda/NVIDIA H100 NVL)']] partition [[0, 19], [19, 36]]
+[coord warn] ckpt_every=0: a dead worker cannot be healed, only restarted from step 0
+[coord info] launching attempt 1 (resume=False) on 2 slot(s)
+[coord warn] handshake from 10.0.0.253 failed: handshake message too large

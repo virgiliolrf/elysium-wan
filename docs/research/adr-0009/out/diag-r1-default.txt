@@ -1,0 +1,3 @@
+mamba default {'logits': True, 'grads': 42, 'differ': 8} first_bad ['backbone.layers.0.mixer.dt_proj.weight', 'backbone.layers.0.mixer.dt_proj.bias']
+megatron-bert default {'logits': True, 'grads': 74, 'differ': 1} first_bad ['cls.predictions.bias']
+xlm-roberta-xl default {'logits': True, 'grads': 74, 'differ': 1} first_bad ['lm_head.bias']

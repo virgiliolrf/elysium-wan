@@ -1,0 +1,69 @@
+WT_PHASE train
+WT_STAGE rank=0 peer=0 device=cuda partition=[[0, 18], [18, 34]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=002b7ed2a67f6560c278a47f40bc8362
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=002b7ed2a67f6560c278a47f40bc8362
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=002b7ed2a67f6560c278a47f40bc8362
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=002b7ed2a67f6560c278a47f40bc8362
+/workspace/elysium/src/wantrain/model/wgrad.py:201: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:410.)
+  gx = g.matmul(weight) if ctx.needs_input_grad[0] else None
+WT_TELEM {"v": 1, "step": 0, "rank": 0, "peer": 0, "step_ms": 15749.589841812849, "emit_us": 0.0, "ops": {"F": {"n": 16, "med_ms": 22.555104456841946}, "B": {"n": 16, "med_ms": 66.8031305540353}, "W": {"n": 16, "med_ms": 9.246207075193524}, "OPT": {"n": 1, "med_ms": 8867.863616906106}}, "stall_ms": 4908.711337018758, "hops": {"next0": {"frames": 64, "bytes": 57448392, "busy_ms": 4226.233484223485}}}
+WT_MEM step=0 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 0
+WT_TELEM {"v": 1, "step": 1, "rank": 0, "peer": 0, "step_ms": 9899.373790249228, "emit_us": 1517.2469429671764, "ops": {"F": {"n": 16, "med_ms": 22.822529077529907}, "B": {"n": 16, "med_ms": 79.9627979286015}, "W": {"n": 16, "med_ms": 14.235286507755518}, "OPT": {"n": 1, "med_ms": 520.7252008840442}}, "stall_ms": 7521.690139081329, "hops": {"next0": {"frames": 64, "bytes": 56131600, "busy_ms": 5916.690496727824}}}
+WT_MEM step=1 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 1
+WT_TELEM {"v": 1, "step": 2, "rank": 0, "peer": 0, "step_ms": 10504.9108248204, "emit_us": 995.4469278454781, "ops": {"F": {"n": 16, "med_ms": 22.35573111101985}, "B": {"n": 16, "med_ms": 71.09823008067906}, "W": {"n": 16, "med_ms": 13.278466183692217}, "OPT": {"n": 1, "med_ms": 535.9861361794174}}, "stall_ms": 8245.34331727773, "hops": {"next0": {"frames": 48, "bytes": 50181620, "busy_ms": 5852.51935152337}}}
+WT_MEM step=2 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 2
+WT_TELEM {"v": 1, "step": 3, "rank": 0, "peer": 0, "step_ms": 7304.164797067642, "emit_us": 888.4770795702934, "ops": {"F": {"n": 16, "med_ms": 22.359531139954925}, "B": {"n": 16, "med_ms": 59.21179288998246}, "W": {"n": 16, "med_ms": 9.716107975691557}, "OPT": {"n": 1, "med_ms": 519.4572098553181}}, "stall_ms": 5224.624790716916, "hops": {"next0": {"frames": 48, "bytes": 47395892, "busy_ms": 4838.632736355066}}}
+WT_MEM step=3 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 3
+WT_TELEM {"v": 1, "step": 4, "rank": 0, "peer": 0, "step_ms": 9104.419209063053, "emit_us": 864.9230003356934, "ops": {"F": {"n": 16, "med_ms": 22.34352706000209}, "B": {"n": 16, "med_ms": 59.41032851114869}, "W": {"n": 16, "med_ms": 13.48776905797422}, "OPT": {"n": 1, "med_ms": 515.2888726443052}}, "stall_ms": 7087.189378682524, "hops": {"next0": {"frames": 48, "bytes": 45385291, "busy_ms": 4825.386509299278}}}
+WT_MEM step=4 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 4
+WT_TELEM {"v": 1, "step": 5, "rank": 0, "peer": 0, "step_ms": 7951.794549822807, "emit_us": 975.6679646670818, "ops": {"F": {"n": 16, "med_ms": 22.208319511264563}, "B": {"n": 16, "med_ms": 59.673415729776025}, "W": {"n": 16, "med_ms": 13.462505768984556}, "OPT": {"n": 1, "med_ms": 515.2199831791222}}, "stall_ms": 5911.599796731025, "hops": {"next0": {"frames": 48, "bytes": 44675402, "busy_ms": 5076.239755377173}}}
+WT_MEM step=5 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 5
+WT_TELEM {"v": 1, "step": 6, "rank": 0, "peer": 0, "step_ms": 6969.980196096003, "emit_us": 877.3007430136204, "ops": {"F": {"n": 16, "med_ms": 22.356806555762887}, "B": {"n": 16, "med_ms": 59.62335504591465}, "W": {"n": 16, "med_ms": 13.424379052594304}, "OPT": {"n": 1, "med_ms": 515.5517128296196}}, "stall_ms": 4949.282348155975, "hops": {"next0": {"frames": 48, "bytes": 44015671, "busy_ms": 4380.462126340717}}}
+WT_MEM step=6 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 6
+WT_TELEM {"v": 1, "step": 7, "rank": 0, "peer": 0, "step_ms": 14757.457080297172, "emit_us": 850.5405858159065, "ops": {"F": {"n": 16, "med_ms": 22.362989839166403}, "B": {"n": 16, "med_ms": 57.78731941245496}, "W": {"n": 16, "med_ms": 8.525313576683402}, "OPT": {"n": 1, "med_ms": 528.3018215559423}}, "stall_ms": 12666.840005200356, "hops": {"next0": {"frames": 48, "bytes": 43678125, "busy_ms": 4838.66410003975}}}
+WT_MEM step=7 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 7
+WT_TELEM {"v": 1, "step": 8, "rank": 0, "peer": 0, "step_ms": 8379.959247075021, "emit_us": 865.9237064421177, "ops": {"F": {"n": 16, "med_ms": 22.288733860477805}, "B": {"n": 16, "med_ms": 61.87883298844099}, "W": {"n": 16, "med_ms": 13.576320605352521}, "OPT": {"n": 1, "med_ms": 515.4354791156948}}, "stall_ms": 6312.2415211983025, "hops": {"next0": {"frames": 48, "bytes": 43468062, "busy_ms": 3688.7653875164688}}}
+WT_MEM step=8 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 8
+WT_TELEM {"v": 1, "step": 9, "rank": 0, "peer": 0, "step_ms": 8625.696716364473, "emit_us": 852.8754115104675, "ops": {"F": {"n": 16, "med_ms": 22.22513291053474}, "B": {"n": 16, "med_ms": 59.66116348281503}, "W": {"n": 16, "med_ms": 13.473641593009233}, "OPT": {"n": 1, "med_ms": 526.4172409661114}}, "stall_ms": 6566.841831896454, "hops": {"next0": {"frames": 48, "bytes": 43296466, "busy_ms": 4882.708987221122}}}
+WT_MEM step=9 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 9
+WT_TELEM {"v": 1, "step": 10, "rank": 0, "peer": 0, "step_ms": 16280.503142159432, "emit_us": 827.6570588350296, "ops": {"F": {"n": 16, "med_ms": 22.31021993793547}, "B": {"n": 16, "med_ms": 59.51390694826841}, "W": {"n": 16, "med_ms": 13.37845460511744}, "OPT": {"n": 1, "med_ms": 514.632809907198}}, "stall_ms": 14163.463439326733, "hops": {"next0": {"frames": 48, "bytes": 43263590, "busy_ms": 6001.584907062352}}}
+WT_MEM step=10 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 10
+WT_TELEM {"v": 1, "step": 11, "rank": 0, "peer": 0, "step_ms": 21099.681814201176, "emit_us": 1057.6797649264336, "ops": {"F": {"n": 16, "med_ms": 22.59991690516472}, "B": {"n": 16, "med_ms": 59.41538792103529}, "W": {"n": 16, "med_ms": 13.386290520429611}, "OPT": {"n": 1, "med_ms": 515.3949428349733}}, "stall_ms": 19039.593508001417, "hops": {"next0": {"frames": 48, "bytes": 43135817, "busy_ms": 14534.327106084675}}}
+WT_MEM step=11 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 11
+WT_TELEM {"v": 1, "step": 12, "rank": 0, "peer": 0, "step_ms": 8387.631420046091, "emit_us": 882.469117641449, "ops": {"F": {"n": 16, "med_ms": 22.197890328243375}, "B": {"n": 16, "med_ms": 59.103576466441154}, "W": {"n": 16, "med_ms": 11.243644170463085}, "OPT": {"n": 1, "med_ms": 525.9588798508048}}, "stall_ms": 6371.375745162368, "hops": {"next0": {"frames": 48, "bytes": 43020455, "busy_ms": 4060.5607265606523}}}
+WT_MEM step=12 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 12
+WT_TELEM {"v": 1, "step": 13, "rank": 0, "peer": 0, "step_ms": 5284.843255765736, "emit_us": 818.3429017663002, "ops": {"F": {"n": 16, "med_ms": 22.353749256581068}, "B": {"n": 16, "med_ms": 50.5394299980253}, "W": {"n": 16, "med_ms": 9.74737317301333}, "OPT": {"n": 1, "med_ms": 523.9296029321849}}, "stall_ms": 3386.890226509422, "hops": {"next0": {"frames": 48, "bytes": 43027625, "busy_ms": 2885.4099311865866}}}
+WT_MEM step=13 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 13
+WT_TELEM {"v": 1, "step": 14, "rank": 0, "peer": 0, "step_ms": 5437.534838914871, "emit_us": 820.1957680284977, "ops": {"F": {"n": 16, "med_ms": 22.302546305581927}, "B": {"n": 16, "med_ms": 70.38584211841226}, "W": {"n": 16, "med_ms": 13.889862457290292}, "OPT": {"n": 1, "med_ms": 521.1042882874608}}, "stall_ms": 3159.5522556453943, "hops": {"next0": {"frames": 48, "bytes": 42972483, "busy_ms": 2867.577658034861}}}
+WT_MEM step=14 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 14
+WT_TELEM {"v": 1, "step": 15, "rank": 0, "peer": 0, "step_ms": 5643.71591527015, "emit_us": 971.3009931147099, "ops": {"F": {"n": 16, "med_ms": 22.46064320206642}, "B": {"n": 16, "med_ms": 74.83335118740797}, "W": {"n": 16, "med_ms": 13.95972166210413}, "OPT": {"n": 1, "med_ms": 530.419051181525}}, "stall_ms": 3338.401115499437, "hops": {"next0": {"frames": 48, "bytes": 42869300, "busy_ms": 3248.6347225494683}}}
+WT_MEM step=15 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 15
+WT_TELEM {"v": 1, "step": 16, "rank": 0, "peer": 0, "step_ms": 7337.154584005475, "emit_us": 1086.3030329346657, "ops": {"F": {"n": 16, "med_ms": 22.500631865113974}, "B": {"n": 16, "med_ms": 36.16560366936028}, "W": {"n": 16, "med_ms": 7.836442906409502}, "OPT": {"n": 1, "med_ms": 515.4817290604115}}, "stall_ms": 5645.190821029246, "hops": {"next0": {"frames": 48, "bytes": 42956933, "busy_ms": 3449.4588896632195}}}
+WT_MEM step=16 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 16
+WT_TELEM {"v": 1, "step": 17, "rank": 0, "peer": 0, "step_ms": 6906.05029091239, "emit_us": 833.7046019732952, "ops": {"F": {"n": 16, "med_ms": 22.27354235947132}, "B": {"n": 16, "med_ms": 39.897424168884754}, "W": {"n": 16, "med_ms": 7.701596710830927}, "OPT": {"n": 1, "med_ms": 537.2079228982329}}, "stall_ms": 5234.023249708116, "hops": {"next0": {"frames": 48, "bytes": 42961100, "busy_ms": 3364.83237054199}}}
+WT_MEM step=17 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 17
+WT_TELEM {"v": 1, "step": 18, "rank": 0, "peer": 0, "step_ms": 8246.934344060719, "emit_us": 965.1919826865196, "ops": {"F": {"n": 16, "med_ms": 22.31092401780188}, "B": {"n": 16, "med_ms": 26.238591177389026}, "W": {"n": 16, "med_ms": 11.33044296875596}, "OPT": {"n": 1, "med_ms": 537.2322141192853}}, "stall_ms": 6692.007303703576, "hops": {"next0": {"frames": 48, "bytes": 42951686, "busy_ms": 4115.131786093116}}}
+WT_MEM step=18 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 18
+WT_TELEM {"v": 1, "step": 19, "rank": 0, "peer": 0, "step_ms": 8409.525278024375, "emit_us": 830.9106342494488, "ops": {"F": {"n": 16, "med_ms": 22.341899573802948}, "B": {"n": 16, "med_ms": 39.01627101004124}, "W": {"n": 16, "med_ms": 6.600976921617985}, "OPT": {"n": 1, "med_ms": 529.8106903210282}}, "stall_ms": 6748.509342316538, "hops": {"next0": {"frames": 48, "bytes": 42926691, "busy_ms": 4573.340404778719}}}
+WT_MEM step=19 alloc=5.54 peak=29.62 reserved=30.49
+WT_STEP 19
+WT_WAVE 19

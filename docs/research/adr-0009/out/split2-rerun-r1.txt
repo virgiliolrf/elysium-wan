@@ -1,0 +1,10 @@
+deepseek eager RuntimeError The size of tensor a (4) must match the size of tensor b (8) at non-singleton dimension 1
+{"mt": "deepseek_v3", "attn": "sdpa", "converted": 33, "params": 57, "logits_equal": true, "grads_equal": true, "bad": 0, "kwargs_data_independent": true, "tied": false}
+bf16-autocast {"mt": "llama", "attn": "sdpa", "converted": 29, "params": 39, "logits_equal": true, "grads_equal": true, "bad": 0, "kwargs_data_independent": true, "tied": false}
+bf16-autocast {"mt": "gemma3_text", "attn": "sdpa", "converted": 28, "params": 54, "logits_equal": true, "grads_equal": true, "bad": 0, "kwargs_data_independent": true, "tied": true}
+bf16-autocast {"mt": "qwen3", "attn": "sdpa", "converted": 29, "params": 47, "logits_equal": true, "grads_equal": true, "bad": 0, "kwargs_data_independent": true, "tied": false}
+bf16-autocast {"mt": "gpt_neox", "attn": "sdpa", "converted": 17, "params": 52, "logits_equal": true, "grads_equal": true, "bad": 0, "kwargs_data_independent": true, "tied": false}
+autocast boundary dtypes: embed-out torch.float32 layer-out torch.float32
+bf16-params layer-out torch.bfloat16
+tied fold order: 107254/163840 elements differ between per-mb-sum-then-fold and fold-each-then-sum
+-0.0 + +0.0 = 0.0 signbit False

@@ -1,0 +1,22 @@
+llama        float32   {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+llama        bfloat16  {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+qwen3        float32   {'logits': True, 'grads': 47, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+qwen3        bfloat16  {'logits': True, 'grads': 47, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gemma2       float32   {'logits': True, 'grads': 46, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gemma2       bfloat16  {'logits': True, 'grads': 46, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gemma3_text  float32   {'logits': True, 'grads': 54, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gemma3_text  bfloat16  {'logits': True, 'grads': 54, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+granite      float32   {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+granite      bfloat16  {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gpt2         float32   {'logits': True, 'grads': 52, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['transformer.wte', 'transformer.wpe'], 'epilogue': ['transformer.ln_f', 'lm_head']}
+gpt2         bfloat16  {'logits': True, 'grads': 52, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['transformer.wte', 'transformer.wpe'], 'epilogue': ['transformer.ln_f', 'lm_head']}
+llama4_text  float32   {'logits': True, 'grads': 45, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+llama4_text  bfloat16  {'logits': True, 'grads': 45, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gpt_oss      float32   {'logits': True, 'grads': 71, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+gpt_oss      bfloat16  {'logits': True, 'grads': 71, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+deepseek_v3  float32   {'logits': True, 'grads': 60, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+deepseek_v3  bfloat16  {'logits': True, 'grads': 60, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+phi3         float32   {'logits': True, 'grads': 27, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+phi3         bfloat16  {'logits': True, 'grads': 27, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+starcoder2   float32   {'logits': True, 'grads': 67, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}
+starcoder2   bfloat16  {'logits': True, 'grads': 67, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 'prologue': ['model.embed_tokens'], 'epilogue': ['model.norm', 'lm_head']}

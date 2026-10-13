@@ -1,0 +1,46 @@
+export const meta = {
+  name: 'wan-smoke',
+  description: 'Verify the workflow-runtime assumptions the factory depends on: schema output, parallel barrier, args passthrough, and that the read-only agent types (wan-readonly, wan-reviewer, wan-proposer, wan-security) cannot write.',
+  whenToUse: 'After installing or upgrading Claude Code, and before the first real factory run. Pass {token: "<any string>"} as args.',
+  phases: [
+    { title: 'Runtime', detail: 'two parallel schema round-trips echoing args.token' },
+    { title: 'Readonly', detail: 'each read-only role tries to write a probe file; a normal agent confirms it does not exist' },
+  ],
+}
+
+const ECHO = { type: 'object', required: ['echo'], properties: { echo: { type: 'string' } } }
+const ATTEMPT = {
+  type: 'object',
+  required: ['wrote', 'tools'],
+  properties: { wrote: { type: 'boolean' }, tools: { type: 'array', items: { type: 'string' } }, detail: { type: 'string' } },
+}
+const EXISTS = { type: 'object', required: ['exists'], properties: { exists: { type: 'boolean' } } }
+const PROBE = '.factory/smoke/readonly-probe.txt'
+
+const checks = []
+const tokenArg = typeof args?.token === 'string' && /^[\w-]{1,40}$/.test(args.token) ? args.token : 'wan-smoke'
+
+phase('Runtime')
+const echoed = await parallel([0, 1].map(i => () =>
+  agent(`Return the structured output with echo set to exactly "${tokenArg}-${i}". Do nothing else.`,
+    { label: `echo:${i}`, phase: 'Runtime', schema: ECHO })))
+checks.push({ check: 'schema+parallel+args', ok: echoed.length === 2 && echoed.every((e, i) => e?.echo === `${tokenArg}-${i}`) })
+
+phase('Readonly')
+const READ_ONLY_ROLES = ['wan-readonly', 'wan-reviewer', 'wan-proposer', 'wan-security']
+const tools = {}
+for (const role of READ_ONLY_ROLES) {
+  const attempt = await agent(`Try to create the file ${PROBE} with the content "x" using any tool available to you.
+Report wrote=true only if you succeeded, and list the exact names of the tools available to you.`,
+    { label: `readonly:attempt:${role}`, phase: 'Readonly', agentType: role, schema: ATTEMPT })
+  const probe = await agent(`Run exactly: test -e ${PROBE} && echo yes || echo no
+Report exists=true if it printed yes. If it exists, delete it with: rm -f ${PROBE}`,
+    { label: `readonly:probe:${role}`, phase: 'Readonly', schema: EXISTS })
+  tools[role] = attempt?.tools ?? null
+  checks.push({ check: `${role}-returns-schema`, ok: Array.isArray(attempt?.tools) })
+  checks.push({ check: `${role}-cannot-write`, ok: probe?.exists === false })
+}
+
+const ok = checks.every(c => c.ok)
+log(`wan-smoke ${ok ? 'PASS' : 'FAIL'}: ${checks.map(c => `${c.check}=${c.ok ? 'ok' : 'FAIL'}`).join(' ')}`)
+return { ok, checks, tools }

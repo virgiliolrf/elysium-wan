@@ -1,0 +1,297 @@
+{
+  "findings": [
+    {
+      "id": "M2-MPS-INTERMITTENT",
+      "status": "open",
+      "severity": "major",
+      "lens": "bug",
+      "problem": "test_real_heterogeneous_fleet_cpu_and_gpu, a CPU stage plus an Apple MPS stage, stalls intermittently: no optimizer step fleet-wide for 8s, the restart budget is spent. It is N/A under gpu false.",
+      "fix": "Run /wan-bughunt when the hardware switch is gpu true; it may share a cause with the restart-in-place liveness accounting (M2 C1).",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-FIT-1",
+      "status": "open",
+      "severity": "major",
+      "lens": "fit",
+      "problem": "The integration and full rungs ran the Apple MPS test test_real_heterogeneous_fleet_cpu_and_gpu, which is intermittent: it failed in integration and passed in full in the same ladder run. Under gpu false it should not decide a gate.",
+      "fix": "Resolved for gates by the hardware switch: with gpu false, GPU tests are N/A (tests/conftest.py gpu_allowed). The intermittent stall stays open as M2-MPS-INTERMITTENT.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-FIT-2",
+      "status": "open",
+      "severity": "major",
+      "lens": "fit",
+      "problem": "Plan mode groups peers by a class key, but coordinator.py:723 builds label=f'{n.name}/{n.gpu_name}', which is unique per node, so no two nodes ever group and plan-mode-wide can never pass.",
+      "fix": "Group by the device-class key used by BA-11 and find_replacement.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-FIT-3",
+      "status": "open",
+      "severity": "minor",
+      "lens": "fit",
+      "problem": "Send events do not record the sending host (stage.py:369-371), and there is no step_opt event.",
+      "fix": "Add both to the telemetry events.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-FIT-4",
+      "status": "open",
+      "severity": "minor",
+      "lens": "fit",
+      "problem": "BA-15 cites spec.py:52-56, which is the wrong range.",
+      "fix": "Cite the right lines.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-FIT-5",
+      "status": "open",
+      "severity": "minor",
+      "lens": "fit",
+      "problem": "The byte-exact test template does not fit plan mode, which must read spec.json.",
+      "fix": "Give plan-mode tests their own fixture.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-SAFE-1",
+      "status": "open",
+      "severity": "major",
+      "lens": "safety",
+      "problem": "A stabilize applier that writes files and then errors is classified apply-failed and skips the stabilize review; its edits stay in the tree and a later VERIFIED would ship unreviewed code. This applies to the wan-x template and to the M2 workflow.",
+      "fix": "Mark a round as stabilized whenever the scope audit shows changed files, not only on outcome applied.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-SAFE-2",
+      "status": "open",
+      "severity": "major",
+      "lens": "safety",
+      "problem": "The stabilize review leaves out the tests lens, and a fix passes with 2 of 3 votes. Stabilize exists to turn a gate green, which is where a test gets weakened; replacing a measured metric with a predicted one would pass.",
+      "fix": "Add the tests lens, and optionally the objective lens, to the stabilize review.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-SAFE-3",
+      "status": "open",
+      "severity": "minor",
+      "lens": "safety",
+      "problem": "A specConflict raised by a stabilize applier or a review fixer is ignored; the stop for an ADR exists only in Implement.",
+      "fix": "Route specConflict from every writer to the ADR stop.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-SAFE-4",
+      "status": "open",
+      "severity": "minor",
+      "lens": "safety",
+      "problem": "The skip and xfail marker scan misses rare spellings (_pytest.outcomes, tabs, getattr) and does not cover mark.mps.",
+      "fix": "Widen the scan; pytest's runtime summary still catches skips.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-VER-1",
+      "status": "open",
+      "severity": "major",
+      "lens": "verification",
+      "problem": "integration-cpu and full-cpu check only the format of pytest's last line: there is no minimum passed count and no frozen node-id list, so deleting a byte-exact test, or marking it mps, keeps both gates green.",
+      "fix": "Freeze the pre-phase node-id list and require each one to pass, or at least require >= the pre-phase passed counts plus the phase's new nodes and exactly the expected deselected count.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-VER-2",
+      "status": "open",
+      "severity": "minor",
+      "lens": "verification",
+      "problem": "The main re-plan arm does not prove that ownership changed.",
+      "fix": "Print REPLANS and OWNER_CHANGED=1 and check both.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-VER-3",
+      "status": "open",
+      "severity": "minor",
+      "lens": "verification",
+      "problem": "no-pending-markers passes when grep fails to read a file (exit 2).",
+      "fix": "Treat grep exit 2 as a failure.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-VER-4",
+      "status": "open",
+      "severity": "minor",
+      "lens": "verification",
+      "problem": "causal-slow-shutdown's 3600 s timeout is below its inner worst case of 4 x 1800 s; it fails closed.",
+      "fix": "Raise the timeout to cover the worst case.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-R5-VER-5",
+      "status": "open",
+      "severity": "minor",
+      "lens": "verification",
+      "problem": "TELEM_US_PER_STEP measures only the summary, not the full telemetry path that RUNTIME-I9 promises.",
+      "fix": "Measure the full per-step telemetry cost.",
+      "source": "wan-next m2-adaptive-ownership review round 5 (2026-10-08); phase split into smaller phases"
+    },
+    {
+      "id": "M2-P1-CKPT-IDENTITY",
+      "status": "open",
+      "severity": "major",
+      "lens": "safety",
+      "problem": "CKPT and RESULT in coordinator._dispatch take rank and peer from the message (coordinator.py:372, 397-398) and CKPT does not check the attempt: an admitted worker can inject another slot's checkpoint wave or forge the final RESULT.",
+      "fix": "Route CKPT and RESULT through _slot_for and run.attempt, as CONTROL-I18 does for TELEMETRY and TELEM_STEP, with tests that send them from the wrong connection.",
+      "source": "wan-x-m2-p1-liveness-telemetry review (2026-10-08); deferred by ADR-0003-m2-p1-progress-monotone"
+    },
+    {
+      "id": "M2-P1-MESH-AUTH",
+      "status": "open",
+      "severity": "major",
+      "lens": "safety",
+      "problem": "The wide-stage mesh data plane authenticates no peer: _connect_mesh accepts a socket, reads the HELLO and trusts its (st, pe) (src/wantrain/runtime/stage.py:541-551), while the chain path runs authenticate with trusted_peers (stage.py:267-279). THREAT_MODEL T3 claims ed25519 plus trusted_peers for the whole data plane.",
+      "fix": "Run authenticate(sock, key, trusted_peers) on every mesh socket before the HELLO, bind (st, pe) to the authenticated identity and the spec's endpoint table, reject an st outside {rank - 1, rank} or a duplicate key; tests that dial with an untrusted key or a wrong st and are refused.",
+      "source": "wan-x-m2-p1-liveness-telemetry review (2026-10-08); deferred by ADR-0004-m2-p1-mesh-auth-deferred"
+    },
+    {
+      "id": "M2-P2-RESTORE-LIVE-STAGE",
+      "status": "open",
+      "severity": "minor",
+      "lens": "protocol-proof",
+      "location": "src/wantrain/worker/agent.py:663-686 (_on_restore)",
+      "problem": "The restore does not exclude a live stage writing the same out_dir (no stage.alive() check, no kill, no refusal) and runs outside _ship_lock. Interleaving restore replace(S), stage replace(N), stage write_sidecar(N), restore write_sidecar(S) leaves a sidecar naming S over wave N's bytes.",
+      "fix": "Refuse (or kill the stage before) a RESTORE while the slot's stage is alive, and take _ship_lock around the restore.",
+      "source": "wan-x-m2-p2-wave-label-binding review (2026-10-09); open minor, recorded by the human's decision"
+    },
+    {
+      "id": "M2-P2-RESTORE-BODY-LEAK",
+      "status": "open",
+      "severity": "minor",
+      "lens": "tests",
+      "location": "src/wantrain/worker/agent.py:666 (_on_restore, int(msg[\"step\"]))",
+      "problem": "A RESTORE whose step is missing or not an integer raises before the sha256 check and the unlink branch, so the received body in workdir/incoming stays on disk; no test covers the malformed-step path.",
+      "fix": "Unlink the received body on every exit path of _on_restore (try/finally) and add a malformed-step test.",
+      "source": "wan-x-m2-p2-wave-label-binding review (2026-10-09); open minor, recorded by the human's decision"
+    },
+    {
+      "id": "M2-P2-SHIP-TEST-TIMING",
+      "status": "open",
+      "severity": "minor",
+      "lens": "byte-exact",
+      "location": "tests/unit/test_fault_tolerance.py:836-839 (test_concurrent_ships_never_cross_waves)",
+      "problem": "The ship-unlocked mutant is caught only if ship 2 overwrites the snapshot within the 2 s ship2.join(2) window before gate.set(); nothing synchronizes on that copy, so the would-fail evidence for BA-4 depends on timing.",
+      "fix": "Synchronize on an Event set after ship 2's copy instead of a timed join.",
+      "source": "wan-x-m2-p2-wave-label-binding review (2026-10-09); open minor, recorded by the human's decision"
+    },
+    {
+      "id": "M2-P2-SHIP-SPANS-RESTORE",
+      "status": "open",
+      "severity": "minor",
+      "lens": "loud-failure",
+      "location": "src/wantrain/worker/agent.py:663-676 (_on_restore) with agent.py:546-547 and 609-646 (_ship_checkpoint_locked)",
+      "problem": "The ship's before/after sidecar check assumes steps only go up; a restore moves shard and sidecar back without _ship_lock, so a ship spanning restore, relaunch and a new save of the same step sees before == after while copying older bytes (narrow window).",
+      "fix": "Take _ship_lock in _on_restore, or add a generation counter the ship compares.",
+      "source": "wan-x-m2-p2-wave-label-binding review (2026-10-09); open minor, recorded by the human's decision"
+    },
+    {
+      "id": "M2-P2-RESTORE-RESHIP",
+      "status": "open",
+      "severity": "minor",
+      "lens": "cost",
+      "location": "src/wantrain/worker/agent.py:663-686 (_on_restore) with agent.py:609-646 (_ship_checkpoint_locked)",
+      "problem": "A restore writes a sidecar for the restored step but does not record it in _shipped, so a fresh replacement ships the restored wave back to the coordinator, which already holds it: one wasted full-shard transfer per heal while holding _ship_lock.",
+      "fix": "Record the restored (run, rank, peer, step) in _shipped.",
+      "source": "wan-x-m2-p2-wave-label-binding review (2026-10-09); open minor, recorded by the human's decision"
+    },
+    {
+      "id": "M2-P2-NO-COMMON-WAVE",
+      "status": "open",
+      "severity": "major",
+      "lens": "verification",
+      "location": "tests/chaos/test_recovery.py:76 (test_dead_worker_is_replaced_and_the_run_stays_exact); src/wantrain/fault_tolerance/checkpoint.py (save_shard); src/wantrain/worker/agent.py (_ship_checkpoint_locked)",
+      "problem": "Unloaded, the dead-worker heal intermittently finds no checkpoint wave held for every slot after wait_step(5) and restarts from step 0 ('no checkpoint wave is held for every slot: restarting from step 0'); the run stays byte-exact (320 losses, 2 attempts, 1 heal) but resumed_from_step is None. Seen once in pinned chaos-dead-worker-plain on tree 05de1a4 (first repetition); passed rung:chaos 2x, chaos-dead-worker-loaded 20/20 under 2x load, 3/3 local reruns. Not H1: no stall signature, no 'mislabeled wave'. HYPOTHESIS (unconfirmed): the shard/sidecar seqlock plus the serialized ship make the shipper skip waves on fast unloaded steps. ALTERNATIVE HYPOTHESIS (from the code): each agent samples whatever shard is on disk every 0.5 s (agent.py _supervise) instead of shipping every saved wave, and the coordinator resumes only from a step every slot shipped (CheckpointStore.common_step); unloaded toy steps are shorter than 0.5 s, so two slots can sample disjoint steps before the kill, while under load every wave outlives a poll. The experiment must discriminate the two.",
+      "fix": "First task of the single M2 plan: discriminating experiment (waves shipped and held per slot at the kill, unloaded, this tree vs 2e51b5b), then a causal fix with statistical and causal closure; do not retune timeouts or weaken the test. If sampling is the cause: write each wave to an immutable step-named file (keep the last 2-3) and ship every new wave in order, which also removes M2-P2-RESTORE-LIVE-STAGE and M2-P2-SHIP-SPANS-RESTORE by construction.",
+      "source": "pinned.mjs m2-p2-wave-label-binding on tree 05de1a4 (2026-10-09); phase 2 merged NOT VERIFIED by the human's decision"
+    },
+    {
+      "id": "M2B-E4-F3",
+      "status": "open",
+      "severity": "major",
+      "lens": "experiment",
+      "source": "M2b e4-exposure attempt 3 (.factory/runs/M2b/tasks/e4-exposure.md); docs/experiments/m2b-e4/PLAN.json as amended under SC-4",
+      "location": "tests/integration/test_engine_bitwise.py::test_e4_controls_fifo_barrier_today[interior_w4-barrier], ::test_e4_emission_rtt_arm[interior_w4-store-rtt_hi]; src/wantrain/scheduler/exchange_sim.py (SCHEDULER-I17)",
+      "problem": "ADR-0006 F3 fired on 2 arms (SIMULATED, gpu false, tree fingerprint e9f6d85cf0af): the interior w4 barrier-kept control measured 1.296x its in-situ I17 simulation (1.273 and 1.265 on earlier trees), outside [0.8, 1.2]; the interior w4 backward-emission arm at RTT_hi measured 1.232x. The simulation under-predicts every pieces-family arm by 9-30%. By the PLAN's rule a failed barrier control points at the shim or the simulation's link/CPU model, not at H3. HYPOTHESIS: the exchange threads share each peer's CPU with compute (in-situ c_s varied up to 2x between runs). F6 did not fire (min fraction 0.736), F5 did not fire, the emission order agrees. Every training run's manifest equals the reference. REVIEW (whole diff, major, researcher's call): interior arms measure E as first_f + gather - previous stage end on the latest peer, so E also counts how late step t's first forward starts (rank 0's B, W, AdamW, F and the boundary send), which the stage-alone I17 simulation does not model; HYPOTHESIS: this biases measured/simulated upward, the direction of the fired arms. DEFERRED to M1 (GPU), the human's decision 2026-10-10 (HANDOUT-M2b D-3): on the Mac (gpu false) the measured numbers are printed and do not fail; with gpu true the criterion fails again.",
+      "fix": "Researcher: discriminate shim vs model (a barrier control with compute replaced by sleep isolates CPU contention); never re-pin toward the measurement. GATES-M2b e4-exposure-sweep stays red until resolved (HANDOUT-M2b D-3). Discriminator: per_step_start_gather_pct (exposure.late_parts) on the interior w4 pieces and barrier arms; a positive start part on pieces arms without the barrier is non-exchange delay counted as E. E4 lines must be re-measured on the current tree (exposure.py changed its fingerprint)."
+    },
+    {
+      "id": "M2B-E4-W8-OFFCONFIG",
+      "status": "open",
+      "severity": "major",
+      "lens": "experiment",
+      "source": "M2b e4-exposure attempt 3 (.factory/runs/M2b/tasks/e4-exposure.md); docs/experiments/m2b-e4/PLAN.json as amended under SC-4",
+      "location": "tests/integration/test_engine_bitwise.py::test_e4_f6_pieces_beat_the_alternatives[interior_w8-lpt] and the interior_w8 controls",
+      "problem": "Interior w8 cannot reach the PLAN's pinned op split on this Mac: F share 0.04-0.076 against 0.1065 +-25% with 10 busy processes on 10 cores, so its arms ran off the PLAN's configuration and are not evidence (the test fails for that reason). interior_w4.step1 was off the split in 2 of 3 runs. The summary line's f6_interior_w8_vs_lpt_fraction (1.09) comes from off-configuration arms and does not flag it. DEFERRED to M1 (GPU), the human's decision 2026-10-10 (HANDOUT-M2b D-3): on the Mac (gpu false) the measured numbers are printed and do not fail; with gpu true the criterion fails again.",
+      "fix": "Researcher: either an E4 PLAN amendment pinning w8 at an op split this machine reaches, or run w8 where 8 peers have their own cores. summary_line now names every off-configuration arm (`off_configuration`, whole-diff review 2026-10-10)."
+    },
+    {
+      "id": "M2B-E4-TODAY-STAGE0",
+      "status": "open",
+      "severity": "minor",
+      "lens": "experiment",
+      "source": "M2b e4-exposure attempt 3 (.factory/runs/M2b/tasks/e4-exposure.md); docs/experiments/m2b-e4/PLAN.json as amended under SC-4",
+      "location": "src/wantrain/scheduler/exchange_sim.py flush='stage' vs the runtime's ZeRO-1 stage 0",
+      "problem": "Recorded-only arm: today's stage 0 measured 12.4% of C against 131.4% simulated (0.094x); interior w4/w8 today 79.8/47.7 against 73.3/61.2. No criterion uses these arms, but the tenfold gap at stage 0 says the flush='stage' model or the runtime's today path differs (e.g. the runtime broadcasts fp32 shard parameters while I17's step1 gathers at b_p 2). DEFERRED to M1 (GPU), the human's decision 2026-10-10 (HANDOUT-M2b D-3): on the Mac (gpu false) the measured numbers are printed and do not fail; with gpu true the criterion fails again.",
+      "fix": "Researcher: explain the stage-0 gap before the today arms are used as a baseline."
+    },
+    {
+      "id": "M2B-ZERO1-EMPTY-SHARD",
+      "status": "closed",
+      "severity": "major",
+      "lens": "correctness",
+      "source": "M2b e4-exposure attempt 3 (.factory/runs/M2b/tasks/e4-exposure.md); docs/experiments/m2b-e4/PLAN.json as amended under SC-4",
+      "location": "src/wantrain/runtime/stage.py (ZeRO-1 shard_params = params[peer::w] -> AdamW over an empty list)",
+      "problem": "Today's ZeRO-1 wide stage crashes when its width exceeds its number of trainable tensors: a width-4 stage over the Head's 3 tensors raises 'optimizer got an empty parameter list' (peer 3 owns nothing). Found while laying out E4's stage-0 arms (the Head ran at width 3 to avoid it). The planner can propose such a width.",
+      "fix": "Fixed in the runtime (src/wantrain/runtime/stage.py, M2b closeout 2026-10-10): a whole-tensor ZeRO-1 peer that owns no trainable tensor builds no optimizer (StageRuntime.__init__, opt None); in _optimizer_step_wide it folds nothing, steps nothing, still broadcasts its (empty) PARAMS and installs every owner's; its checkpoint records an empty optimizer state under its peers' AdamW hyperparameters (_opt_state, _adamw_hparams), and a resume accepts only such an empty state (_load_opt). Test: tests/integration/test_zero1_empty_shard.py (the Head's 3 tensors at width 4, fp32 batch, fp32 streamed and native wires: 7 failed on the pre-fix code with 'optimizer got an empty parameter list', 7 passed after; final manifest and every loss hex equal the reference, also after a resume from the empty slot's wave)."
+    },
+    {
+      "id": "M2B-DRAM-PROBE-UNITS",
+      "status": "open",
+      "severity": "minor",
+      "lens": "spec-conformance",
+      "source": "SC-5 count (docs/research/adr-0006/sc5-passes.md), 2026-10-10",
+      "location": "src/wantrain/resources/probe.py:71-78 (bench_host_dram_gbps) vs SCHEDULER-I16 S1 (k counts single passes)",
+      "problem": "host_dram_gbps is a copy rate (each byte read and written), while k counts single passes per byte; S1 against the probe is up to 2x conservative and its units differ from the 600 GB/s anchors of ADR-0006/E7.",
+      "fix": "Researcher: state the probe's unit in SCHEDULER-I16 (passes per second = 2x the copy rate) or change the probe; admission only, no bit moves."
+    },
+    {
+      "id": "M2B-DESIGN-K-ANCHORS",
+      "status": "open",
+      "severity": "minor",
+      "lens": "consistency",
+      "source": "SC-5 count (docs/research/adr-0006/sc5-passes.md), 2026-10-10",
+      "location": "docs/design/DESIGN.md §9 (~lines 225, 236, 261: 'k = 10 in today's transport', '(16, 2) pieces on 1-GPU hosts at today's 10'); HANDOUT-M2b line ~99; HANDOUT-M2 R4",
+      "problem": "With SC-5's k = 15 (sealed data plane), DESIGN §9's quoted anchors at k 10 no longer describe today's transport: at 15 a 1-GPU 600 GB/s host refuses B interior and (16, 2) stage 0, so 32 H100 at 400 Gbps takes (16, 2) zero1 + native, not pieces (HYPOTHESIS, scaled; round5 §8's script to re-run at 15). The E4/E7 PLANs carry explicit k and are unaffected.",
+      "fix": "Researcher: amend DESIGN §9 and the handouts' anchors at k 15 (DESIGN is a granted document: its amendment is recorded, waived under autonomy)."
+    },
+    {
+      "id": "M2B-SLOT-PAD-TIMING-LOAD",
+      "status": "open",
+      "severity": "minor",
+      "lens": "verification",
+      "source": "light ladder on tree dfc62777 (2026-10-10 ~23:15)",
+      "location": "tests/unit/test_timing_seams.py::test_slot_pad_seam_holds_each_op_to_its_slot_and_keeps_the_state (the 'unset: less' wall-clock check)",
+      "problem": "SUSPECTED LOAD (not code): the unset arm's step span must be below M/w x tau - w = 1.85 s; it measured 2.55 s once, in the full unit rung while the other test slot ran 'gate-speed-factory' (load average ~7 on 10 cores). Rerun alone through the slot: 3/3 passed (16-26 s). The state equalled the reference in every run; the padded-arm checks passed.",
+      "fix": "If it recurs, make the 'unset: less' check independent of machine load (e.g. a larger tau, or compare the unset arm's op starts against the padded slots instead of a fixed wall bound); never widen the bound."
+    },
+    {
+      "id": "M2B-R0-FULL-FROZEN-STAGE",
+      "status": "closed",
+      "severity": "minor",
+      "lens": "verification",
+      "source": "M2b verdict gate r0 (wf_4c4dfd30-00d, tree ed8cb3d5), rung full",
+      "location": "tests/chaos/test_recovery.py::test_frozen_stage_is_restarted_in_place",
+      "problem": "Failed once in rung full with 'assert (2 == 1)' in the same run whose pytest session folder (pytest-of-virgiliofilho/pytest-37) the orchestrator's disk guard deleted at 00:04 (FileNotFoundError in the same rung).",
+      "fix": "Not code: run 20x alone through the test slot on the committed tree 77113a8 (2 batches of 10): 20 passed, 0 failed. Attributed to the deleted session; the disk guard was fixed by the orchestrating session. Reopen if it fails again outside a deleted session."
+    }
+  ]
+}

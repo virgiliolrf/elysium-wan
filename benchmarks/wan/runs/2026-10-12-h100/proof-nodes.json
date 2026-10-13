@@ -1,0 +1,68 @@
+[
+ {
+  "name": "cz",
+  "port": 47898,
+  "host": "203.0.113.12",
+  "region": null,
+  "ip": "203.0.113.12",
+  "free_ports": [
+   [
+    8080,
+    53154
+   ],
+   [
+    10100,
+    47355
+   ],
+   [
+    10200,
+    40610
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Rakovn\u00edk",
+  "country": "CZ",
+  "org": "AS47232 ISP Alliance a.s.",
+  "data": [
+   8080,
+   53154
+  ],
+  "probe": [
+   10100,
+   47355
+  ],
+  "coord": [
+   10200,
+   40610
+  ]
+ },
+ {
+  "name": "us",
+  "port": 27502,
+  "host": "203.0.113.25",
+  "region": null,
+  "ip": "203.0.113.25",
+  "free_ports": [
+   [
+    10100,
+    27554
+   ],
+   [
+    10200,
+    27497
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Denver",
+  "country": "US",
+  "org": "AS20029 H5 Data Centers",
+  "data": [
+   10100,
+   27554
+  ],
+  "probe": [
+   10200,
+   27497
+  ]
+ }
+]

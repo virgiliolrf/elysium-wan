@@ -1,0 +1,37 @@
+WT_PHASE train
+WT_STAGE rank=0 peer=0 device=cuda partition=[[0, 19], [19, 36]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET dial {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=aea85efd6c74dd887117641221e41927
+/workspace/elysium/src/wantrain/model/wgrad.py:205: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:410.)
+  gx = g.matmul(weight) if ctx.needs_input_grad[0] else None
+WT_OPT overlap layers=19 params=218
+WT_TELEM {"v": 1, "step": 0, "rank": 0, "peer": 0, "step_ms": 282040.07665999985, "emit_us": 0.0, "ops": {"F": {"n": 32, "med_ms": 67.47108800004753}, "B": {"n": 32, "med_ms": 60.85812650007938}, "W": {"n": 32, "med_ms": 45.915975500292916}, "OPT": {"n": 1, "med_ms": 103.32194600005096}}, "stall_ms": 276001.66804000136, "hops": {"next0": {"frames": 256, "bytes": 252768821, "busy_ms": 280266.45047399984}}}
+WT_MEM step=0 alloc=53.28 peak=74.25 reserved=74.58
+WT_STEP 0
+WT_TELEM {"v": 1, "step": 1, "rank": 0, "peer": 0, "step_ms": 44332.16055499997, "emit_us": 851166.3120002595, "ops": {"F": {"n": 32, "med_ms": 67.33310749996235}, "B": {"n": 32, "med_ms": 122.18581799993444}, "W": {"n": 32, "med_ms": 46.16201750013715}, "OPT": {"n": 1, "med_ms": 1.24023499984105}}, "stall_ms": 5886.17806800039, "hops": {"next0": {"frames": 256, "bytes": 247059378, "busy_ms": 11524.577365000368}}}
+WT_MEM step=1 alloc=53.34 peak=74.25 reserved=74.97
+WT_STEP 1
+WT_TELEM {"v": 1, "step": 2, "rank": 0, "peer": 0, "step_ms": 31129.717595999864, "emit_us": 1818.4079999628011, "ops": {"F": {"n": 32, "med_ms": 67.18377350011906}, "B": {"n": 32, "med_ms": 60.84272550015157}, "W": {"n": 32, "med_ms": 46.21666749994802}, "OPT": {"n": 1, "med_ms": 1.131744999838702}}, "stall_ms": 22301.234780001323, "hops": {"next0": {"frames": 224, "bytes": 223471260, "busy_ms": 26295.489018999888}}}
+WT_MEM step=2 alloc=53.34 peak=74.25 reserved=75.29
+WT_STEP 2
+WT_TELEM {"v": 1, "step": 3, "rank": 0, "peer": 0, "step_ms": 18034.660994000205, "emit_us": 1739.756999995734, "ops": {"F": {"n": 32, "med_ms": 66.52016749967515}, "B": {"n": 32, "med_ms": 60.73194800001147}, "W": {"n": 32, "med_ms": 46.19181899988689}, "OPT": {"n": 1, "med_ms": 1.2706659999821568}}, "stall_ms": 9150.264671000059, "hops": {"next0": {"frames": 224, "bytes": 205911959, "busy_ms": 14433.041762000357}}}
+WT_MEM step=3 alloc=53.34 peak=74.25 reserved=75.60
+WT_STEP 3
+WT_TELEM {"v": 1, "step": 4, "rank": 0, "peer": 0, "step_ms": 30432.1191869999, "emit_us": 1700.917000107438, "ops": {"F": {"n": 32, "med_ms": 67.19561699992482}, "B": {"n": 32, "med_ms": 162.27135349981836}, "W": {"n": 32, "med_ms": 46.21015200018519}, "OPT": {"n": 1, "med_ms": 1.1243149997426372}}, "stall_ms": 20624.113411999133, "hops": {"next0": {"frames": 192, "bytes": 199187748, "busy_ms": 17257.41690399991}}}
+WT_MEM step=4 alloc=53.34 peak=74.25 reserved=75.92
+WT_STEP 4

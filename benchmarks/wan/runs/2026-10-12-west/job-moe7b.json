@@ -1,0 +1,69 @@
+{
+ "plan": {
+  "model": "gpt760m",
+  "n_layer": 26,
+  "n_head": 24,
+  "d_model": 3072,
+  "seq_len": 1024,
+  "norm": "rmsnorm",
+  "mlp": "swiglu",
+  "bias": false,
+  "pos": "rope",
+  "moe_experts": 8,
+  "moe_top_k": 2,
+  "moe_d_ff": 8192,
+  "moe_score": "sigmoid",
+  "moe_select": "score_bias",
+  "moe_norm": true,
+  "moe_bias_rate": 0.001,
+  "compute_dtype": "bf16",
+  "boundary_dtype": "bf16",
+  "dataset": "/workspace/data/big.bin",
+  "steps": 5000,
+  "lr": 0.0002,
+  "recompute": true,
+  "mb_size": 1,
+  "microbatches": 32,
+  "p2p_streams": 4,
+  "extras": {
+   "optimizer": "adamw-host"
+  },
+  "require_margin": false,
+  "out_dir": "/workspace/run/out",
+  "ckpt_every": 0,
+  "tag": "moe7b",
+  "policy": "balanced",
+  "device": "cuda",
+  "partition": [
+   [
+    0,
+    3
+   ],
+   [
+    3,
+    5
+   ],
+   [
+    5,
+    11
+   ],
+   [
+    11,
+    13
+   ],
+   [
+    13,
+    15
+   ],
+   [
+    15,
+    21
+   ],
+   [
+    21,
+    28
+   ]
+  ]
+ },
+ "stages": 7
+}

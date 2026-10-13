@@ -1,0 +1,13 @@
+{
+  "python": {
+    "paths": ["src/"],
+    "cmd": "uv run --all-extras pytest -q -x -p no:randomly tests/unit tests/oracle",
+    "timeoutFactor": 10,
+    "minTimeoutSec": 60,
+    "maxMutants": 400
+  },
+  "rust": {
+    "cmd": "cargo mutants --in-diff {diff} --no-shuffle --output {out}",
+    "timeoutSec": 14400
+  }
+}

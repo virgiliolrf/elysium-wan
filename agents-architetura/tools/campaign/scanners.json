@@ -1,0 +1,94 @@
+{
+  "scanners": [
+    {
+      "id": "semgrep",
+      "when": [
+        "src"
+      ],
+      "probe": "uvx semgrep --version",
+      "cmd": "uvx semgrep scan --quiet --config p/python --config p/security-audit --config p/secrets --sarif --output \"$FACTORY_SCAN_OUT/semgrep.sarif\" src"
+    },
+    {
+      "id": "bandit",
+      "when": [
+        "pyproject.toml",
+        "src"
+      ],
+      "cmd": "uvx --from 'bandit[sarif]' bandit -q -r src -ll -iii -f sarif -o \"$FACTORY_SCAN_OUT/bandit.sarif\" || test -s \"$FACTORY_SCAN_OUT/bandit.sarif\""
+    },
+    {
+      "id": "ruff-security",
+      "when": [
+        "pyproject.toml",
+        "src"
+      ],
+      "cmd": "uv run ruff check --select S,B --output-format sarif -o \"$FACTORY_SCAN_OUT/ruff.sarif\" src || test -s \"$FACTORY_SCAN_OUT/ruff.sarif\""
+    },
+    {
+      "id": "mypy-strict",
+      "when": [
+        "pyproject.toml",
+        "src"
+      ],
+      "cmd": "uv run mypy --strict --no-error-summary src > \"$FACTORY_SCAN_OUT/mypy.diag.txt\" || test -s \"$FACTORY_SCAN_OUT/mypy.diag.txt\""
+    },
+    {
+      "id": "pip-audit",
+      "when": [
+        "uv.lock"
+      ],
+      "cmd": "uvx pip-audit --strict -f json -o \"$FACTORY_SCAN_OUT/pip-audit.json\" || test -s \"$FACTORY_SCAN_OUT/pip-audit.json\""
+    },
+    {
+      "id": "clippy-pedantic",
+      "when": [
+        "Cargo.toml"
+      ],
+      "probe": "clippy-sarif --version",
+      "cmd": "cargo clippy --workspace --all-targets --message-format=json -- -W clippy::pedantic | clippy-sarif > \"$FACTORY_SCAN_OUT/clippy.sarif\""
+    },
+    {
+      "id": "cargo-deny",
+      "when": [
+        "Cargo.toml"
+      ],
+      "probe": "cargo deny --version",
+      "cmd": "cargo deny --format json check 2> \"$FACTORY_SCAN_OUT/cargo-deny.jsonl\" || test -s \"$FACTORY_SCAN_OUT/cargo-deny.jsonl\""
+    },
+    {
+      "id": "osv-scanner",
+      "when": [],
+      "probe": "osv-scanner --version",
+      "cmd": "osv-scanner scan source --format sarif --output \"$FACTORY_SCAN_OUT/osv.sarif\" -r . || test -s \"$FACTORY_SCAN_OUT/osv.sarif\""
+    },
+    {
+      "id": "gitleaks",
+      "when": [],
+      "probe": "gitleaks version",
+      "cmd": "gitleaks detect --no-banner --report-format sarif --report-path \"$FACTORY_SCAN_OUT/gitleaks.sarif\" || test -s \"$FACTORY_SCAN_OUT/gitleaks.sarif\""
+    },
+    {
+      "id": "trivy",
+      "when": [
+        "Dockerfile"
+      ],
+      "probe": "trivy --version",
+      "cmd": "trivy fs --quiet --format sarif --output \"$FACTORY_SCAN_OUT/trivy.sarif\" ."
+    },
+    {
+      "id": "torch-paranoia",
+      "when": [
+        "tests/oracle"
+      ],
+      "cmd": "TORCH_DISTRIBUTED_DEBUG=DETAIL NCCL_ASYNC_ERROR_HANDLING=1 FACTORY_DETECT_ANOMALY=1 CUBLAS_WORKSPACE_CONFIG=:4096:8 uv run pytest -q -p no:randomly --junitxml=\"$FACTORY_SCAN_OUT/junit.xml\" tests/oracle"
+    },
+    {
+      "id": "codeql",
+      "when": [
+        "src"
+      ],
+      "probe": "codeql version",
+      "cmd": "codeql database create .factory/codeql-db --overwrite --language=python --source-root=. >/dev/null && codeql database analyze .factory/codeql-db --format=sarif-latest --output=\"$FACTORY_SCAN_OUT/codeql.sarif\" codeql/python-queries"
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+[project]
+name = "wantrain"
+version = "0.1.0"
+description = "Byte-exact pipeline-parallel training of one model across data centers over wide-area networks"
+readme = "docs/engine/ARCHITECTURE.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Virgilio Filho" }]
+dependencies = [
+    "torch>=2.4",
+    "numpy>=1.24",
+    # 70x faster than zlib-6 at a better ratio on boundary planes; the codec
+    # falls back to zlib without it, which can be slower than the compute window.
+    "zstandard>=0.22",
+    # ed25519 peer identities on the data plane; without it the handshake needs
+    # WANTRAIN_SHARED_TOKEN.
+    "cryptography>=42",
+]
+
+[project.urls]
+Homepage = "https://elysium-network.vercel.app/"
+Repository = "https://github.com/virgiliolrf/elysium-wan"
+Issues = "https://github.com/virgiliolrf/elysium-wan/issues"
+
+[project.optional-dependencies]
+data = ["tiktoken>=0.7"]
+hf = ["safetensors>=0.4", "transformers==5.19.0"]
+
+[project.scripts]
+wantrain = "wantrain.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "hypothesis>=6.100",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wantrain"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# the determinism pins enter this session's environment before any kernel
+# runs (ATen caches its CPU capability at its first dispatch)
+addopts = "-ra -p wantrain.runtime.determinism"
+xfail_strict = true
+markers = [
+    "slow: multi-process runs (seconds to minutes)",
+    "mps: needs an Apple MPS device",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Factory-owned paths (another workstream) are not policed by the engine's
+# formatter; ruff also formats Python blocks inside Markdown.
+# Research and experiment derivations are byte-pinned records: ADRs and granted PLAN.json files pin their
+# sha256, and the scripts slice and patch each other's source text, so reformatting one breaks the record.
+extend-exclude = [
+    ".claude",
+    "agents-architetura",
+    "docs/factory",
+    "docs/experiments/*/derive",
+    "docs/research",
+    "README.md",
+    "CLAUDE.md",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "E501",   # long rationale strings in error messages are deliberate
+    "B008",
+    "UP007",
+    "B905",   # zip(strict=) is py3.10+ only in spirit; lengths are asserted where it matters
+    "E741",   # `l` for a layer in comprehensions, inherited from the source
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]
+
+[tool.mypy]
+files = ["src/wantrain"]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = false
+no_implicit_optional = false
+allow_redefinition = true
+# Empty-container annotations on the runtime's many bookkeeping dicts add noise,
+# not safety; everything else is checked.
+disable_error_code = ["var-annotated", "annotation-unchecked"]

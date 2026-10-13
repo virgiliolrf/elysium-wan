@@ -1,0 +1,32 @@
+[
+ {
+  "name": "0.83B, 2x RTX 4090\nUS-Sweden, 32 mb\n(2026-10-13)",
+  "idle_min": 39,
+  "idle_max": 54,
+  "tok_s": 5500
+ },
+ {
+  "name": "13.5B, 2x H100 NVL\nUS-Czechia, 32 mb\n(2026-10-12)",
+  "idle_min": 24,
+  "idle_max": 30,
+  "tok_s": 2465
+ },
+ {
+  "name": "25.1B, 4x H100 SXM\n3 countries, 64 mb\n(2026-10-12)",
+  "idle_min": 28,
+  "idle_max": 50,
+  "tok_s": 2500
+ },
+ {
+  "name": "15.8B, 2x H100 NVL\nUS-Czechia, 128 mb\nrun 1 (today)",
+  "idle_min": 2.3,
+  "idle_max": 9.5,
+  "tok_s": 2730
+ },
+ {
+  "name": "15.8B, 2x H100 NVL\nUS-Czechia, 128 mb\nrun 3: paced + flash",
+  "idle_min": 5.9,
+  "idle_max": 20.1,
+  "tok_s": 3344
+ }
+]

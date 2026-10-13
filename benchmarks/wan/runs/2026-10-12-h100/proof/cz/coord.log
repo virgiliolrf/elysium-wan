@@ -1,0 +1,16 @@
+[coord info] COORDINATOR_ID 66948fd7e7dbaabd1660a138972f9f0a
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-200210-70ae68: starting
+[coord info] registered us (47a930f440) key=002b7ed2a67f6560c278a47f40bc8362 203.0.113.25:27554 cuda/NVIDIA H100 NVL 531.052 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered cz (a19177e606) key=329f0d4dec0af1d456fd608d224a433d 203.0.113.12:53154 cuda/NVIDIA H100 NVL 541.463 TFLOPs 92.6 GB region=cz declared=['region']
+[coord info] selection: 2 node(s) in *: cz(NVIDIA H100 NVL, 541.46 TFLOPs, 92.6 GB), us(NVIDIA H100 NVL, 531.05 TFLOPs, 92.6 GB); one device model, so the run stays bit-comparable against itself
+[coord info] probe matrix (Mbps): [[null, 25.4], [25.4, null]]
+[coord info] link cz->us: fwd 41.16 rev 49.3 bidir 26.63+49.4 Mbps, RTT 133.83 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 268.7 Mbps, link is 41.16 Mbps. Expect residual stall
+[coord info] zero-bubble schedule: predicted 2.739 s/step, bubble 51.9%; F/B/W ms per stage [[22.552, 45.649, 13.619], [22.995, 45.388, 14.38]], hop comm ms [781.518], peer weights [[1.0], [1.0]]
+[coord info] fit rank 0: peak 31.09 GiB of 78.72 GiB budget
+[coord info] fit rank 1: peak 34.53 GiB of 78.69 GiB budget
+[coord info] placement: [['cz(cuda/NVIDIA H100 NVL)'], ['us(cuda/NVIDIA H100 NVL)']] partition [[0, 18], [18, 34]]
+[coord warn] ckpt_every=0: a dead worker cannot be healed, only restarted from step 0
+[coord info] launching attempt 1 (resume=False) on 2 slot(s)

@@ -1,0 +1,67 @@
+WT_PHASE train
+WT_STAGE rank=0 peer=0 device=cuda partition=[[0, 22], [22, 42]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET dial {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=ef843b56c6e331853fe3e9406bc1e975
+WT_OPT overlap layers=22 params=254
+WT_TELEM {"v": 1, "step": 0, "rank": 0, "peer": 0, "step_ms": 46161.918639000076, "emit_us": 0.0, "ops": {"F": {"n": 128, "med_ms": 84.57484100000556}, "B": {"n": 128, "med_ms": 187.66713299999083}, "W": {"n": 128, "med_ms": 76.37498950003874}, "OPT": {"n": 1, "med_ms": 113.92745499995272}}, "stall_ms": 1385.3357509999569, "hops": {"next0": {"frames": 4096, "bytes": 1010837605, "busy_ms": 1338.883995000515}}, "recv": {"next0": {"n": 128, "med_ms": 107.17209950001916, "max_ms": 414.12476499999684}}}
+WT_MEM step=0 alloc=61.79 peak=75.35 reserved=76.40
+WT_STEP 0
+WT_TELEM {"v": 1, "step": 1, "rank": 0, "peer": 0, "step_ms": 84278.78331299996, "emit_us": 836858.5560000383, "ops": {"F": {"n": 128, "med_ms": 85.83742999996957}, "B": {"n": 128, "med_ms": 188.19937450007274}, "W": {"n": 128, "med_ms": 76.1731630000213}, "OPT": {"n": 1, "med_ms": 1.2601710000126332}}, "stall_ms": 4874.133884999992, "hops": {"next0": {"frames": 4096, "bytes": 968712918, "busy_ms": 1542.6806449995638}}, "recv": {"next0": {"n": 128, "med_ms": 109.76670899998453, "max_ms": 407.15967199992065}}}
+WT_MEM step=1 alloc=62.17 peak=75.72 reserved=76.97
+WT_STEP 1
+WT_OPT resident bytes=0 params=0/254 room=-8589099008 peak=82646663168
+WT_TELEM {"v": 1, "step": 2, "rank": 0, "peer": 0, "step_ms": 48048.69908799992, "emit_us": 17198.286000052576, "ops": {"F": {"n": 128, "med_ms": 86.94510999998784}, "B": {"n": 128, "med_ms": 191.64662949992817}, "W": {"n": 128, "med_ms": 77.5215315000537}, "OPT": {"n": 1, "med_ms": 1.515950000111843}}, "stall_ms": 1094.4589279999946, "hops": {"next0": {"frames": 4096, "bytes": 875380790, "busy_ms": 1116.2144540002146}}, "recv": {"next0": {"n": 128, "med_ms": 109.77841549998857, "max_ms": 310.2272339999672}}}
+WT_MEM step=2 alloc=62.17 peak=75.72 reserved=76.97
+WT_STEP 2
+WT_TELEM {"v": 1, "step": 3, "rank": 0, "peer": 0, "step_ms": 48054.301863999855, "emit_us": 17127.228999925137, "ops": {"F": {"n": 128, "med_ms": 87.28365699994356}, "B": {"n": 128, "med_ms": 192.172750500049}, "W": {"n": 128, "med_ms": 77.6319584998646}, "OPT": {"n": 1, "med_ms": 1.2616420001450024}}, "stall_ms": 1004.3950519998361, "hops": {"next0": {"frames": 4096, "bytes": 808663281, "busy_ms": 1053.033124001331}}, "recv": {"next0": {"n": 128, "med_ms": 152.25354100005006, "max_ms": 498.18417300002693}}}
+WT_MEM step=3 alloc=62.17 peak=75.72 reserved=77.03
+WT_STEP 3
+WT_TELEM {"v": 1, "step": 4, "rank": 0, "peer": 0, "step_ms": 48005.27264600009, "emit_us": 17037.87399992507, "ops": {"F": {"n": 128, "med_ms": 87.00015450006049}, "B": {"n": 128, "med_ms": 191.72266900000068}, "W": {"n": 128, "med_ms": 77.35790699996414}, "OPT": {"n": 1, "med_ms": 1.3169019998713338}}, "stall_ms": 1054.0272919997733, "hops": {"next0": {"frames": 4096, "bytes": 789377661, "busy_ms": 1092.0681420002438}}, "recv": {"next0": {"n": 128, "med_ms": 112.4076134999541, "max_ms": 415.21326699989913}}}
+WT_MEM step=4 alloc=62.17 peak=75.72 reserved=77.03
+WT_STEP 4
+WT_TELEM {"v": 1, "step": 5, "rank": 0, "peer": 0, "step_ms": 48115.7072420001, "emit_us": 17268.465000142896, "ops": {"F": {"n": 128, "med_ms": 86.9459860000461}, "B": {"n": 128, "med_ms": 191.81131850007205}, "W": {"n": 128, "med_ms": 77.49676299999919}, "OPT": {"n": 1, "med_ms": 1.2874420001480757}}, "stall_ms": 1146.0046079998847, "hops": {"next0": {"frames": 4096, "bytes": 775781290, "busy_ms": 561.0080459989604}}, "recv": {"next0": {"n": 128, "med_ms": 200.5126615000563, "max_ms": 407.03127000006134}}}
+WT_MEM step=5 alloc=62.17 peak=75.72 reserved=77.03
+WT_STEP 5
+WT_TELEM {"v": 1, "step": 6, "rank": 0, "peer": 0, "step_ms": 47943.18943400003, "emit_us": 17233.417000170448, "ops": {"F": {"n": 128, "med_ms": 87.04100249997282}, "B": {"n": 128, "med_ms": 191.6340320000245}, "W": {"n": 128, "med_ms": 77.69139649985846}, "OPT": {"n": 1, "med_ms": 1.359271999945122}}, "stall_ms": 950.3243009999096, "hops": {"next0": {"frames": 4096, "bytes": 768139869, "busy_ms": 567.1245030000591}}, "recv": {"next0": {"n": 128, "med_ms": 112.51202250002734, "max_ms": 409.9568309998176}}}
+WT_MEM step=6 alloc=62.17 peak=75.72 reserved=77.03
+WT_STEP 6
+WT_TELEM {"v": 1, "step": 7, "rank": 0, "peer": 0, "step_ms": 48136.421318999965, "emit_us": 17054.054000027463, "ops": {"F": {"n": 128, "med_ms": 86.93349099996794}, "B": {"n": 128, "med_ms": 191.26944399999957}, "W": {"n": 128, "med_ms": 77.8919645000542}, "OPT": {"n": 1, "med_ms": 1.2694229999397066}}, "stall_ms": 1172.2997879999184, "hops": {"next0": {"frames": 4096, "bytes": 763510539, "busy_ms": 821.8527129995437}}, "recv": {"next0": {"n": 128, "med_ms": 110.28229150008428, "max_ms": 463.51379399993675}}}
+WT_MEM step=7 alloc=62.17 peak=75.72 reserved=77.19
+WT_STEP 7
+WT_TELEM {"v": 1, "step": 8, "rank": 0, "peer": 0, "step_ms": 48014.41651999994, "emit_us": 17175.231999999596, "ops": {"F": {"n": 128, "med_ms": 86.85199399997146}, "B": {"n": 128, "med_ms": 191.12165650005863}, "W": {"n": 128, "med_ms": 77.90232499974081}, "OPT": {"n": 1, "med_ms": 1.2594130000707082}}, "stall_ms": 1045.5415760002325, "hops": {"next0": {"frames": 4096, "bytes": 757233001, "busy_ms": 564.0339279998443}}, "recv": {"next0": {"n": 128, "med_ms": 109.77634749997378, "max_ms": 415.80322000004344}}}
+WT_MEM step=8 alloc=62.17 peak=75.72 reserved=77.19
+WT_STEP 8
+WT_TELEM {"v": 1, "step": 9, "rank": 0, "peer": 0, "step_ms": 47924.622608999925, "emit_us": 17006.324000021777, "ops": {"F": {"n": 128, "med_ms": 86.91679499997917}, "B": {"n": 128, "med_ms": 191.13034550002794}, "W": {"n": 128, "med_ms": 78.02178949998506}, "OPT": {"n": 1, "med_ms": 1.2678430000505614}}, "stall_ms": 944.54865900002, "hops": {"next0": {"frames": 4096, "bytes": 755122652, "busy_ms": 667.1295160001591}}, "recv": {"next0": {"n": 128, "med_ms": 110.43317699989075, "max_ms": 428.72312599979523}}}
+WT_MEM step=9 alloc=62.17 peak=75.72 reserved=77.19
+WT_STEP 9

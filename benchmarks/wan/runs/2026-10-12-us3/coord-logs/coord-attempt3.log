@@ -1,0 +1,16 @@
+[coord info] COORDINATOR_ID 8420098b1a830c270f5f85b0881d72a9
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-221848-5a887a: starting
+[coord info] registered va (2c347f0617) key=afce005267d51d49b4f82e7260f8ca70 203.0.113.19:40424 cuda/NVIDIA H100 NVL 548.897 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered den (7fd242926e) key=aea85efd6c74dd887117641221e41927 203.0.113.25:27408 cuda/NVIDIA H100 NVL 537.020 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] selection: 2 node(s) in *: va(NVIDIA H100 NVL, 548.90 TFLOPs, 92.6 GB), den(NVIDIA H100 NVL, 537.02 TFLOPs, 92.6 GB); one device model, so the run stays bit-comparable against itself; WARNING: a hop of this fleet is UNRELIABLE, measured at 67-104 Mbps across runs
+[coord info] probe matrix (Mbps): [[null, 57.3], [57.3, null]]
+[coord info] link va->den: fwd 98.21 rev 99.42 bidir 58.28+106.18 Mbps, RTT 44.37 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 125.3 Mbps, link is 98.21 Mbps. Expect residual stall -- WARNING: estimated 138.2 GB per stage exceeds the 92.6 GB budget
+[coord info] zero-bubble schedule: predicted 9.437 s/step, bubble 16.3%; F/B/W ms per stage [[62.23, 116.996, 59.711], [66.586, 125.448, 62.637]], hop comm ms [681.067], peer weights [[1.0], [1.0]]
+[coord info] fit rank 0: peak 80.19 GiB of 78.69 GiB budget
+[coord info] fit rank 1: peak 80.75 GiB of 78.69 GiB budget
+[coord warn] rank 0 does not fit: peak 80.19 GiB > budget 78.69; re-solving the schedule: rank 0 schedules with 23.80 GiB of activations; rank 1 schedules with 27.47 GiB of activations
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 125.3 Mbps, link is 98.21 Mbps. Expect residual stall -- WARNING: estimated 138.2 GB per stage exceeds the 92.6 GB budget

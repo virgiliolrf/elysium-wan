@@ -1,0 +1,9 @@
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00, 246.13it/s]
+WT_HF {"loaded": 19, "loaded_bytes": 361728, "missing": [], "missing_count": 0, "unused": [], "unused_count": 0}
+llama native vs transformers: max|dlogit|=8.179e-03 argmax agree=1.000
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00, 122.95it/s]
+WT_HF {"loaded": 19, "loaded_bytes": 361728, "missing": [], "missing_count": 0, "unused": [], "unused_count": 0}
+llama-yarn native vs transformers: max|dlogit|=6.264e-03 argmax agree=0.969
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00, 677.05it/s]
+WT_HF {"loaded": 19, "loaded_bytes": 361728, "missing": [], "missing_count": 0, "unused": ["model.layers.0.self_attn.k_norm.weight", "model.layers.0.self_attn.q_norm.weight", "model.layers.1.self_attn.k_norm.weight", "model.layers.1.self_attn.q_norm.weight"], "unused_count": 4}
+qwen3 native vs transformers: max|dlogit|=2.958e-01 argmax agree=0.672

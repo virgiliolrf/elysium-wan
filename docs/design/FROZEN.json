@@ -1,0 +1,859 @@
+{
+  "docs": {
+    "docs/design/SPEC-control.md": {
+      "history": [
+        {
+          "sha256": "7a4619158060bb345f6f3ac321ae2932616a66ada7998e937ab4ca03cf12b14a",
+          "at": "2026-10-09T16:13:42.167Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "8f57424587a3fe0b42800b00898340c2f8a059c2f6955d9c4872a421d01a0e79",
+          "at": "2026-10-09T16:22:22.591Z",
+          "reason": "CONTROL-I9 and the heal task: a slot of a sharded stage (shard pieces) is replaced only by the identical device model, else the heal fails cleanly with the reason",
+          "by": "ADR-0006"
+        },
+        {
+          "sha256": "664f94dd457cf30491a55ba231d28b995769706151f46b055518d36c40fd48cc",
+          "at": "2026-10-09T17:11:35.531Z",
+          "reason": "ADR-0007 slice-only build: new CONTROL-I19 (HELLO init class, heal before the first wave within the class, PROFILE and FIT build slices)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "4b1f9aa5feacda717764deb652b00186cc1768c67c2e4b055b2310a1fddef7ed",
+          "at": "2026-10-09T17:30:09.237Z",
+          "reason": "ADR-0007 round 1: init record (ledger, per-tensor digests, sampler fingerprint) replaces the declared init class; writers rule for tied tables; ledger replay; resume refuses a wave without RNG",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "052f191a3728d2991ec11fd9f5cde12a7d8270b253e18fc22a83f3c48ace0d1a",
+          "at": "2026-10-09T17:47:55.613Z",
+          "reason": "ADR-0007 round 2: record bound to (cfg, seed, program id) and anchored at manual_seed; digests from one pinned phase-major walk on NaN-filled layers (pass 2 removed); each home tensor finalized after its last writer; pinned fingerprint; one exclusion rule",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "e7d2c2dacc01218b6adf0829d50dcb1d34f04c5df5592f5aab21b26531017a5a",
+          "at": "2026-10-09T18:20:41.393Z",
+          "reason": "ADR-0007 round 4: CPU-device slot heal keeps the record's fingerprint (R9 open); PROFILE and FIT re-tied slice, memory stated, user arch keeps full build",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "e8b0af60ac9e2925629d96808c8db4dd594f8e7c4c821c44ce658874376e15e2",
+          "at": "2026-10-09T18:36:29.474Z",
+          "reason": "ADR-0007 round 5: review corrections of text and numbers (hf RNG trust stated, R10; LoRA per-layer primitive; record encoding and cap; binding or anchor failures refuse the job; user manifest); no mechanism changed",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "9b1b9cd96b3a5fa98f83c841767d3d0c0ade43684b45e6de01bb472f8ded238a",
+          "at": "2026-10-09T20:33:58.292Z",
+          "reason": "M2 re-recorded on top of ADR-0007 after merging main: conflict wave-layout rulings (wave retention counts keep over waves at or below the committed step; §2.3 wave cap MAX_WAVES_AHEAD) carried from the pre-merge record",
+          "by": "conflict-wave-layout"
+        },
+        {
+          "sha256": "6499e6e90851f4d008db52792961f8b9988d814504a7b46fb846378d5717c2b1",
+          "at": "2026-10-09T20:37:06.775Z",
+          "reason": "HANDOUT-M2 §8 P1 on top of ADR-0007: A4 (CONTROL-I19 text recorded as CONTROL-I23, collision with ADR-0007), A5 CONTROL-I20, A6 CONTROL-I16 replaced, A7 CONTROL-I21, A8 CONTROL-I22, CONTROL-I8 amended",
+          "by": "HANDOUT-M2"
+        },
+        {
+          "sha256": "0b346f4a6771f8e1ceb7f1327145b7d1c4feea222e5caf2d704afdff0221b3f9",
+          "at": "2026-10-11T02:31:26.596Z",
+          "reason": "ADR-0009 round 0: any HF decoder through transformers' own modules windowed per unit, launch gate, per-use tied fold hosted on the Head stage (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "45d0b855d1d3f0fa8abdc62e82a939a4c6367dff99a3b46f38a05c3624f69c55",
+          "at": "2026-10-11T03:14:38.714Z",
+          "reason": "ADR-0009 round 1: stock-order tied fold (row-sparse, rows relayed on the chain, no tied link or probe), NaN stubs and trace rules, convert exclusion, device gate, RECORD fingerprint, HF boundary_dtype refused (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "f46b8d430e88e5f1e3a412d3207d3e5f5cf7403cc642763eaee90b6d29831257",
+          "at": "2026-10-11T03:51:54.009Z",
+          "reason": "ADR-0009 round 2: per-platform fingerprint, buffer record, device-map reference, stride-0 stubs, TIED frames, corrected eager and tied cost terms",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "ab6c60db8446765241f521a8a629d5abe82bd30ed53fb166cd5e2805d22d8392",
+          "at": "2026-10-11T04:10:40.038Z",
+          "reason": "ADR-0009 round 3: text corrected to the frozen mechanism (oracle, buffer record carrier and guard, LoRA refusal, per-map reference scope, TIED width, NaN claim); see SPEC-control-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "da92d2b31fc2f61a25d38668381918dd1a232eda7a80299432261df6d6c6fccf",
+          "at": "2026-10-11T04:10:59.146Z",
+          "reason": "ADR-0009 round 3: task 6 matches CONTROL-I24 (fingerprints in the run record, buffer record pinned in the JobSpec, wave.json format unchanged)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "7b25c32408c1b63f90825e2204b0aa149385c799e6729445d7cf186cf75cd24f",
+          "at": "2026-10-11T04:31:39.966Z",
+          "reason": "ADR-0009 round 4: text corrected per review (oracle on one-class maps, refusals, tied cost terms); history entry dated 2026-10-11",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "24337c38464578dd7265c5c59c7fe4c03aa3f4eb1e38f726349ff1a4a52802b9",
+          "at": "2026-10-11T04:51:14.410Z",
+          "reason": "ADR-0009 round 5: text corrected for review findings (classifier, environment, heal class, TIED at receipt, rollback); see SPEC-control-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "dbc1c8fc0377946d8493e04db40a7fe3e5c18f7fd24d5b30e3ae6f92c64797a3",
+          "at": "2026-10-11T05:12:39.028Z",
+          "reason": "ADR-0009 r6 items h, j, g: decision 8 re-checked at every admission; native set equal per class; task 6 rollback target",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "1f0fec779518d53e368fd4fce0cd9e2216d5c6a518d041381ca5ae1a1bd0e8fa",
+          "at": "2026-10-11T22:40:17.077Z",
+          "reason": "Human decision 2026-10-11: homogeneous fleets only; CONTROL-I25 refuses every mixed fleet (MIXED-FLEET) for every arch at launch, planner, heal, restart, rebalance, resume; CONTROL-I5 suspended; resolves ADR-0009 decision 8 conflict",
+          "by": "human-2026-10-11"
+        },
+        {
+          "sha256": "ebec7bf69b0b8812138c928fbc1f85919d09ad1eed5824ac44b6ed257fa31b5d",
+          "at": "2026-10-12T15:31:07.139Z",
+          "reason": "CONTROL-I25: the operator's WANTRAIN_DEVICE_CLASS=arch groups CUDA classes by compute capability for a run whose oracle holds per device map (human, 2026-10-12, WAN benchmark on an RTX 3060 + RTX 3070 Laptop pair)",
+          "by": "human-2026-10-12"
+        },
+        {
+          "sha256": "75d62e5b4b14e9e6a74bbf2ae7ab16eda43489a6cdb05687e45620518b711a1c",
+          "at": "2026-10-12T16:11:19.816Z",
+          "reason": "CONTROL-I25 arch classes: the grouping holds at admission only; a heal takes a spare of the dead slot's GPU model (review of PR #52)",
+          "by": "human-2026-10-12"
+        },
+        {
+          "sha256": "0be4c7a6dd854912a681df9c2dc876db5f7416ae5e845cd0157ed7d80ae9abe8",
+          "at": "2026-10-12T18:43:44.682Z",
+          "reason": "CONTROL-I26: a measured fit overshoot re-plans the cut (shrink_for_overshoot) before halving the microbatch; found on the 2026-10-12 MoE run (a 24 GB stage measured 22.49 GiB of 19.66)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "9e35e717e4816f0067b23f7e322202c5c105c1e43c90dc675311753bcf469452",
+          "at": "2026-10-12T19:08:44.453Z",
+          "reason": "CONTROL-I26: the schedule budget first (fewer in-flight microbatches, same cut), then the cut; an out-of-memory fit counts as a whole-card peak (2026-10-12: a balanced 8.4B MoE OOMed stage 0 on a 24 GB card)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "a31c00d48881231b7fb32e5560dab212ea987fd2d34a6a8964aa308a61cf72ad",
+          "at": "2026-10-13T02:40:03.000Z",
+          "reason": "CONTROL-I27: re-cut from measured stage costs; a stage slower than its own baseline is healed onto a spare or re-cut away from",
+          "by": "orchestrator"
+        }
+      ]
+    },
+    "docs/design/SPEC-model.md": {
+      "history": [
+        {
+          "sha256": "6a053b424c901b8e964db8a84566d5b6fbc2de4fcc67c05ce8fcb246f117aeb8",
+          "at": "2026-10-09T16:13:42.167Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "ab82e59bc03654de0355b089faac727644be8818557e3294cfe8da8e887a1219",
+          "at": "2026-10-09T16:22:22.617Z",
+          "reason": "MODEL-I7 and task 2 (M2b): wgrad.flush_iter(store, order) streams per-entry native-dtype dW in a plan-fixed order, bit-identical to flush; gather dtype table from the recipe",
+          "by": "ADR-0006"
+        },
+        {
+          "sha256": "412608a681e7bddf6d7890dc30d5e38cffcb865a482dcc4b031fd2b5f51e9d81",
+          "at": "2026-10-09T17:11:35.466Z",
+          "reason": "ADR-0007 slice-only build: MODEL-I6 rewritten (replay of the unchanged init stream, skeleton structure), determinism and provides, task 1 without a recipe version, decision",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "50f336aa26a9e7d2df00fd7b97a2ee3004a9b4468e07ef1fae03af3f6bf28071",
+          "at": "2026-10-09T17:30:09.171Z",
+          "reason": "ADR-0007 round 1: init record (ledger, per-tensor digests, sampler fingerprint) replaces the declared init class; writers rule for tied tables; ledger replay; resume refuses a wave without RNG",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "14ab28041e172258813e66b19e5598e0a518228239c5c0dee56179bf441bb73e",
+          "at": "2026-10-09T17:47:55.531Z",
+          "reason": "ADR-0007 round 2: record bound to (cfg, seed, program id) and anchored at manual_seed; digests from one pinned phase-major walk on NaN-filled layers (pass 2 removed); each home tensor finalized after its last writer; pinned fingerprint; one exclusion rule",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "bdcf5a4b21e11f9ca524a20ae308e4dc34e2854374efc745a05756ae9ebad3d1",
+          "at": "2026-10-09T18:04:26.502Z",
+          "reason": "ADR-0007 round 3: gpt2_init phase only where the build reaches arch.build_layers (hf or _uses_general_arch) with init_scheme gpt2, as today; CPU home adds 4*P_s to the build's host memory",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "12c543d890ea63d50d94a12c77137b7d7987593d45552c6fa08e3b3864e0d2b2",
+          "at": "2026-10-09T18:04:43.018Z",
+          "reason": "ADR-0007 round 3: section 6 decision numbers re-derived with the record walk's memory passes (94 s per launch, record 811 s, per-parameter generator record 101 s)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "0141e27b318c088beb856dcd0296ecec0ee23d498532fff14c53a626ad9f8ab2",
+          "at": "2026-10-09T18:20:17.245Z",
+          "reason": "ADR-0007 round 4: fingerprint stated as necessary only; skeleton re-tie after to_empty; hf tied Head-only stage reads embed_tokens; user arch keeps full build for resume, PROFILE, FIT; task 1 cut to what the ADR decides",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "a6423586274d91e1c933d7b1475e6c23d571332d67f6535e6da97183b38b6afc",
+          "at": "2026-10-09T18:36:29.427Z",
+          "reason": "ADR-0007 round 5: review corrections of text and numbers (hf RNG trust stated, R10; LoRA per-layer primitive; record encoding and cap; binding or anchor failures refuse the job; user manifest); no mechanism changed",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "50cac98c622726e04ace65648febe20a099e69182de0351b0425b34242f5a698",
+          "at": "2026-10-09T18:50:37.042Z",
+          "reason": "ADR-0007 decision 6: MODEL-I6 binding adds the code id; hf replays its writers' random phases into scratch and checks every transition (R10 closed)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "c36137061751fb94e0f7930a17e526a0412aa5ba76dd8a5fa39bd19ab59dca39",
+          "at": "2026-10-11T01:34:36.328Z",
+          "reason": "ADR-0008 draft brought onto main a62e4eb (from factory/moe-adr round 0): exact Mixture-of-Experts block; MoE ids renumbered RUNTIME-I15->I18 (collision with M2 resume) and SCHEDULER-I19->I21 (collision with M2b I19/I20); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "85364a9dba702318b82230b18b4f1cf5d14922dede163b4d087dad1fae78b2fe",
+          "at": "2026-10-11T01:55:10.305Z",
+          "reason": "ADR-0008 round 1: retargeted M2c->M4; enumerated MoE routing recipe, aux terms, selection-bias update, loader classification with hf_unplaced rollback, HF-modules substitution rule; stale ids fixed (RUNTIME-I18, SCHEDULER-I21); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "1bc6d31286365724bff62791d489f0e8dac5b6733fe59c66c469f7ff169782c9",
+          "at": "2026-10-11T02:25:35.752Z",
+          "reason": "ADR-0008 round 2: router dtype per family; allowlist config map with head_dim, norm_eps, rope_style; orientation table for fused experts; HF-modules path keeps HF objects and replaces the sparse block forward (moe_forward, call contract table); MODEL-I8 HF-object equality",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "73093c7ac5f581e4b272da193d23f2d32d44d5c599c1591d3adc12744df5901c",
+          "at": "2026-10-11T02:31:26.525Z",
+          "reason": "ADR-0009 round 0: any HF decoder through transformers' own modules windowed per unit, launch gate, per-use tied fold hosted on the Head stage (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "528b6b99fbedb9d2a81515120cf55ff20a2bb7937bcdc78f289a8dacc3ce8cbf",
+          "at": "2026-10-11T02:50:15.885Z",
+          "reason": "ADR-0008 round 3: native loader keyed on ADR-0009's grant (decision 6), HF-object table at transformers 5.19.0 with the v5 forward written out, task 3 split, MODEL-I4/I8 corrected",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "10ae65205f1772d58c0dbce859e008f77108cf0237dff9eb61d4b144a36f58b9",
+          "at": "2026-10-11T03:05:48.106Z",
+          "reason": "ADR-0008 round 4: group-size refusals, HF replacement as a class swap, open ADR-0009 seam note",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "b1da379c32bc27b8a3c332b17491d6ce27988c8c046829fb9ecb0c7cd1473583",
+          "at": "2026-10-11T03:14:38.593Z",
+          "reason": "ADR-0009 round 1: stock-order tied fold (row-sparse, rows relayed on the chain, no tied link or probe), NaN stubs and trace rules, convert exclusion, device gate, RECORD fingerprint, HF boundary_dtype refused (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "1b317c2399a68173435aa9aa2ebd3bb691f3fb884db3bcb2f76029cca933f128",
+          "at": "2026-10-11T03:18:16.608Z",
+          "reason": "ADR-0008 round 5: HF v5 bank-gradient hold stated in the pending-W note; MODEL-I10 launch gate named in the open ADR-0009 seam note",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "933522bf1c410018df383c6fc646736723ae54b704395bc8047c2121846c7524",
+          "at": "2026-10-11T03:51:53.896Z",
+          "reason": "ADR-0009 round 2: per-platform fingerprint, buffer record, device-map reference, stride-0 stubs, TIED frames, corrected eager and tied cost terms",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "96e454aafce389471f1a0814599e372560d77a5eda89abd47a572c3ee29bec2b",
+          "at": "2026-10-11T04:10:39.967Z",
+          "reason": "ADR-0009 round 3: text corrected to the frozen mechanism (oracle, buffer record carrier and guard, LoRA refusal, per-map reference scope, TIED width, NaN claim); see SPEC-model-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "783b758f788fb52feae88d848ddbac2ddacb66208eac21dda6e8709c4bb52123",
+          "at": "2026-10-11T04:31:39.874Z",
+          "reason": "ADR-0009 round 4: text corrected per review (oracle on one-class maps, refusals, tied cost terms); history entry dated 2026-10-11",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "467d9ae56805e2bf422937bb19ac2a81813432a998e74ce226cea8e2a5fcd72a",
+          "at": "2026-10-11T04:51:14.376Z",
+          "reason": "ADR-0009 round 5: text corrected for review findings (classifier, environment, heal class, TIED at receipt, rollback); see SPEC-model-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "2386c7ade006c7b46dbd3974f8a69339a02c2723ed08dbf56d58c5b29d0ad237",
+          "at": "2026-10-11T05:11:53.231Z",
+          "reason": "ADR-0008 r7 items a, b (bank hold x m_BW in flight; seam rule rows, module calls; MODEL-I4 hub-to-fused map; 6b paragraph moved to history)",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "2386c7ade006c7b46dbd3974f8a69339a02c2723ed08dbf56d58c5b29d0ad237",
+          "at": "2026-10-11T05:11:57.799Z",
+          "reason": "ADR-0009 r6 items b, d, e, g, i, j (MODEL-I9 reference with the swap; routing classifier; importable probes; rollback per piece; prefix ordering; native objects in MODEL-I10)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "9e70b133cac1fb4a4aa62ccd383be955f32a7b789b0e036c44aa88b962f478b2",
+          "at": "2026-10-11T05:18:05.161Z",
+          "reason": "reconcile check: item i (MODEL-I10 names wantrain modules; launch without -X pycache_prefix refused)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "baf368b6a9b7a5ffedbf9d4938497b280626adb42a1e29e31a2713941a8b6dcc",
+          "at": "2026-10-11T22:38:22.996Z",
+          "reason": "M4 implement deviation: MODEL-I10 causality probe runs substituted expert GEMMs row by row during the probe only (hfm._rowwise_experts); D8 counts a tagged value meeting an E-leading parameter in one op; unit trace on the swapped model with TRACE-UNPLACED for never-called layer modules; hf extra pins transformers==5.19.0 + safetensors locked with hashes; superseded decision-6b text moved to history",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "c5e1d81917e976c90fe6822d31702c9b4c706d762ca22fa3bed522d7da59dd9f",
+          "at": "2026-10-11T19:32:22.349Z",
+          "reason": "MODEL-I11: data-reading slots provision and verify the shards their microbatches draw (per-shard sha256, pinned manifest, fetch from dataset_source) before connecting; the human asked for it on 2026-10-11 without an ADR",
+          "by": "human-2026-10-11"
+        },
+        {
+          "sha256": "8bd6d04199e73127734b6c04bda15253d0c056f6effaa990a77e178568dec07f",
+          "at": "2026-10-11T19:47:46.432Z",
+          "reason": "MODEL-I11: the planner's default data_shards is the prepared shard count (a recipe pin) and the plan warns about it; a corpus without a manifest is not pinned by content and the plan warns (review of PR #61)",
+          "by": "human-2026-10-11"
+        },
+        {
+          "sha256": "6fdc62af47a0db8e9ecd3a8ac7eb794a7775dbb5d3e86273c3173e3cdbae913c",
+          "at": "2026-10-12T14:48:14.368Z",
+          "reason": "Merge of M4 (factory/m4: MODEL-I8..I10, MoE and any-decoder amendments) with main + M2b (MODEL-I11 data provisioning): both sides' text kept, no invariant renumbered",
+          "by": "orchestrator-merge-2026-10-12"
+        }
+      ]
+    },
+    "docs/design/SPEC-runtime.md": {
+      "history": [
+        {
+          "sha256": "0c6b71f671408e32c61270e75808c0a9be1492d99c9bc151fef36b410c381c1e",
+          "at": "2026-10-09T16:13:42.167Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "900d4c87ae4a1520480690bdef958ef40bff1f71cb6984a6173fc57a428c4150",
+          "at": "2026-10-09T16:22:22.643Z",
+          "reason": "RUNTIME-I10..I13 and task 5 (M2b): per-tensor pieces under the left fold, working copy, need-first queues, async copies, per-unit updates, logical checkpoints whose manifest is the step-bound sidecar, one-step host bound with gathers",
+          "by": "ADR-0006"
+        },
+        {
+          "sha256": "4690dfd27a20577a1433ad87726eb687d59a6ab19f5d544fadcee1d7f72197b3",
+          "at": "2026-10-09T17:11:35.488Z",
+          "reason": "ADR-0007 slice-only build: new RUNTIME-I14 (slice build at the device home, draw-free resume, init-class check) and task 4 rewritten",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "13fb683e09a8b100e9cc046f69079e302b0088f76becd7a00bf1e243cbd5c95b",
+          "at": "2026-10-09T17:30:09.195Z",
+          "reason": "ADR-0007 round 1: init record (ledger, per-tensor digests, sampler fingerprint) replaces the declared init class; writers rule for tied tables; ledger replay; resume refuses a wave without RNG",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "b914559b5a2ed24db95c0f9785e22846648adbb95d180fd33e843f679fa22856",
+          "at": "2026-10-09T17:47:55.560Z",
+          "reason": "ADR-0007 round 2: record bound to (cfg, seed, program id) and anchored at manual_seed; digests from one pinned phase-major walk on NaN-filled layers (pass 2 removed); each home tensor finalized after its last writer; pinned fingerprint; one exclusion rule",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "f0e0ffa376a29e60c623b3e0ce3b24a320d3e356051c5ef3d38a4b453da644d6",
+          "at": "2026-10-09T18:04:26.527Z",
+          "reason": "ADR-0007 round 3: RUNTIME-I14 build bound adds the slice on a CPU device; resume host memory stated (12*P_s wave, plus slice on CPU) and charged by SCHEDULER-I18; build full does not roll back the draw-free resume (R8)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "2e39796722c51a1862a859077ae65283fda5fee02185a92b798ec6f61eab506a",
+          "at": "2026-10-09T18:20:29.527Z",
+          "reason": "ADR-0007 round 4: resume re-ties the skeleton slice after to_empty; arch user resumes by full build then load; heal admission referred to CONTROL-I19",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "db0024fe2d336ee4b0c6ad20c2bf6a060bd90be09772d470f9defe9eab451e59",
+          "at": "2026-10-09T18:21:18.474Z",
+          "reason": "ADR-0007 round 4: rewrap of the RUNTIME-I14 resume bullet amended in this round; no text change",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "ca286430ed1d35759904723b696d6305954d3e130a9dd546af694a8482d960f6",
+          "at": "2026-10-09T18:36:29.451Z",
+          "reason": "ADR-0007 round 5: review corrections of text and numbers (hf RNG trust stated, R10; LoRA per-layer primitive; record encoding and cap; binding or anchor failures refuse the job; user manifest); no mechanism changed",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "5120c324e76c32c8c28786c46732c9b9bc02c7b7c37ebad21a19246bc65247b0",
+          "at": "2026-10-09T18:50:37.065Z",
+          "reason": "ADR-0007 decisions 5 and 6: RUNTIME-I14 binding with code id; rollback by code revert, no resume field",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "4ed2d0307129b35a5f9ab4560293a3a9a1e855bb182d940d51fba5e958e13b89",
+          "at": "2026-10-09T20:33:58.314Z",
+          "reason": "M2 re-recorded on top of ADR-0007 after merging main: conflict resume-ownership rulings (HANDOUT-M2 A2 with steps removed from the recipe pins; RUNTIME-I15 device change limited by a device_types pin) carried from the pre-merge record",
+          "by": "conflict-resume-ownership"
+        },
+        {
+          "sha256": "cccc1c8868c6092ef9e4346b00cdcb18f80a69eeb50ccafb416d207ca5ad7bf4",
+          "at": "2026-10-09T20:37:06.754Z",
+          "reason": "HANDOUT-M2 §8 P1 on top of ADR-0007: A1 recorded as RUNTIME-I17 (renumbered from RUNTIME-I14, collision with ADR-0007), A3 as RUNTIME-I16; A2 already present",
+          "by": "HANDOUT-M2"
+        },
+        {
+          "sha256": "77cf166f16f221f8c7c7d3b05fbac0898ba5174165af08c8935015596dc9eefe",
+          "at": "2026-10-10T23:22:38.308Z",
+          "reason": "M2b re-recorded after merging main a62e4eb (M2): RUNTIME-I12 manifest embedded in every piece file (SC-1), RUNTIME-I10..I13 deferred to M2b",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "8cffa6e492fd7355916eefd18a7041d3cac8dce6fd1fcddbda1773396df4f4c1",
+          "at": "2026-10-11T01:34:36.357Z",
+          "reason": "ADR-0008 draft brought onto main a62e4eb (from factory/moe-adr round 0): exact Mixture-of-Experts block; MoE ids renumbered RUNTIME-I15->I18 (collision with M2 resume) and SCHEDULER-I19->I21 (collision with M2b I19/I20); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "a419418be13f08189e40469d2662ec7a6191906c35d8234604710dd9df36229c",
+          "at": "2026-10-11T01:55:10.333Z",
+          "reason": "ADR-0008 round 1: retargeted M2c->M4; enumerated MoE routing recipe, aux terms, selection-bias update, loader classification with hf_unplaced rollback, HF-modules substitution rule; stale ids fixed (RUNTIME-I18, SCHEDULER-I21); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "00de4d201a90625375d928133cb38ecf1fa8c114d425a4bee53380b0abdc8d95",
+          "at": "2026-10-11T02:25:35.776Z",
+          "reason": "ADR-0008 round 2: selection-bias count transport for every width (zero1 ownership list with biases appended, int64 count lane in pieces GRADS frames, owner update and gather, frame checks), 3-D expert tensor as an HF-path unit",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "f30a1ecbe5dcd523109b1cc7df30c7349a66e7c4172e99f84f3304bfdba64cdd",
+          "at": "2026-10-11T02:31:26.548Z",
+          "reason": "ADR-0009 round 0: any HF decoder through transformers' own modules windowed per unit, launch gate, per-use tied fold hosted on the Head stage (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "ddc9f8c559e40049ceef5676fa9d1238a98f832e134c9058fd46eef9cce386da",
+          "at": "2026-10-11T02:50:15.916Z",
+          "reason": "ADR-0008 round 3: task 5 HF v5 expert units (two 3-D tensors, Q_t on whole experts, B-produced gradients shipped when W(mb) starts)",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "349742084c4e5bb38f272b1e479f70c0ae642332093f2daed5a3fbf9882bb58d",
+          "at": "2026-10-11T03:14:38.636Z",
+          "reason": "ADR-0009 round 1: stock-order tied fold (row-sparse, rows relayed on the chain, no tied link or probe), NaN stubs and trace rules, convert exclusion, device gate, RECORD fingerprint, HF boundary_dtype refused (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "69b7c99c5de4558823831d3836230eb46ba83d84f485bcac91618468b9117f01",
+          "at": "2026-10-11T03:51:53.934Z",
+          "reason": "ADR-0009 round 2: per-platform fingerprint, buffer record, device-map reference, stride-0 stubs, TIED frames, corrected eager and tied cost terms",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "2dfaed2c918928d03f09f8778a49c79f452d5a70ea5e5b654a62ba61f60553c3",
+          "at": "2026-10-11T03:52:38.685Z",
+          "reason": "ADR-0009 round 2: section 6 tied decision names TIED frames and rejects lanes inside FWD/BWD frames (deadlock)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "9c935d4b2ac49d0813196543f82bffc1070c476ce5aa9f58ca555681a89ee530",
+          "at": "2026-10-11T04:10:39.991Z",
+          "reason": "ADR-0009 round 3: text corrected to the frozen mechanism (oracle, buffer record carrier and guard, LoRA refusal, per-map reference scope, TIED width, NaN claim); see SPEC-runtime-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "4ba1dc6f72d2c7be10a3c6613862eab5fcb31058fe06c543980bab235277de69",
+          "at": "2026-10-11T04:31:39.919Z",
+          "reason": "ADR-0009 round 4: text corrected per review (oracle on one-class maps, refusals, tied cost terms); history entry dated 2026-10-11",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "a1376db0daa16d2309f9c546c01128236d6e1969305ff77baa0432f8cbfb07b4",
+          "at": "2026-10-11T04:51:14.445Z",
+          "reason": "ADR-0009 round 5: text corrected for review findings (classifier, environment, heal class, TIED at receipt, rollback); see SPEC-runtime-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "a030ccbfdf858ee8d39f0a8cd7bf18211f18cfec4628eddbd39c7c9b7fafa73d",
+          "at": "2026-10-11T04:53:34.634Z",
+          "reason": "merge of origin/factory/m2b (8dee0b9, M2b snapshot) into factory/m4: both sides kept (M2b's amendments plus ADR-0008/0009's); no invariant id collides",
+          "by": "M4-merge-m2b"
+        },
+        {
+          "sha256": "e7067bf773b26d6cf8d8e9fe9b54710dd2f05a1f06b2be883b2fc62a672b1893",
+          "at": "2026-10-11T05:12:24.274Z",
+          "reason": "ADR-0008 r7 item b: HF MoE oracle carries the same SUBSTITUTE swap and aux injection (seam rule)",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "e7067bf773b26d6cf8d8e9fe9b54710dd2f05a1f06b2be883b2fc62a672b1893",
+          "at": "2026-10-11T05:12:24.297Z",
+          "reason": "ADR-0009 r6 items g, h, k: task 7 rollback per piece; I15 resume re-checks decision 8; determinism.py pins assigned and read back",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "90fce1348e753061f855ece7e229c0affb1dfa694105d2f30c782a563843b77f",
+          "at": "2026-10-11T05:18:05.182Z",
+          "reason": "reconcile check: item k (task 7 WOULD-FAIL-IF adds allow_tf32 True after setup)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "ee2b25c39ba88ea41334b81706822bf46da40dcd698007d139e6f8dd2fef5601",
+          "at": "2026-10-11T22:39:20.019Z",
+          "reason": "M4 implement deviation: pins/recipe_digest omit only the M4 hf_* fields (hf_config, hf_buffers, hf_census, hf_code, hf_impl) of a non-hf model and every moe_* field of a dense one; hf_model/hf_model_sha256 stay (BA-465)",
+          "by": "M4-implement"
+        },
+        {
+          "sha256": "ee2b25c39ba88ea41334b81706822bf46da40dcd698007d139e6f8dd2fef5601",
+          "at": "2026-10-11T22:39:20.043Z",
+          "reason": "Human decision 2026-10-11: homogeneous fleets only (CONTROL-I25); RUNTIME-I15 mixed-map scope replaced by MIXED-FLEET refusal in JobSpec.finalize",
+          "by": "human-2026-10-11"
+        },
+        {
+          "sha256": "06fca37ee6b56c1c67d26e3b8c0d1c7cf33bebee880c786d91a7642ba3a2c3dd",
+          "at": "2026-10-12T16:55:21.397Z",
+          "reason": "RUNTIME-I20 (adamw-host: AdamW moments in host memory, single-rounding ops, recipe pin) and RUNTIME-I21 (width-1 streamed gradient fold, flush's bits); human request 2026-10-12: fit larger models on 24 GB WAN stages without changing quality or exactness",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "a80e54f9430dbceac36d0010e479eda13435a32d6820e47ca9f43c352f705ca4",
+          "at": "2026-10-12T18:52:31.133Z",
+          "reason": "RUNTIME-I22: a stage builds only its span with the full build's draws (a 15.7B MoE needed 63 GB of host RAM per node to build in full; a 66 GB node could not)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "ab78eeb57b4ce026a373a8f909475d9436625cab71d915e6f94fb96efb053174",
+          "at": "2026-10-12T20:52:32.594Z",
+          "reason": "RUNTIME-I23: the adamw-host step overlapped with the next step, released per layer (0.8 s per 1B parameters off the critical path)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "b06e6f91913fe12076803a5ab2c4f949bcdad41be50a7176b3e43ad5a408f6e4",
+          "at": "2026-10-12T23:27:54.000Z",
+          "reason": "RUNTIME-I24: adamw-host moments staged through three CUDA streams and moved onto the device where the measured peak leaves room (the host round trip held each 12.7 s step's first forward for 2.7 s, 13.5B on two H100 NVL)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "baacb8678f4a7d25af0285151c54b18de1d916c7437d4740b0182265019484a4",
+          "at": "2026-10-13T02:32:25.000Z",
+          "reason": "RUNTIME-I25: per-stage recompute; a stage with one microbatch between F and B keeps F's graph (saves a forward at no memory)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "65ecc651e69df3005bb90d0cde2bbd28176d5482e5d43752077dc3f05c4b69cb",
+          "at": "2026-10-13T02:40:03.000Z",
+          "reason": "RUNTIME-I26: re-cut a width-1 chain's checkpoint to another partition, byte for byte, resumed under a new tag",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "831db7964cd68c99006eca60c87bbd1b57ab57d6127119eb8701a73456c7a24f",
+          "at": "2026-10-13T04:06:42.000Z",
+          "reason": "RUNTIME-I9 amended (per-hop recv spread), RUNTIME-I27: a W filling a wait runs in sub-blocks; leak-free W task; one optimizer stream per run",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "8849420c4c01c8cd1e460678082990e02362e2b0a5846277ca3f66da9c46dab1",
+          "at": "2026-10-13T04:53:30.000Z",
+          "reason": "RUNTIME-I28: a streamed W folds narrow gradients, widened by the fold itself (bit-identical)",
+          "by": "orchestrator"
+        }
+      ]
+    },
+    "docs/design/SPEC-scheduler.md": {
+      "history": [
+        {
+          "sha256": "b88a6be97a07a25b843e1db7944478da6c931edef78c7a525a4b1d98e77d21b3",
+          "at": "2026-10-09T16:13:42.167Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "10b4e8bb979cf68868ef099bba7fed26ba9a94f5e46bf76a2ebdcca2d1a3d97c",
+          "at": "2026-10-09T16:22:22.669Z",
+          "reason": "SCHEDULER-I16, I17 and task 4 (M2b): pieces admitted by device class, S1 at the stage's c_s (GEMM params) per link incl. host DRAM summed per host, S2 from the per-unit simulation, device and per-host memory (MEM-HOST)",
+          "by": "ADR-0006"
+        },
+        {
+          "sha256": "cdd6b105f42ea49f70536e85d430adf6bf1e161a4d4152a39899eacd19f79911",
+          "at": "2026-10-09T17:11:35.510Z",
+          "reason": "ADR-0007 slice-only build: new SCHEDULER-I18 (one init class at a first launch, MEM-INIT host charge of the build)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "df0d823c3fa99517057d219d48475fb7b2a5d0dacc7e01048d2de43cb5c383a8",
+          "at": "2026-10-09T17:30:09.216Z",
+          "reason": "ADR-0007 round 1: init record (ledger, per-tensor digests, sampler fingerprint) replaces the declared init class; writers rule for tied tables; ledger replay; resume refuses a wave without RNG",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "2c972e35525518db9a258b0501894910ac5fef880156ddfb815fefb7bd856c72",
+          "at": "2026-10-09T17:47:55.586Z",
+          "reason": "ADR-0007 round 2: record bound to (cfg, seed, program id) and anchored at manual_seed; digests from one pinned phase-major walk on NaN-filled layers (pass 2 removed); each home tensor finalized after its last writer; pinned fingerprint; one exclusion rule",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "a62d2df70dab5ed2af38c1f4fff03c1a80702f8377ee3d157fc62e3001c0959f",
+          "at": "2026-10-09T18:04:26.553Z",
+          "reason": "ADR-0007 round 3: MEM-INIT charges per slot max(build, resume), resume = the wave as _resume loads it (12*P_s), each plus 4*P_s on a CPU device; replaces 'a resume charges neither condition' (R7)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "150ef2637ae9601508d0bb042c13ade611cef55eb80d92c9e75f3789829d9182",
+          "at": "2026-10-09T18:20:51.211Z",
+          "reason": "ADR-0007 round 4: a resume excludes no node from init, but a CPU-device slot's replacement must match the record's fingerprint (CONTROL-I19, R9)",
+          "by": "ADR-0007"
+        },
+        {
+          "sha256": "b8ee877f193063c4be84cd92b410aba5f92965407fc8dc82e8ac89a55e3528e7",
+          "at": "2026-10-09T20:33:58.335Z",
+          "reason": "M2 re-recorded on top of ADR-0007 after merging main: conflict degrade-memory (SCHEDULER-I13 degraded search) and conflict replan-solver (SCHEDULER-I15 measured hop seconds per transfer) carried from the pre-merge record",
+          "by": "conflict-degrade-memory"
+        },
+        {
+          "sha256": "db1081d687403e3df2c52ee86ed228628fb809b6932f0328738e9fc8a736bbfe",
+          "at": "2026-10-09T20:37:06.796Z",
+          "reason": "HANDOUT-M2 §8 P1 on top of ADR-0007: A10 (SCHEDULER-I13/I15 undeferred, task 1 and task 2 appends); no scheduler id renumbered (M2 renumbering CONTROL-I19->I23, RUNTIME-I14->I17 is elsewhere)",
+          "by": "HANDOUT-M2"
+        },
+        {
+          "sha256": "ce83e3cdcef624e89e1e680262a7e49833450a181d1ffd59449d76b125027c96",
+          "at": "2026-10-10T23:22:38.331Z",
+          "reason": "M2b re-recorded after merging main a62e4eb (M2): SCHEDULER-I19 lane-consistent orders (SC-2); SCHEDULER-I16 one c_s from layer_costs (ADR-0006 R16)",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "877f49aed74d07c42646b92ad4ceaaf983b3de8c63d78125c2aa7925cd32be17",
+          "at": "2026-10-11T00:16:27.966Z",
+          "reason": "SC-5 (HANDOUT-M2b): SCHEDULER-I16's counted k on host DRAM is 15 on the sealed M2 data plane (sender 12, receiver 18 passes per byte, mean; docs/research/adr-0006/sc5-passes.md), was 10 before sealing",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "b9fb279e9b3056e477047a22a62ff5fecf02fe47deaeac46dea6515ea47dbe57",
+          "at": "2026-10-11T00:23:04.907Z",
+          "reason": "SC-5 follow-up: SCHEDULER-I16 counted k is 17 with adaptive microbatching (fragmented exchange frames: sender 14, receiver 20), 15 otherwise",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "74b9db240975675b32a35ddd81f7f5b3d7a69f5ad59046b4368484485d3c6bee",
+          "at": "2026-10-11T01:34:36.386Z",
+          "reason": "ADR-0008 draft brought onto main a62e4eb (from factory/moe-adr round 0): exact Mixture-of-Experts block; MoE ids renumbered RUNTIME-I15->I18 (collision with M2 resume) and SCHEDULER-I19->I21 (collision with M2b I19/I20); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "5c81bb700f581bdad292450b32c954ead673cc15bdb3d43539e3a6dd51848724",
+          "at": "2026-10-11T01:55:10.361Z",
+          "reason": "ADR-0008 round 1: retargeted M2c->M4; enumerated MoE routing recipe, aux terms, selection-bias update, loader classification with hf_unplaced rollback, HF-modules substitution rule; stale ids fixed (RUNTIME-I18, SCHEDULER-I21); under revision",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "75789b7322fc610bbf311b0e30440983eff4bf81a0f60e8b30208e8f5381db8d",
+          "at": "2026-10-11T02:25:35.802Z",
+          "reason": "ADR-0008 round 2: analytic MoE layer cost and c_s are lower bounds (launches, host count reads omitted) so S1/S2 stay conservative; count lane bytes in SCHEDULER-I17; plans record analytic vs profiled MoE stage time",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "a04249da7e1d647fb6415180b9f2e09c3c61877a2c1269a90c344d30151fe028",
+          "at": "2026-10-11T02:31:26.572Z",
+          "reason": "ADR-0009 round 0: any HF decoder through transformers' own modules windowed per unit, launch gate, per-use tied fold hosted on the Head stage (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "7933722497c01fe7b2ae1cae1ba761b474de080c4b0ab8f9dd1c8bf274f8451e",
+          "at": "2026-10-11T02:50:15.946Z",
+          "reason": "ADR-0008 round 3: SCHEDULER-I21 charges HF v5 expert dW to B and releases its units when W(mb) starts at master-dtype bytes",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "70f189c7b226f7b1bda751fa5fbe824cc1fecaa4742a6d5dccd222aea184eb56",
+          "at": "2026-10-11T03:14:38.679Z",
+          "reason": "ADR-0009 round 1: stock-order tied fold (row-sparse, rows relayed on the chain, no tied link or probe), NaN stubs and trace rules, convert exclusion, device gate, RECORD fingerprint, HF boundary_dtype refused (awaiting the human grant)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "ceeb48d728bd3460f0df9c1a02d686ce414fab8788ad4b34905bedbc6fe3a325",
+          "at": "2026-10-11T03:18:16.630Z",
+          "reason": "ADR-0008 round 5: HF v5 bank-gradient hold charged in mem_b/mem_w and in SCHEDULER-I16 device memory via SCHEDULER-I21",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "935b3b8524322b20f6f546ad1d1a5b8808c1f5e08bdae2d6e22de835acadd494",
+          "at": "2026-10-11T03:51:53.972Z",
+          "reason": "ADR-0009 round 2: per-platform fingerprint, buffer record, device-map reference, stride-0 stubs, TIED frames, corrected eager and tied cost terms",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "89001e74edd4df9286131817e7231ec48916b46247ea9456bbfaaa3a9a869d90",
+          "at": "2026-10-11T04:10:40.015Z",
+          "reason": "ADR-0009 round 3: text corrected to the frozen mechanism (oracle, buffer record carrier and guard, LoRA refusal, per-map reference scope, TIED width, NaN claim); see SPEC-scheduler-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "89877c2faa7e56aa43eab8740bf097e4d544b88d534485d94648743c480e23de",
+          "at": "2026-10-11T04:31:40.013Z",
+          "reason": "ADR-0009 round 4: text corrected per review (oracle on one-class maps, refusals, tied cost terms); history entry dated 2026-10-11",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "a52ae1e143530e0207011fb1e13c931f48c673e738a5d2e043bac4853899bbf3",
+          "at": "2026-10-11T04:53:34.683Z",
+          "reason": "merge of origin/factory/m2b (8dee0b9, M2b snapshot) into factory/m4: both sides kept (M2b's amendments plus ADR-0008/0009's); no invariant id collides",
+          "by": "M4-merge-m2b"
+        },
+        {
+          "sha256": "efe9a7e2e8b955056564812ec5536de0cfe146efb247911fe30c8637f5522762",
+          "at": "2026-10-11T05:12:11.711Z",
+          "reason": "ADR-0008 r7 item a: bank-gradient hold charged in mem_b/mem_w in both branches and m_BW times in the replay, I21 and I16",
+          "by": "ADR-0008"
+        },
+        {
+          "sha256": "efe9a7e2e8b955056564812ec5536de0cfe146efb247911fe30c8637f5522762",
+          "at": "2026-10-11T05:12:11.733Z",
+          "reason": "ADR-0009 r6 item g: task 6 rollback target (tied HF at S > 1 refused at planning)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "5905c82401488b0b0bc57bcbf13932b2e5d7769a0ef09aa412d763c8dbf4b325",
+          "at": "2026-10-11T22:39:28.759Z",
+          "reason": "M4 implement deviation: delta_t_tied keeps the 8 positional args and adds keyword-only d_model, vocab_size, tokens_mb, mem_bw_Bps (inf = unmeasured, scan and AdamW terms 0), adamw_bytes_per_elem=28",
+          "by": "M4-implement"
+        },
+        {
+          "sha256": "5905c82401488b0b0bc57bcbf13932b2e5d7769a0ef09aa412d763c8dbf4b325",
+          "at": "2026-10-11T22:39:28.783Z",
+          "reason": "Human decision 2026-10-11: homogeneous fleets only (CONTROL-I25); selection/plan_job/place refuse MIXED-FLEET",
+          "by": "human-2026-10-11"
+        },
+        {
+          "sha256": "112006a75dbefd07b74201a0e0e39febc233c467e78595a14da5d42ad7894e96",
+          "at": "2026-10-12T20:54:09.286Z",
+          "reason": "SCHEDULER-I23: the shape advisor (square-cube law priced from measured compute and link), within standard width/depth ratios",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "f01e07af809097df3d7618456d976c77ae72a322fae89e6d5d06ddc689c8a3ae",
+          "at": "2026-10-13T04:06:42.000Z",
+          "reason": "SCHEDULER-I24: partition DP feasibility from measured fit peaks and the optimizer's state bytes per parameter",
+          "by": "orchestrator"
+        }
+      ]
+    },
+    "docs/design/SPEC-transport.md": {
+      "history": [
+        {
+          "sha256": "141b9162591d3bf40dc17ae7a773af68f9b26e91bc2a17e08d80dd8b36cd1f61",
+          "at": "2026-10-09T16:13:42.167Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "222fc3929538424fe9af55599a451552fbde3066846b2aff66dcf5fbeec6f30c",
+          "at": "2026-10-09T16:22:22.693Z",
+          "reason": "TRANSPORT-I8 and task 3 (M2b): shim shared-pacer mode with per-peer egress/ingress and per-site-pair uplink budgets for E4",
+          "by": "ADR-0006"
+        },
+        {
+          "sha256": "e0aea3c85cb2b96cb48b73e9b2f0aa962e0758545e4d2ac9a001172f60936829",
+          "at": "2026-10-09T20:33:58.356Z",
+          "reason": "HANDOUT-M2 §8 A9 re-recorded after merging main (main did not touch SPEC-transport): TRANSPORT-I5 replaced, TRANSPORT-I7 undeferred, TRANSPORT-I9 added, carried from the pre-merge record",
+          "by": "HANDOUT-M2"
+        },
+        {
+          "sha256": "46bc1d6287703846a37670d6f5b5f261b63677042429aa2fffd6c88d0e9cd02b",
+          "at": "2026-10-11T03:51:54.047Z",
+          "reason": "ADR-0009 round 2: per-platform fingerprint, buffer record, device-map reference, stride-0 stubs, TIED frames, corrected eager and tied cost terms",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "34ae419343cbc43498da8ebcf913af18b21c00bd04c99e96553a73b6da72fafb",
+          "at": "2026-10-11T04:51:14.486Z",
+          "reason": "ADR-0009 round 5: text corrected for review findings (classifier, environment, heal class, TIED at receipt, rollback); see SPEC-transport-history.md",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "3638c9716c8d330813abb69e24d416de1975d637dc9ce12cbb2f138df513df2e",
+          "at": "2026-10-11T05:12:39.049Z",
+          "reason": "ADR-0009 r6 item g: TIED type rollback target (id unassigned, refused by typed decode)",
+          "by": "ADR-0009"
+        },
+        {
+          "sha256": "4e09775c7208de06090582775d5b3c5e326cf7a0a94da6a5cbf4f2285cd0e880",
+          "at": "2026-10-11T22:38:58.225Z",
+          "reason": "M4 implement deviation: TIED paylen rule per frame vs fragment (unfragmented == rows*h*4, fragment <= rows*h*4, reassembled == rows*h*4); 0-row TIED is one empty fragment",
+          "by": "M4-implement"
+        },
+        {
+          "sha256": "497294cf580d230b1f83fb1382ce9846d270740bcd95089d564aea82890aeffd",
+          "at": "2026-10-12T20:27:21.288Z",
+          "reason": "TRANSPORT-I10: BBR and path-sized buffers per socket, 8 flows per hop in production (2026-10-12: one CUBIC flow moved 40-50 Mbps over 130 ms between Gbps datacenters)",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "78c97bba713a949889f8a44de9fe307588bca1fff00f6717cbd75c38b69d4d59",
+          "at": "2026-10-13T04:06:42.000Z",
+          "reason": "TRANSPORT-I11: probe and measure with the run's flow count, time-based; TRANSPORT-I12: fragments of ceil(len/N) within [64 KiB, 1 MiB]",
+          "by": "orchestrator"
+        },
+        {
+          "sha256": "072ffa13e17f2c3fc2d11821cf2f114e2c2a6c3a51daf75f5a074a63833f3778",
+          "at": "2026-10-13T04:53:30.000Z",
+          "reason": "TRANSPORT-I13: kernel TCP pacing on every data-plane and probe socket",
+          "by": "orchestrator"
+        }
+      ]
+    },
+    "docs/experiments/m2b-e4/PLAN.json": {
+      "history": [
+        {
+          "sha256": "d64e909863a99a85260bfbde1d2ae258f1c3b0b82908c4f438102c5bbe5f9e1a",
+          "at": "2026-10-10T23:22:38.353Z",
+          "reason": "frozen"
+        }
+      ]
+    },
+    "docs/experiments/m2b-e7/PLAN.json": {
+      "history": [
+        {
+          "sha256": "e1972ede0943309032cbcb78628657b57c291de9939407592dbd98d51f9d8476",
+          "at": "2026-10-10T23:22:38.353Z",
+          "reason": "frozen"
+        }
+      ]
+    },
+    "docs/design/GATES-M2b.json": {
+      "history": [
+        {
+          "sha256": "1a5e69df660c4e32d2e7539234f158e67493c6484df37f510d7a65da06bc31f5",
+          "at": "2026-10-10T23:26:05.708Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "9320ab147bc4e087fa8102c55ec4580f85b35a212af89b97a516bfd0aa9e9986",
+          "at": "2026-10-10T23:26:42.642Z",
+          "reason": "The human's decisions 2026-10-10: campaigns amplify-chaos and load-chaos deferred to before the M1 sign-off (D-6, py-devmode stays); e4-exposure-sweep: F3 band and off-configuration arms MEASURED with gpu false, byte identity, F6, F5 and the RTT_hi emission order still fail (D-3)",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "5b45943110cf9678ab5ffe3b87cd4ff705eaa931c2f4055044ccbdd10fea0790",
+          "at": "2026-10-11T12:42:04.750Z",
+          "reason": "D-7: the audit entry is deferred to before the M1 sign-off (AUDIT-RESULTS.json never existed; wan-audit malicious-worker planned before rented machines); the orchestrating session's decision delegated by the human, to be confirmed",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "1ca95759ac250ce391ee93d7359567f3819008a2ea75145d4c94ee71b83dbeed",
+          "at": "2026-10-12T02:47:07.000Z",
+          "reason": "f1-matrix-x20 selection -k \"(e1_ or e5_ or native) and not e4_\": the old -k also matched the 4 E4 F6 wall-clock arms, which skip outside E4's own entry, and the entry's 'N passed' regex then refused a repetition in which all 125 tests passed (gate r0 on tree 151f4472). Same 125 tests, repeat 20 and regex unchanged.",
+          "by": "orchestrator-2026-10-11"
+        }
+      ]
+    },
+    "docs/design/HANDOUT-M2b.md": {
+      "history": [
+        {
+          "sha256": "6c148310f228a2b0b18203463558d5cf19dd4e6e1ca68a176ae3aad2cb302826",
+          "at": "2026-10-10T23:26:05.708Z",
+          "reason": "frozen"
+        },
+        {
+          "sha256": "9527aa0a6634936a4be3475f7221fbfef4e446992d34ce5415b749586ffb390d",
+          "at": "2026-10-10T23:26:42.664Z",
+          "reason": "The human's decisions 2026-10-10: D-3 E4 on the Mac measure-not-block (gpu false), findings deferred to M1; D-6 campaigns amplify-chaos and load-chaos deferred to before the M1 sign-off",
+          "by": "HANDOUT-M2b"
+        },
+        {
+          "sha256": "57e5e39ca1775a4fc899e66a736fc3eb88bb525aaf92321045e1c1ced1310819",
+          "at": "2026-10-11T12:42:04.775Z",
+          "reason": "D-7: closeout without the audit entry, deferred to before the M1 sign-off (delegated decision, to be confirmed by the human)",
+          "by": "HANDOUT-M2b"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "humanGrants": false,
+  "decidedBy": "the human",
+  "at": "2026-10-09",
+  "why": "Like the reference PR (oven-sh/WebKit#249): the factory runs without waiting for human grants of plans, gates and ADRs. approve.mjs check waives them and says so; it never writes a human grant.",
+  "staysHuman": ["paid experiment plans (docs/experiments/*/PLAN.json with cloud spend or a budget)", "the hardware switch (gpu true)", "merges to main"]
+}

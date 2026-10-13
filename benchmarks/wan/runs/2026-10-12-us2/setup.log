@@ -1,0 +1,12 @@
+== va
+debconf: delaying package configuration, since apt-utils is not installed
+NODE {"gpu": "NVIDIA H100 NVL, 95830 MiB", "cpus": 40, "public_ip": "203.0.113.14", "city": "Dulles Town Center", "region": "Virginia", "country": "US", "org": "AS8069 Microsoft Corporation", "ports": {"VAST_TCP_PORT_10100": "40166", "VAST_TCP_PORT_10200": "40939", "VAST_TCP_PORT_1111": "40493", "VAST_TCP_PORT_22": "40787", "VAST_TCP_PORT_6006": "40077", "VAST_TCP_PORT_72299": "40971", "VAST_TCP_PORT_8080": "40956", "VAST_TCP_PORT_8384": "40417"}, "corpus_sha256": "ed8f812ecb2de6610f7de69492044a2488d0f9f7d04061fce885085152d51107", "torch": "2.14.1+cu130 True"}
+BIG 105112084 50257 uint16
+2525ff978f39ec7e
+free 540G
+== den
+debconf: delaying package configuration, since apt-utils is not installed
+NODE {"gpu": "NVIDIA H100 NVL, 95830 MiB", "cpus": 128, "public_ip": "203.0.113.25", "city": "Denver", "region": "Colorado", "country": "US", "org": "AS20029 H5 Data Centers", "ports": {"VAST_TCP_PORT_10100": "27481", "VAST_TCP_PORT_10200": "27424", "VAST_TCP_PORT_1111": "27455", "VAST_TCP_PORT_22": "27467", "VAST_TCP_PORT_6006": "27525", "VAST_TCP_PORT_72299": "27488", "VAST_TCP_PORT_8080": "27514", "VAST_TCP_PORT_8384": "27503"}, "corpus_sha256": "ed8f812ecb2de6610f7de69492044a2488d0f9f7d04061fce885085152d51107", "torch": "2.14.1+cu130 True"}
+BIG 105112084 50257 uint16
+2525ff978f39ec7e
+free 13G

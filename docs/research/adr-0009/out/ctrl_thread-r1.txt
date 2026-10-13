@@ -1,0 +1,3 @@
+thread stubs=nan trace_ids=independent: logits_equal=False grads_differ=39/39
+thread stubs=replay trace_ids=gate: logits_equal=True grads_differ=28/39
+thread stubs=replay trace_ids=independent: refused (RuntimeError: The size of tensor a (2) must match the size of tensor b (3) at non-singleton dimension 0)

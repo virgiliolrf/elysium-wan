@@ -1,0 +1,46 @@
+WT_PHASE train
+WT_STAGE rank=0 peer=0 device=cuda partition=[[0, 16], [16, 29], [29, 42], [42, 53]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET dial {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_OPT overlap layers=16 params=182
+WT_TELEM {"v": 1, "step": 0, "rank": 0, "peer": 0, "step_ms": 223708.9740220108, "emit_us": 0.0, "ops": {"F": {"n": 256, "med_ms": 79.44829398184083}, "B": {"n": 256, "med_ms": 113.56974850059487}, "W": {"n": 256, "med_ms": 49.940426979446784}, "OPT": {"n": 1, "med_ms": 108.05548896314576}}, "stall_ms": 163735.83963455167, "hops": {"next0": {"frames": 2304, "bytes": 2206537485, "busy_ms": 17845.257880166173}}}
+WT_MEM step=0 alloc=53.06 peak=63.76 reserved=64.60
+WT_STEP 0
+WT_TELEM {"v": 1, "step": 1, "rank": 0, "peer": 0, "step_ms": 264121.6759600211, "emit_us": 13514.522986952215, "ops": {"F": {"n": 256, "med_ms": 58.668083511292934}, "B": {"n": 256, "med_ms": 134.4817870121915}, "W": {"n": 256, "med_ms": 42.78305097250268}, "OPT": {"n": 1, "med_ms": 2.7390559553168714}}, "stall_ms": 144499.50185167836, "hops": {"next0": {"frames": 2304, "bytes": 2165375447, "busy_ms": 10187.986725301016}}}
+WT_MEM step=1 alloc=53.43 peak=64.13 reserved=65.17
+WT_STEP 1
+WT_OPT resident bytes=0 params=0/182 room=-17534157 peak=70183288832
+WT_TELEM {"v": 1, "step": 2, "rank": 0, "peer": 0, "step_ms": 192853.33334305324, "emit_us": 19741.84700520709, "ops": {"F": {"n": 256, "med_ms": 62.217023980338126}, "B": {"n": 256, "med_ms": 133.25067749246955}, "W": {"n": 256, "med_ms": 42.790292005520314}, "OPT": {"n": 1, "med_ms": 2.457267022691667}}, "stall_ms": 130566.20640476467, "hops": {"next0": {"frames": 2048, "bytes": 1905537708, "busy_ms": 2867.185732582584}}}
+WT_MEM step=2 alloc=53.43 peak=64.13 reserved=65.36
+WT_STEP 2

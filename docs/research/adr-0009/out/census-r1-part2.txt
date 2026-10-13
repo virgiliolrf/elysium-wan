@@ -1,0 +1,19 @@
+afmoe                          ERR RuntimeError: One of the differentiated Tensors does not require grad
+apertus                        EXACT
+arcee                          EXACT
+aria_text                      EXACT
+axk1                           EXACT
+axk2                           ERR RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow
+bamba                          ERR StrictDataclassClassValidationError: Class validation error for validator 'validate_architecture':
+    ValueError: The dimensio
+bart                           ERR AssertionError: the forward draws from the default generator: refused
+bert                           EXACT unconverted=['cls.predictions.decoder']
+bert-generation                EXACT unconverted=['lm_head.decoder']
+big_bird                       ERR AssertionError: the forward draws from the default generator: refused
+bigbird_pegasus                ERR AssertionError: the forward draws from the default generator: refused
+biogpt                         ERR AssertionError: the forward draws from the default generator: refused
+bitnet                         EXACT
+blenderbot                     ERR AssertionError: 
+blenderbot-small               ERR AssertionError: the forward draws from the default generator: refused
+bloom                          ERR AssertionError: layer 0 returns a non-residual tensor of shape (2, 4, 24, 24): refused
+exit 143

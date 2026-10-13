@@ -1,0 +1,63 @@
+WT_PHASE train
+WT_STAGE rank=3 peer=0 device=cuda partition=[[0, 16], [16, 29], [29, 42], [42, 53]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET listen {"cc": "bbr", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_P2P_BOUND hop=prev0 st=2 pe=0 peer=833e08bd0e7e8126868ac6cfca83c9b9
+WT_METRIC {"step": 0, "loss": 10.940099716186523, "t": 1791850463.0931146}
+WT_OPT overlap layers=11 params=123
+WT_TELEM {"v": 1, "step": 0, "rank": 3, "peer": 0, "step_ms": 213400.85595520213, "emit_us": 0.0, "ops": {"F": {"n": 256, "med_ms": 69.99610923230648}, "B": {"n": 256, "med_ms": 146.037005353719}, "W": {"n": 256, "med_ms": 65.62911486253142}, "OPT": {"n": 1, "med_ms": 259.62118385359645}}, "stall_ms": 143662.8271159716, "hops": {"prev0": {"frames": 2302, "bytes": 2163081269, "busy_ms": 170633.6599048227}}}
+WT_MEM step=0 alloc=36.19 peak=55.94 reserved=57.81
+WT_STEP 0
+WT_METRIC {"step": 1, "loss": 16.473953247070312, "t": 1791850741.1176574}
+WT_TELEM {"v": 1, "step": 1, "rank": 3, "peer": 0, "step_ms": 262480.8927956037, "emit_us": 13234.477955847979, "ops": {"F": {"n": 256, "med_ms": 69.6042759809643}, "B": {"n": 256, "med_ms": 138.65153957158327}, "W": {"n": 256, "med_ms": 57.0565287489444}, "OPT": {"n": 1, "med_ms": 0.9676762856543064}}, "stall_ms": 194652.78383344412, "hops": {"prev0": {"frames": 2042, "bytes": 2099051147, "busy_ms": 169294.5363302715}}}
+WT_MEM step=1 alloc=36.51 peak=56.32 reserved=58.30
+WT_STEP 1
+WT_METRIC {"step": 2, "loss": 11.05947208404541, "t": 1791850945.168402}
+WT_OPT resident bytes=7254245376 params=90/123 room=7292878848 peak=62874714112
+WT_TELEM {"v": 1, "step": 2, "rank": 3, "peer": 0, "step_ms": 189129.9780011177, "emit_us": 12129.456270486116, "ops": {"F": {"n": 256, "med_ms": 70.0036792550236}, "B": {"n": 256, "med_ms": 136.81282987818122}, "W": {"n": 256, "med_ms": 59.17139700613916}, "OPT": {"n": 1, "med_ms": 372.5064671598375}}, "stall_ms": 118666.98286682367, "hops": {"prev0": {"frames": 1989, "bytes": 1940404373, "busy_ms": 144808.81387041882}}}
+WT_MEM step=2 alloc=43.26 peak=56.32 reserved=58.56
+WT_STEP 2
+WT_METRIC {"step": 3, "loss": 11.35698127746582, "t": 1791851139.7291455}
+Traceback (most recent call last):
+  File "/workspace/elysium/src/wantrain/worker/stage_main.py", line 92, in run_stage
+    StageRuntime(spec, rank, peer).run()
+  File "/workspace/elysium/src/wantrain/runtime/stage.py", line 3193, in run
+    self._run_step(step)
+  File "/workspace/elysium/src/wantrain/runtime/stage.py", line 3321, in _run_step
+    self._pump(block=True, top=True)
+  File "/workspace/elysium/src/wantrain/runtime/stage.py", line 3358, in _pump
+    self._pump_inbox(block and not (updates and self._ready), timeout)
+  File "/workspace/elysium/src/wantrain/runtime/stage.py", line 3374, in _pump_inbox
+    raise RuntimeError(item[1])
+RuntimeError: reader: peer connection lost (ConnectionResetError: [Errno 104] Connection reset by peer)
+WT_DONE 1

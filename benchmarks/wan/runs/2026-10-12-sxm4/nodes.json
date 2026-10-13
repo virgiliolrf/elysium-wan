@@ -1,0 +1,126 @@
+[
+ {
+  "name": "mt",
+  "port": 40930,
+  "host": "203.0.113.3",
+  "region": null,
+  "ip": "203.0.113.3",
+  "free_ports": [
+   [
+    8080,
+    40220
+   ],
+   [
+    10100,
+    40840
+   ],
+   [
+    10200,
+    40556
+   ]
+  ],
+  "gpu": "NVIDIA H100 80GB HBM3, 81559 MiB",
+  "city": "Missoula",
+  "country": "US",
+  "org": "AS4181 TDS TELECOM",
+  "data": [
+   8080,
+   40220
+  ],
+  "probe": [
+   10100,
+   40840
+  ],
+  "coord": [
+   10200,
+   40556
+  ]
+ },
+ {
+  "name": "de",
+  "port": 20501,
+  "host": "203.0.113.6",
+  "region": null,
+  "ip": "203.0.113.6",
+  "free_ports": [
+   [
+    10100,
+    20582
+   ],
+   [
+    10200,
+    20596
+   ]
+  ],
+  "gpu": "NVIDIA H100 80GB HBM3, 81559 MiB",
+  "city": "Nuremberg",
+  "country": "DE",
+  "org": "AS197540 netcup GmbH",
+  "data": [
+   10100,
+   20582
+  ],
+  "probe": [
+   10200,
+   20596
+  ]
+ },
+ {
+  "name": "cz1",
+  "port": 49516,
+  "host": "203.0.113.29",
+  "region": null,
+  "ip": "203.0.113.29",
+  "free_ports": [
+   [
+    10100,
+    42469
+   ],
+   [
+    10200,
+    43028
+   ]
+  ],
+  "gpu": "NVIDIA H100 80GB HBM3, 81559 MiB",
+  "city": "Litv\u00ednov",
+  "country": "CZ",
+  "org": "AS210712 ISP Alliance a.s.",
+  "data": [
+   10100,
+   42469
+  ],
+  "probe": [
+   10200,
+   43028
+  ]
+ },
+ {
+  "name": "cz2",
+  "port": 52467,
+  "host": "203.0.113.28",
+  "region": null,
+  "ip": "203.0.113.28",
+  "free_ports": [
+   [
+    10100,
+    44020
+   ],
+   [
+    10200,
+    54980
+   ]
+  ],
+  "gpu": "NVIDIA H100 80GB HBM3, 81559 MiB",
+  "city": "Litv\u00ednov",
+  "country": "CZ",
+  "org": "AS210712 ISP Alliance a.s.",
+  "data": [
+   10100,
+   44020
+  ],
+  "probe": [
+   10200,
+   54980
+  ]
+ }
+]

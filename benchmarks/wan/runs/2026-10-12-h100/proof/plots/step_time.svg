@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="340" viewBox="0 0 820 340" font-family="Helvetica,Arial,sans-serif" font-size="12">
+<rect width="820" height="340" fill="white"/>
+<text x="410.0" y="22" text-anchor="middle" font-size="15" font-weight="bold">Step time and network wait (stage 1, us; capped at 10 s)</text>
+<line x1="64" x2="796" y1="292.0" y2="292.0" stroke="#e5e7eb"/>
+<text x="58" y="296.0" text-anchor="end">0</text>
+<text x="64.0" y="308" text-anchor="middle">0</text>
+<line x1="64" x2="796" y1="241.6" y2="241.6" stroke="#e5e7eb"/>
+<text x="58" y="245.6" text-anchor="end">2.1</text>
+<text x="210.4" y="308" text-anchor="middle">3.8</text>
+<line x1="64" x2="796" y1="191.2" y2="191.2" stroke="#e5e7eb"/>
+<text x="58" y="195.2" text-anchor="end">4.2</text>
+<text x="356.8" y="308" text-anchor="middle">7.6</text>
+<line x1="64" x2="796" y1="140.8" y2="140.8" stroke="#e5e7eb"/>
+<text x="58" y="144.8" text-anchor="end">6.3</text>
+<text x="503.2" y="308" text-anchor="middle">11.4</text>
+<line x1="64" x2="796" y1="90.4" y2="90.4" stroke="#e5e7eb"/>
+<text x="58" y="94.4" text-anchor="end">8.4</text>
+<text x="649.6" y="308" text-anchor="middle">15.2</text>
+<line x1="64" x2="796" y1="40.0" y2="40.0" stroke="#e5e7eb"/>
+<text x="58" y="44.0" text-anchor="end">10.5</text>
+<text x="796.0" y="308" text-anchor="middle">19</text>
+<text x="410.0" y="332" text-anchor="middle">step</text>
+<text x="14" y="166.0" text-anchor="middle" transform="rotate(-90 14 166.0)">seconds</text>
+<rect x="64" y="40" width="732" height="252" fill="none" stroke="#9ca3af"/>
+<polyline fill="none" stroke="#2563eb" stroke-width="1.6" points="64.0,52.0 102.5,52.0 141.1,52.0 179.6,116.6 218.1,74.6 256.6,98.1 295.2,124.4 333.7,103.3 372.2,52.0 410.7,78.4 449.3,52.0 487.8,52.0 526.3,85.6 564.8,165.3 603.4,166.2 641.9,153.8 680.4,116.2 718.9,125.6 757.5,99.9 796.0,86.3"/>
+<rect x="74" y="48" width="14" height="4" fill="#2563eb"/>
+<text x="94" y="54">step time (s)</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="1.6" points="64.0,185.0 102.5,82.3 141.1,99.3 179.6,178.4 218.1,138.1 256.6,162.5 295.2,190.2 333.7,167.1 372.2,52.0 410.7,140.5 449.3,52.0 487.8,52.0 526.3,148.2 564.8,227.4 603.4,229.4 641.9,217.2 680.4,178.5 718.9,189.3 757.5,157.7 796.0,149.7"/>
+<rect x="264" y="48" width="14" height="4" fill="#dc2626"/>
+<text x="284" y="54">waiting on the network (s)</text>
+</svg>

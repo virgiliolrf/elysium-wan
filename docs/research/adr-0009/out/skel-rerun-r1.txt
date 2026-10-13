@@ -1,0 +1,5 @@
+llama        rng_drawn=False params_meta=True buffers=2 equal_to_real=True to_empty_wrong=2/2 e.g. ['model.rotary_emb.inv_freq', 'model.rotary_emb.original_inv_freq']
+gemma3_text  rng_drawn=False params_meta=True buffers=5 equal_to_real=True to_empty_wrong=5/5 e.g. ['model.embed_tokens.embed_scale', 'model.rotary_emb.full_attention_inv_freq']
+gpt2         rng_drawn=False params_meta=True buffers=0 equal_to_real=True to_empty_wrong=0/0 e.g. []
+qwen3        rng_drawn=False params_meta=True buffers=2 equal_to_real=True to_empty_wrong=2/2 e.g. ['model.rotary_emb.inv_freq', 'model.rotary_emb.original_inv_freq']
+phi3         rng_drawn=False params_meta=True buffers=2 equal_to_real=True to_empty_wrong=2/2 e.g. ['model.rotary_emb.inv_freq', 'model.rotary_emb.original_inv_freq']

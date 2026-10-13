@@ -1,0 +1,46 @@
+[coord info] COORDINATOR_ID 35766a55995ad536a461cba273be7b11
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-194157-17f85f: starting
+[coord info] registered b1 (8c9c4168b7) key=640f4ba534add2198061106557004383 203.0.113.13:6529 cuda/NVIDIA GeForce RTX 4090 152.468 TFLOPs 23.1 GB region=us declared=['region']
+[coord info] registered b4 (05ca33e066) key=46e1473c81f93a4a103269bc28066fd1 203.0.113.9:40674 cuda/NVIDIA GeForce RTX 4090 154.070 TFLOPs 23.1 GB region=us declared=['region']
+[coord info] registered a3 (1addc2a90d) key=a2cdd5c8051b1b81f5afcec13329b0b5 203.0.113.8:14378 cuda/NVIDIA GeForce RTX 4090 151.862 TFLOPs 47.0 GB region=us declared=['region']
+[coord info] registered a4 (84e5587fec) key=4fa2936040991cae3adab974cdbc4a97 203.0.113.26:50232 cuda/NVIDIA GeForce RTX 4090 134.576 TFLOPs 47.0 GB region=us declared=['region']
+[coord info] registered b5 (6c4d2b04fc) key=3581a735473d77eb09d8b308bad94f04 203.0.113.1:50349 cuda/NVIDIA GeForce RTX 4090 152.501 TFLOPs 23.2 GB region=us declared=['region']
+[coord info] registered b3 (5cab6b1974) key=df37d5b15d7092a589438d6d3f10c92b 203.0.113.21:44809 cuda/NVIDIA GeForce RTX 4090 153.916 TFLOPs 23.1 GB region=us declared=['region']
+[coord info] registered a5 (0365c28fad) key=46cce5825e7e72ebaa6a6b0d0b59b0a6 203.0.113.24:50117 cuda/NVIDIA GeForce RTX 4090 151.498 TFLOPs 47.2 GB region=us declared=['region']
+[coord info] selection: 7 node(s) in *: b4(NVIDIA GeForce RTX 4090, 154.07 TFLOPs, 23.1 GB), b3(NVIDIA GeForce RTX 4090, 153.92 TFLOPs, 23.1 GB), b5(NVIDIA GeForce RTX 4090, 152.50 TFLOPs, 23.2 GB), b1(NVIDIA GeForce RTX 4090, 152.47 TFLOPs, 23.1 GB), a3(NVIDIA GeForce RTX 4090, 151.86 TFLOPs, 47.0 GB), a5(NVIDIA GeForce RTX 4090, 151.50 TFLOPs, 47.2 GB), a4(NVIDIA GeForce RTX 4090, 134.58 TFLOPs, 47.0 GB); one device model, so the run stays bit-comparable against itself; previously measured between these nodes at 186 Mbps
+[coord info] probe matrix (Mbps): [[null, 84.2, 143.1, 116.9, 80.0, 65.7, 71.8], [84.2, null, 49.0, 337.4, 66.2, 85.3, 84.8], [143.1, 49.0, null, 71.8, 53.2, 43.1, 46.0], [116.9, 337.4, 71.8, null, 248.5, 12.2, 97.2], [80.0, 66.2, 53.2, 248.5, null, 98.9, 91.4], [65.7, 85.3, 43.1, 12.2, 98.9, null, 160.4], [71.8, 84.8, 46.0, 97.2, 91.4, 160.4, null]]
+[coord info] link b3->a5: fwd 127.12 rev 187.42 bidir 160.31+100.83 Mbps, RTT 33.65 ms, duplex per_direction
+[coord info] link a5->a4: fwd 360.35 rev 237.24 bidir 304.22+255.7 Mbps, RTT 15.06 ms, duplex per_direction
+[coord info] link a4->a3: fwd 158.48 rev 149.12 bidir 161.72+122.93 Mbps, RTT 39.63 ms, duplex per_direction
+[coord info] link a3->b1: fwd 438.3 rev 759.21 bidir 613.47+531.92 Mbps, RTT 2.32 ms, duplex per_direction
+[coord info] link b1->b4: fwd 57.3 rev 201.58 bidir 92.17+168.72 Mbps, RTT 31.62 ms, duplex per_direction
+[coord info] link b4->b5: fwd 224.88 rev 250.69 bidir 230.19+230.0 Mbps, RTT 26.9 ms, duplex per_direction
+[coord info] re-routing (attempt 2): a hop measured far below its probe; new order ['b5', 'b4', 'b3', 'b1', 'a3', 'a5', 'a4']
+[coord info] link b4->b3: fwd 143.36 rev 152.38 bidir 148.83+83.49 Mbps, RTT 43.05 ms, duplex per_direction
+[coord info] link b3->b1: fwd 545.12 rev 523.3 bidir 456.77+526.01 Mbps, RTT 8.1 ms, duplex per_direction
+[coord info] link a3->a5: fwd 164.63 rev 187.05 bidir 147.8+128.76 Mbps, RTT 33.41 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 202.5 Mbps, link is 143.36 Mbps. Expect residual stall -- WARNING: estimated 28.61 GB per stage exceeds the 23.1 GB budget
+[coord info] zero-bubble schedule: predicted 2.760 s/step, bubble 53.1%; F/B/W ms per stage [[23.267, 44.23, 15.687], [23.431, 42.096, 18.575], [25.522, 49.953, 15.525], [21.736, 36.95, 15.237], [25.13, 45.675, 15.574], [23.848, 42.633, 15.28], [19.209, 33.266, 13.736]], hop comm ms [118.086, 185.66, 49.016, 54.846, 159.634, 106.714], peer weights [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
+[coord info] fit rank 0: peak 17.69 GiB of 19.68 GiB budget
+[coord info] fit rank 1: peak 22.54 GiB of 19.66 GiB budget
+[coord info] fit rank 2: peak 18.59 GiB of 19.66 GiB budget
+[coord info] fit rank 3: peak 18.65 GiB of 19.66 GiB budget
+[coord info] fit rank 4: peak 18.61 GiB of 39.94 GiB budget
+[coord info] fit rank 5: peak 18.71 GiB of 40.15 GiB budget
+[coord info] fit rank 6: peak 16.29 GiB of 39.94 GiB budget
+[coord warn] rank 1 does not fit: peak 22.54 GiB > budget 19.66; re-solving the schedule: rank 1 schedules with 7.04 GiB of activations
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 202.5 Mbps, link is 143.36 Mbps. Expect residual stall -- WARNING: estimated 28.61 GB per stage exceeds the 23.1 GB budget
+[coord info] zero-bubble schedule: predicted 2.774 s/step, bubble 52.8%; F/B/W ms per stage [[23.412, 45.415, 15.381], [23.415, 41.966, 18.502], [25.502, 51.596, 15.405], [21.714, 36.845, 15.229], [24.895, 47.194, 15.196], [24.491, 43.288, 15.645], [19.835, 34.058, 13.757]], hop comm ms [118.086, 185.66, 49.016, 54.846, 159.634, 106.714], peer weights [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
+[coord info] fit rank 0: peak 17.69 GiB of 19.68 GiB budget
+[coord info] fit rank 1: peak 22.03 GiB of 19.66 GiB budget
+[coord info] fit rank 2: peak 18.42 GiB of 19.66 GiB budget
+[coord info] fit rank 3: peak 18.47 GiB of 19.66 GiB budget
+[coord info] fit rank 4: peak 18.43 GiB of 39.94 GiB budget
+[coord info] fit rank 5: peak 18.82 GiB of 40.15 GiB budget
+[coord info] fit rank 6: peak 16.29 GiB of 39.94 GiB budget
+[coord warn] rank 1 does not fit: peak 22.03 GiB > budget 19.66; re-planning the cut: b4/NVIDIA GeForce RTX 4090 plans with 20.2 GiB (-2.96)
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 202.5 Mbps, link is 143.36 Mbps. Expect residual stall -- WARNING: estimated 28.61 GB per stage exceeds the 20.2 GB budget

@@ -1,0 +1,3 @@
+mamba noconvert {'logits': True, 'grads': 42, 'differ': 0} first_bad []
+megatron-bert noconvert {'logits': True, 'grads': 74, 'differ': 1} first_bad ['cls.predictions.bias']
+xlm-roberta-xl noconvert {'logits': True, 'grads': 74, 'differ': 1} first_bad ['lm_head.bias']

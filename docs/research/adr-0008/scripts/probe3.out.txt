@@ -1,0 +1,114 @@
+torch 2.14.1
+Q1 topk both paths fp32 skew=False cut=1: identical=True ties=10 empty=13
+Q1 topk both paths fp32 skew=False cut=2: identical=True ties=10 empty=13
+Q1 topk both paths fp32 skew=False cut=3: identical=True ties=10 empty=13
+Q1 topk both paths fp32 skew=True cut=1: identical=True ties=69 empty=39
+Q1 topk both paths fp32 skew=True cut=2: identical=True ties=69 empty=39
+Q1 topk both paths fp32 skew=True cut=3: identical=True ties=69 empty=39
+Q1 topk both paths bf16 skew=False cut=1: identical=True ties=10 empty=13
+Q1 topk both paths bf16 skew=False cut=2: identical=True ties=10 empty=13
+Q1 topk both paths bf16 skew=False cut=3: identical=True ties=10 empty=13
+Q1 topk both paths bf16 skew=True cut=1: identical=True ties=69 empty=38
+Q1 topk both paths bf16 skew=True cut=2: identical=True ties=69 empty=38
+Q1 topk both paths bf16 skew=True cut=3: identical=True ties=69 empty=38
+Q1 topk both paths + recompute fp32: identical=True
+Q1 topk both paths + recompute bf16: identical=True
+Q2 HF-style fp32 E8 k2 shared=False cut=1: identical=True ties=9 empty=19
+Q2 HF-style fp32 E8 k2 shared=False cut=2: identical=True ties=9 empty=19
+Q2 HF-style fp32 E8 k2 shared=False cut=3: identical=True ties=9 empty=19
+Q2 HF-style fp32 E8 k2 shared=True cut=1: identical=True ties=11 empty=18
+Q2 HF-style fp32 E8 k2 shared=True cut=2: identical=True ties=11 empty=18
+Q2 HF-style fp32 E8 k2 shared=True cut=3: identical=True ties=11 empty=18
+Q2 HF-style fp32 E8 k3 shared=False cut=1: identical=True ties=11 empty=6
+Q2 HF-style fp32 E8 k3 shared=False cut=2: identical=True ties=11 empty=6
+Q2 HF-style fp32 E8 k3 shared=False cut=3: identical=True ties=11 empty=6
+Q2 HF-style fp32 E8 k3 shared=True cut=1: identical=True ties=10 empty=13
+Q2 HF-style fp32 E8 k3 shared=True cut=2: identical=True ties=10 empty=13
+Q2 HF-style fp32 E8 k3 shared=True cut=3: identical=True ties=10 empty=13
+Q2 HF-style fp32 E6 k4 shared=False cut=1: identical=True ties=14 empty=0
+Q2 HF-style fp32 E6 k4 shared=False cut=2: identical=True ties=14 empty=0
+Q2 HF-style fp32 E6 k4 shared=False cut=3: identical=True ties=14 empty=0
+Q2 HF-style fp32 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+Q2 HF-style fp32 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+Q2 HF-style fp32 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+Q2 HF-style bf16 E8 k2 shared=False cut=1: identical=True ties=10 empty=17
+Q2 HF-style bf16 E8 k2 shared=False cut=2: identical=True ties=10 empty=17
+Q2 HF-style bf16 E8 k2 shared=False cut=3: identical=True ties=10 empty=17
+Q2 HF-style bf16 E8 k2 shared=True cut=1: identical=True ties=11 empty=18
+Q2 HF-style bf16 E8 k2 shared=True cut=2: identical=True ties=11 empty=18
+Q2 HF-style bf16 E8 k2 shared=True cut=3: identical=True ties=11 empty=18
+Q2 HF-style bf16 E8 k3 shared=False cut=1: identical=True ties=12 empty=5
+Q2 HF-style bf16 E8 k3 shared=False cut=2: identical=True ties=12 empty=5
+Q2 HF-style bf16 E8 k3 shared=False cut=3: identical=True ties=12 empty=5
+Q2 HF-style bf16 E8 k3 shared=True cut=1: identical=True ties=10 empty=13
+Q2 HF-style bf16 E8 k3 shared=True cut=2: identical=True ties=10 empty=13
+Q2 HF-style bf16 E8 k3 shared=True cut=3: identical=True ties=10 empty=13
+Q2 HF-style bf16 E6 k4 shared=False cut=1: identical=True ties=15 empty=0
+Q2 HF-style bf16 E6 k4 shared=False cut=2: identical=True ties=15 empty=0
+Q2 HF-style bf16 E6 k4 shared=False cut=3: identical=True ties=15 empty=0
+Q2 HF-style bf16 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+Q2 HF-style bf16 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+Q2 HF-style bf16 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+Q2 HF-style all-tie router fp32 (): identical=True ties=69 empty=39
+Q2 HF-style all-tie router fp32 ('recompute',): identical=True ties=69 empty=39
+Q2 HF-style all-tie router bf16 (): identical=True ties=69 empty=38
+Q2 HF-style all-tie router bf16 ('recompute',): identical=True ties=69 empty=38
+Q3 HF-style fp32 E8 k2 shared=False cut=1: identical=True ties=9 empty=19
+Q3 HF-style fp32 E8 k2 shared=False cut=2: identical=True ties=9 empty=19
+Q3 HF-style fp32 E8 k2 shared=False cut=3: identical=True ties=9 empty=19
+Q3 HF-style fp32 E8 k2 shared=True cut=1: identical=True ties=11 empty=18
+Q3 HF-style fp32 E8 k2 shared=True cut=2: identical=True ties=11 empty=18
+Q3 HF-style fp32 E8 k2 shared=True cut=3: identical=True ties=11 empty=18
+Q3 HF-style fp32 E8 k3 shared=False cut=1: identical=True ties=11 empty=6
+Q3 HF-style fp32 E8 k3 shared=False cut=2: identical=True ties=11 empty=6
+Q3 HF-style fp32 E8 k3 shared=False cut=3: identical=True ties=11 empty=6
+Q3 HF-style fp32 E8 k3 shared=True cut=1: identical=True ties=10 empty=13
+Q3 HF-style fp32 E8 k3 shared=True cut=2: identical=True ties=10 empty=13
+Q3 HF-style fp32 E8 k3 shared=True cut=3: identical=True ties=10 empty=13
+Q3 HF-style fp32 E6 k4 shared=False cut=1: identical=True ties=14 empty=0
+Q3 HF-style fp32 E6 k4 shared=False cut=2: identical=True ties=14 empty=0
+Q3 HF-style fp32 E6 k4 shared=False cut=3: identical=True ties=14 empty=0
+Q3 HF-style fp32 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+Q3 HF-style fp32 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+Q3 HF-style fp32 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+Q3 HF-style bf16 E8 k2 shared=False cut=1: identical=True ties=10 empty=17
+Q3 HF-style bf16 E8 k2 shared=False cut=2: identical=True ties=10 empty=17
+Q3 HF-style bf16 E8 k2 shared=False cut=3: identical=True ties=10 empty=17
+Q3 HF-style bf16 E8 k2 shared=True cut=1: identical=True ties=11 empty=18
+Q3 HF-style bf16 E8 k2 shared=True cut=2: identical=True ties=11 empty=18
+Q3 HF-style bf16 E8 k2 shared=True cut=3: identical=True ties=11 empty=18
+Q3 HF-style bf16 E8 k3 shared=False cut=1: identical=True ties=12 empty=5
+Q3 HF-style bf16 E8 k3 shared=False cut=2: identical=True ties=12 empty=5
+Q3 HF-style bf16 E8 k3 shared=False cut=3: identical=True ties=12 empty=5
+Q3 HF-style bf16 E8 k3 shared=True cut=1: identical=True ties=10 empty=13
+Q3 HF-style bf16 E8 k3 shared=True cut=2: identical=True ties=10 empty=13
+Q3 HF-style bf16 E8 k3 shared=True cut=3: identical=True ties=10 empty=13
+Q3 HF-style bf16 E6 k4 shared=False cut=1: identical=True ties=15 empty=0
+Q3 HF-style bf16 E6 k4 shared=False cut=2: identical=True ties=15 empty=0
+Q3 HF-style bf16 E6 k4 shared=False cut=3: identical=True ties=15 empty=0
+Q3 HF-style bf16 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+Q3 HF-style bf16 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+Q3 HF-style bf16 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+Q3 HF-style all-tie router fp32 (): identical=True ties=69 empty=39
+Q3 HF-style all-tie router fp32 ('recompute',): identical=True ties=69 empty=39
+Q3 HF-style all-tie router bf16 (): identical=True ties=69 empty=38
+Q3 HF-style all-tie router bf16 ('recompute',): identical=True ties=69 empty=38
+SUMMARY Q1: 14/14 identical
+SUMMARY Q2: 40/40 identical
+SUMMARY Q3: 40/40 identical
+Q4 cpu topk vs cpu stable sort, set differs: 436
+Q4 mps topk vs mps stable sort, set differs: 0
+Q4 topk cpu vs mps, set differs: 436 index order differs: 2427
+Q4 stable sort cpu vs mps, rank differs: 0
+Q4 mps topk torch.float32 distinct outputs over 20 runs: 1
+Q4 mps topk torch.bfloat16 distinct outputs over 20 runs: 1
+Q5 mps index_add_ det=True: raised RuntimeError: index_put_with_accumulate_mps does not have a deterministic implementation, but you set 'torch.use_deterministic_algorit
+Q5 mps scatter_add_ det=True: raised RuntimeError: scatter_reduce_mps does not have a deterministic implementation, but you set 'torch.use_deterministic_algorithms(True)'.
+Q5 mps index_add_ duplicates det=False: distinct over 20 runs 20; equals cpu False
+Q5 mps scatter_add_ duplicates det=False: distinct over 20 runs 20; equals cpu False
+Q5 mps stable sort distinct over 20 runs: 1
+Q6 torch._grouped_mm present: True
+Q6 cpu grouped_mm == per-segment mm: True
+Q6 mps grouped_mm == per-segment mm: True
+Q7 mps index_add_ unique indices det=True: raised RuntimeError: index_put_with_accumulate_mps does not have a deterministic implementation, but you set 'torch.use_deterministic_algorit
+sha256 e4773a4926ec0c380fb56d7e1540d1a4b523c35ca75c3ab7f61dc3db8ad6709d

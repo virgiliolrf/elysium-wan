@@ -1,0 +1,582 @@
+{
+  "rungs": [
+    {
+      "id": "factory",
+      "blocking": true,
+      "steps": [
+        {
+          "when": [
+            "agents-architetura/tools/package.json"
+          ],
+          "cmd": "node agents-architetura/tools/test.mjs",
+          "timeoutSec": 300
+        },
+        {
+          "when": [
+            "agents-architetura/tools/wf/build.mjs"
+          ],
+          "cmd": "node agents-architetura/tools/wf/build.mjs --check",
+          "timeoutSec": 60
+        }
+      ]
+    },
+    {
+      "id": "frozen",
+      "steps": [
+        {
+          "when": [
+            "docs/design/FROZEN.json"
+          ],
+          "cmd": "node agents-architetura/tools/factory/freeze.mjs check",
+          "timeoutSec": 120,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "nothing frozen yet"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "build",
+      "blocking": true,
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml"
+          ],
+          "cmd": "uv sync --all-extras --locked",
+          "timeoutSec": 1200
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo build --workspace --all-targets --locked",
+          "timeoutSec": 2400
+        },
+        {
+          "when": [
+            "package.json"
+          ],
+          "cmd": "npm ci && npm run build",
+          "timeoutSec": 1200
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "syntax",
+      "blocking": true,
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml"
+          ],
+          "cmd": "uv run python -m compileall -q -x '(^|/)(\\.venv|node_modules|target)/' .",
+          "timeoutSec": 600
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo check --workspace --all-targets --locked",
+          "timeoutSec": 2400
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "fmt",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml"
+          ],
+          "cmd": "node agents-architetura/tools/gates/scoped.mjs ruff-format",
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no changed Python file"
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo fmt --all --check"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "lint",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml"
+          ],
+          "cmd": "node agents-architetura/tools/gates/scoped.mjs ruff-check",
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no changed Python file"
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo clippy --workspace --all-targets --locked -- -D warnings"
+        },
+        {
+          "when": [
+            "package.json"
+          ],
+          "cmd": "npm run lint"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "types",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml"
+          ],
+          "cmd": "uv run mypy"
+        },
+        {
+          "when": [
+            "package.json"
+          ],
+          "cmd": "npm run typecheck"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "discipline",
+      "steps": [
+        {
+          "cmd": "node agents-architetura/tools/gates/discipline.mjs",
+          "timeoutSec": 300,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no test files"
+        },
+        {
+          "when": [
+            "agents-architetura/tools/campaign/suppressions"
+          ],
+          "cmd": "node agents-architetura/tools/campaign/suppressions-audit.mjs",
+          "timeoutSec": 120,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no suppressions files"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "invariants",
+      "steps": [
+        {
+          "when": [
+            "docs/design"
+          ],
+          "cmd": "node agents-architetura/tools/gates/invariants.mjs",
+          "timeoutSec": 300,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no spec defines numbered invariants"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "claims",
+      "steps": [
+        {
+          "when": [
+            "tests"
+          ],
+          "cmd": "node agents-architetura/tools/gates/claims.mjs",
+          "timeoutSec": 300,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no test files"
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "unit",
+      "steps": [
+        {
+          "when": [
+            "tests/unit"
+          ],
+          "cmd": "uv run pytest -q tests/unit",
+          "timeoutSec": 2700,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo test --workspace --locked",
+          "timeoutSec": 2400
+        },
+        {
+          "when": [
+            "package.json"
+          ],
+          "cmd": "npm test"
+        }
+      ]
+    },
+    {
+      "id": "component",
+      "steps": [
+        {
+          "when": [
+            "tests/component"
+          ],
+          "cmd": "uv run pytest -q tests/component",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "integration",
+      "steps": [
+        {
+          "when": [
+            "tests/integration"
+          ],
+          "cmd": "uv run pytest -q tests/integration",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "multiworker",
+      "steps": [
+        {
+          "when": [
+            "tests/multiworker"
+          ],
+          "cmd": "uv run pytest -q tests/multiworker",
+          "timeoutSec": 7200,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "heavy": true,
+      "coveredBy": "full"
+    },
+    {
+      "id": "multinode",
+      "heavy": true,
+      "steps": [
+        {
+          "when": [
+            "tests/multinode"
+          ],
+          "cmd": "test -n \"$FACTORY_MULTINODE_HOSTS\" || exit 5; uv run pytest -q tests/multinode",
+          "timeoutSec": 14400,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no multi-node hosts configured (FACTORY_MULTINODE_HOSTS) or no tests collected"
+        }
+      ]
+    },
+    {
+      "id": "oracle",
+      "steps": [
+        {
+          "when": [
+            "tests/oracle"
+          ],
+          "cmd": "uv run pytest -q tests/oracle",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        },
+        {
+          "when": [
+            "tests/helpers"
+          ],
+          "cmd": "uv run pytest -q tests/helpers",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no identity-corpus tests under tests/helpers"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "identity",
+      "steps": [
+        {
+          "when": [
+            "agents-architetura/tools/verify/identity.json",
+            "tests/oracle"
+          ],
+          "cmd": "node agents-architetura/tools/verify/identity.mjs",
+          "timeoutSec": 7200,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "identity corpus is empty"
+        }
+      ]
+    },
+    {
+      "id": "chaos",
+      "steps": [
+        {
+          "when": [
+            "tests/chaos"
+          ],
+          "cmd": "uv run pytest -q tests/chaos",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "wan",
+      "steps": [
+        {
+          "when": [
+            "tests/wan"
+          ],
+          "cmd": "uv run pytest -q tests/wan",
+          "timeoutSec": 7200,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "heavy": true,
+      "coveredBy": "full"
+    },
+    {
+      "id": "matrix",
+      "heavy": true,
+      "steps": [
+        {
+          "when": [
+            "agents-architetura/tools/verify/matrix.json"
+          ],
+          "cmd": "node agents-architetura/tools/verify/matrix.mjs",
+          "timeoutSec": 14400,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no matrix modes configured"
+        }
+      ]
+    },
+    {
+      "id": "rest",
+      "description": "tests outside every folder that has its own rung, so a test in a new folder never goes unrun",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml",
+            "tests"
+          ],
+          "cmd": "uv run pytest -q tests --ignore=tests/chaos --ignore=tests/component --ignore=tests/fuzz --ignore=tests/helpers --ignore=tests/integration --ignore=tests/multinode --ignore=tests/multiworker --ignore=tests/oracle --ignore=tests/redteam --ignore=tests/unit --ignore=tests/wan",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests outside the folders that have their own rung"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "full",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml",
+            "tests"
+          ],
+          "cmd": "uv run pytest -q tests",
+          "timeoutSec": 7200,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        },
+        {
+          "when": [
+            "Cargo.toml"
+          ],
+          "cmd": "cargo test --workspace --locked --all-targets",
+          "timeoutSec": 3600
+        }
+      ],
+      "onDemand": true,
+      "description": "the whole suite in ONE pytest session: catches interference between suites (shared state, ports, fixtures). On demand: the verdict gates (milestone GATES, wan-x phase GATES) require it; everyday ladders run each suite once through its own rung"
+    },
+    {
+      "id": "static",
+      "steps": [
+        {
+          "when": [
+            "pyproject.toml",
+            "src"
+          ],
+          "cmd": "uvx bandit -q -r src -ll",
+          "timeoutSec": 600
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "security",
+      "steps": [
+        {
+          "when": [
+            "uv.lock"
+          ],
+          "cmd": "uvx pip-audit --strict",
+          "timeoutSec": 600
+        },
+        {
+          "when": [
+            "Cargo.lock"
+          ],
+          "cmd": "cargo audit --deny warnings",
+          "timeoutSec": 600
+        }
+      ],
+      "deterministic": true
+    },
+    {
+      "id": "fuzz",
+      "steps": [
+        {
+          "when": [
+            "tests/fuzz"
+          ],
+          "cmd": "HYPOTHESIS_PROFILE=ci uv run pytest -q tests/fuzz",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        },
+        {
+          "when": [
+            "tests/fuzz/regressions"
+          ],
+          "cmd": "node agents-architetura/tools/campaign/fuzz-run.mjs --replay-all",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no fuzz campaign applies"
+        }
+      ]
+    },
+    {
+      "id": "bench",
+      "steps": [
+        {
+          "when": [
+            "bench/suite.json",
+            "bench/baseline.json"
+          ],
+          "cmd": "node agents-architetura/tools/gates/bench-gate.mjs",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            3
+          ],
+          "naReason": "machine too noisy to measure"
+        },
+        {
+          "when": [
+            "bench/scaling.json"
+          ],
+          "cmd": "node agents-architetura/tools/gates/scaling-gate.mjs --gate",
+          "timeoutSec": 14400,
+          "naExitCodes": [
+            3
+          ],
+          "naReason": "machine too noisy to measure"
+        }
+      ],
+      "heavy": true
+    },
+    {
+      "id": "redteam",
+      "steps": [
+        {
+          "when": [
+            "tests/redteam"
+          ],
+          "cmd": "uv run pytest -q tests/redteam",
+          "timeoutSec": 3600,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no tests collected"
+        }
+      ],
+      "coveredBy": "full"
+    },
+    {
+      "id": "mutation",
+      "heavy": true,
+      "steps": [
+        {
+          "when": [
+            "agents-architetura/tools/gates/mutation.json"
+          ],
+          "cmd": "node agents-architetura/tools/gates/mutation.mjs --changed-since auto",
+          "timeoutSec": 28800,
+          "naExitCodes": [
+            5
+          ],
+          "naReason": "no changed source lines"
+        }
+      ],
+      "onDemand": true
+    }
+  ]
+}

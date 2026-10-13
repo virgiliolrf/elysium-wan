@@ -1,0 +1,79 @@
+WT_PHASE train
+WT_STAGE rank=2 peer=0 device=cuda partition=[[0, 16], [16, 29], [29, 42], [42, 53]] compute=bf16 boundary=bf16 codec=planes resume=False
+WT_NET listen {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_NET dial {"cc": "cubic", "sndbuf": "auto", "rcvbuf": "auto"}
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=prev0 st=1 pe=0 peer=c5fe61b0671928b23859e909f409b451
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_P2P_BOUND hop=next0 st=3 pe=0 peer=fc4509b957f7d1b845703f82732e096d
+WT_OPT overlap layers=13 params=156
+WT_TELEM {"v": 1, "step": 0, "rank": 2, "peer": 0, "step_ms": 220768.5511719901, "emit_us": 0.0, "ops": {"F": {"n": 256, "med_ms": 64.5529159810394}, "B": {"n": 256, "med_ms": 142.75490801082924}, "W": {"n": 256, "med_ms": 41.64069300168194}, "OPT": {"n": 1, "med_ms": 55.640850972849876}}, "stall_ms": 150324.61091433652, "hops": {"next0": {"frames": 2304, "bytes": 2203696594, "busy_ms": 134664.40408187918}, "prev0": {"frames": 2295, "bytes": 2172729232, "busy_ms": 4589.1094917897135}}}
+WT_MEM step=0 alloc=44.34 peak=56.29 reserved=57.02
+WT_STEP 0
+WT_TELEM {"v": 1, "step": 1, "rank": 2, "peer": 0, "step_ms": 260917.60143899592, "emit_us": 111342.68104797229, "ops": {"F": {"n": 256, "med_ms": 60.53977750707418}, "B": {"n": 256, "med_ms": 143.87817250099033}, "W": {"n": 256, "med_ms": 41.50406297412701}, "OPT": {"n": 1, "med_ms": 3.1461610342375934}}, "stall_ms": 193174.60769438185, "hops": {"next0": {"frames": 2048, "bytes": 1948215370, "busy_ms": 132711.484532163}, "prev0": {"frames": 2049, "bytes": 2111025380, "busy_ms": 4100.683328288142}}}
+WT_MEM step=1 alloc=44.34 peak=59.11 reserved=59.68
+WT_STEP 1
+WT_OPT resident bytes=5746114560 params=111/156 room=5872805478 peak=64286097408
+WT_TELEM {"v": 1, "step": 2, "rank": 2, "peer": 0, "step_ms": 195924.89589203615, "emit_us": 77787.62601083145, "ops": {"F": {"n": 256, "med_ms": 61.89509999239817}, "B": {"n": 256, "med_ms": 127.94894000398926}, "W": {"n": 256, "med_ms": 44.29496100055985}, "OPT": {"n": 1, "med_ms": 172.05382703104988}}, "stall_ms": 132354.68832438346, "hops": {"next0": {"frames": 1792, "bytes": 1781544022, "busy_ms": 116639.61717410712}, "prev0": {"frames": 2056, "bytes": 2013787110, "busy_ms": 3753.968338132836}}}
+WT_MEM step=2 alloc=49.70 peak=59.11 reserved=59.87
+WT_STEP 2

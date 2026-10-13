@@ -1,0 +1,16 @@
+[coord info] COORDINATOR_ID de7291e0c592b722869a8db6596bfa3a
+[coord info] listening on 0.0.0.0:10100
+[coord info] run run-20261012-152445-f45ce4: starting
+[coord info] registered kr-seoul-3060 (5057bf850d) key=1f4be1fd5eae6c5b521b1996acaee1b4 203.0.113.2:31178 cuda/NVIDIA GeForce RTX 3060 23.485 TFLOPs 11.5 GB region=ap-northeast declared=['region']
+[coord info] registered us-bellevue-3070L (68d3fd8d8d) key=392af271119212ee970385374f716ef7 203.0.113.11:28796 cuda/NVIDIA GeForce RTX 3070 Laptop GPU 29.483 TFLOPs 7.5 GB region=us-west declared=['region']
+[coord info] selection: 2 node(s) in *: us-bellevue-3070L(NVIDIA GeForce RTX 3070 Laptop GPU, 29.48 TFLOPs, 7.5 GB), kr-seoul-3060(NVIDIA GeForce RTX 3060, 23.49 TFLOPs, 11.5 GB); heterogeneous fleet (NVIDIA GeForce RTX 3060 + NVIDIA GeForce RTX 3070 Laptop GPU): layers are cut in proportion to measured speed; lossless, but not bit-comparable to a different mix; WARNING: a previous run measured a hop of this fleet at 3-37 Mbps, RTT 151 ms
+[coord info] probe matrix (Mbps): [[null, 1.3], [1.3, null]]
+[coord info] link us-bellevue-3070L->kr-seoul-3060: fwd 39.2 rev 32.95 bidir 39.81+33.47 Mbps, RTT 156.91 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 62.9 Mbps, link is 32.95 Mbps. Expect residual stall
+[coord info] zero-bubble schedule: predicted 1.684 s/step, bubble 51.2%; F/B/W ms per stage [[16.526, 31.9, 11.091], [39.354, 77.15, 29.357]], hop comm ms [346.252], peer weights [[1.0], [1.0]]
+[coord info] fit rank 0: peak 5.89 GiB of 6.38 GiB budget
+[coord info] fit rank 1: peak 9.21 GiB of 9.79 GiB budget
+[coord info] placement: [['us-bellevue-3070L(cuda/NVIDIA GeForce RTX 3070 Laptop GPU)'], ['kr-seoul-3060(cuda/NVIDIA GeForce RTX 3060)']] partition [[0, 7], [7, 18]]
+[coord warn] ckpt_every=0: a dead worker cannot be healed, only restarted from step 0
+[coord info] launching attempt 1 (resume=False) on 2 slot(s)

@@ -1,0 +1,14 @@
+[coord info] COORDINATOR_ID 66948fd7e7dbaabd1660a138972f9f0a
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-201742-39b7fb: starting
+[coord info] registered va (8d0cd43de7) key=c36899e258ec1a898712f6249b9e4dec 203.0.113.14:40823 cuda/NVIDIA H100 NVL 547.260 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered us (4a04ca1833) key=002b7ed2a67f6560c278a47f40bc8362 203.0.113.25:27554 cuda/NVIDIA H100 NVL 523.147 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered cz (f871e1f76c) key=329f0d4dec0af1d456fd608d224a433d 203.0.113.12:53154 cuda/NVIDIA H100 NVL 541.549 TFLOPs 92.6 GB region=cz declared=['region']
+[coord info] selection: 3 node(s) in *: va(NVIDIA H100 NVL, 547.26 TFLOPs, 92.6 GB), cz(NVIDIA H100 NVL, 541.55 TFLOPs, 92.6 GB), us(NVIDIA H100 NVL, 523.15 TFLOPs, 92.6 GB); one device model, so the run stays bit-comparable against itself; WARNING: a previous run measured a hop of this fleet at 38-41 Mbps, RTT 134 ms
+[coord info] probe matrix (Mbps): [[null, 15.8, 66.4], [15.8, null, 26.9], [66.4, 26.9, null]]
+[coord info] link va->us: fwd 114.64 rev 110.57 bidir 97.85+79.81 Mbps, RTT 40.89 ms, duplex per_direction
+[coord info] link us->cz: fwd 49.78 rev 36.11 bidir 5.45+13.12 Mbps, RTT 131.44 ms, duplex aggregate
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 229.9 Mbps, link is 18.055 Mbps. Expect residual stall -- WARNING: estimated 121.21 GB per stage exceeds the 92.6 GB budget
+[coord info] zero-bubble schedule: predicted 4.829 s/step, bubble 53.2%; F/B/W ms per stage [[38.162, 62.647, 37.792], [38.025, 64.935, 37.58], [39.983, 63.528, 41.446]], hop comm ms [339.661, 1043.169], peer weights [[1.0], [1.0], [1.0]]
+[coord warn] worker us (4a04ca1833) disconnected: peer closed

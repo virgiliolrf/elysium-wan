@@ -1,0 +1,7 @@
+Elysium
+Copyright 2026 Virgilio Filho and the Elysium contributors.
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The zero-bubble pipeline schedule in src/wantrain/scheduler/zero_bubble.py ports the scheduling heuristic of
+Zero Bubble Pipeline Parallelism (https://github.com/sail-sg/zero-bubble-pipeline-parallelism).

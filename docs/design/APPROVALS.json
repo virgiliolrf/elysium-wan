@@ -1,0 +1,242 @@
+{
+  "approvals": [
+    {
+      "doc": "docs/design/DESIGN.md",
+      "sha256": "053fbb2fec82bddc81aab4225a4ff1e18044ffccf835d0f7c512e87c8347caf4",
+      "approvedBy": "Virgilio Filho",
+      "at": "2026-10-08T15:44:27.742Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/NEXT-m2-p1-liveness-telemetry.md",
+      "sha256": "cc9fb68868cd8cb22b3df9e5bbd8c15218016e362e0692eec11f079d0fd62230",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T22:57:05.742Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-m2-p1-liveness-telemetry.json",
+      "sha256": "aa6c6084cc3857c760f62101eea6e661309fb3b11e98044047917fac75cbd488",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T22:57:26.111Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p1-liveness-telemetry.js",
+      "sha256": "efecc196140a4c01aadf21ac01151d975e03f6485a2abe583fab5878aeedb219",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T22:57:37.608Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0002-m2-p1-spec.md",
+      "sha256": "c196aedf1287585f666377cf1c7e1996f134a5e07e15e6a99767978af5ead2c2",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T22:57:54.946Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p1-liveness-telemetry.js",
+      "sha256": "8af378cbda26966c27a8ae8f9102b3cc9795f06aaf635e17e1b1e0eb262b4d8c",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T23:15:16.379Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p1-liveness-telemetry.js",
+      "sha256": "e5c25dce0ee229b36b4d9fc83f90cc8068f93f3ca233179989f01abb580bca4f",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T23:16:46.496Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0003-m2-p1-progress-monotone.md",
+      "sha256": "c77bd350b3a7b32afa0fdda159f935703056a92b3924a9019b0c792f22dcb368",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T23:40:54.863Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/NEXT-m2-p1-liveness-telemetry.md",
+      "sha256": "91cbb4548c09c54f4f8cb136a1eeec09ca5b01d12c9c5c35a8cf4718f198ccac",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T23:41:05.164Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p1-liveness-telemetry.js",
+      "sha256": "9e563dc7c79fdcc8088efaee2912d26a866c3757ca092754dc44804cf5bb0663",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-08T23:41:47.161Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0004-m2-p1-mesh-auth-deferred.md",
+      "sha256": "889adc3839402d53773094a03b2036ba5b3998f19ead9f0c8e66a6b3c4db600e",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T00:08:57.232Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p1-liveness-telemetry.js",
+      "sha256": "b00e688a774ee4c9d904178d0239c10969e9ccb0c106ed60a6843322c78e8bcf",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T00:10:26.486Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0005-m2-p1-measurement-bounds.md",
+      "sha256": "d37c07baf389a8971ca757b036bd20eeae899a3b1cab79dd64c5bb9807b75c2a",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T02:29:26.521Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/NEXT-m2-p1-liveness-telemetry.md",
+      "sha256": "6feba3316040fa7bbf2e1ffc96229114a240ed2aeaa5e9f41d1a72a436820e78",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T02:32:01.527Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-m2-p1-liveness-telemetry.json",
+      "sha256": "610108bd26332e2bd7b97eacb1bbeab153fa58645855fb191cc882c5a68c2019",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T02:32:04.884Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/NEXT-m2-p2-wave-label-binding.md",
+      "sha256": "c7fb220ee98641a7a1371b06b4d0f07e8d10fb7350707be01ad8c73d6462a8fe",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T14:57:36.049Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-m2-p2-wave-label-binding.json",
+      "sha256": "ceb0e9dee0d7ccd146fce4caf22c9a17e21bb3c4744d7f89592ff7507149d308",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T14:57:40.939Z",
+      "note": ""
+    },
+    {
+      "doc": ".claude/workflows/wan-x-m2-p2-wave-label-binding.js",
+      "sha256": "b323e9e4d79985d709f80bff118efd110067f0688a55073333b33f89b01caba8",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T14:57:45.261Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/SPEC-runtime.md",
+      "sha256": "0c6b71f671408e32c61270e75808c0a9be1492d99c9bc151fef36b410c381c1e",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T14:57:49.251Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0006-exact-fsdp-placement.md",
+      "sha256": "f26480ce0d78c7697100f96a7b9ed0f0a963e5fed4c954f7328f323b2a56f31e",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T16:24:09.592Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/DESIGN.md",
+      "sha256": "ef04bfe8139a86e03715b84aef4538434cb3881d8ca66d7d1db2129392ad5c94",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T16:24:17.128Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/HANDOUT-M2.md",
+      "sha256": "88d120d9367737717f89241f9293cc392e905089ee4d2d956c0f211e670a8293",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:33:02.625Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/PLAN-M2.json",
+      "sha256": "8252665b70f3b5c6709e28019dad65c2c36e867400413e82f4f994f63c32dda2",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:33:11.079Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-M2.json",
+      "sha256": "6e8cd4e062e5e4f12da3cf9876654ba07f72fbde93146f1adb43dd8b1bf020d3",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:33:15.590Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/HANDOUT-M2b.md",
+      "sha256": "358fa29317da88222f663ee26c001ffa0f5b5a6730feed1c18a138904f90fa73",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:53:11.685Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/PLAN-M2b.json",
+      "sha256": "91459c1791c2c5a219239386bdf1464e3084725d708ca33e4a81dfa9511e0da3",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:53:26.175Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-M2b.json",
+      "sha256": "3c295720943a136b2a303229cc28e4c81bb516d7d23d6442b58b59b0e2392f2e",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:53:34.643Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/experiments/m2b-e4/PLAN.json",
+      "sha256": "7fb6e9ff4cb2c074fb6127b33a44278e7ed4643ab4189d369641f2b9a9794953",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:53:42.138Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/experiments/m2b-e7/PLAN.json",
+      "sha256": "afa2355d645db9aba60f9723bf2bcf86a03e216b97867e1bce300547e81b3f30",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T17:53:49.815Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/HANDOUT-M2.md",
+      "sha256": "d2e1c1f433bf032dbd2f12d92d04442e443868d315848dc50161f8932f23978f",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T18:16:02.299Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/PLAN-M2.json",
+      "sha256": "b5c5dfd2eaf0c122a97fca1d9e9bcdfbf59da0db3091de66da6ab19e03f47669",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T18:16:07.223Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/GATES-M2.json",
+      "sha256": "24fd85663329a0e0f2616e554de14d63c961b8489e6b3fb713369ba68606ecf7",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T18:16:12.561Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/adr/ADR-0007-slice-only-build.md",
+      "sha256": "6b64bd6810d6ed1712b157ac8ef879131e42d3b5758cb7ebb61e17678e5ad7b6",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T18:55:47.936Z",
+      "note": ""
+    },
+    {
+      "doc": "docs/design/DESIGN.md",
+      "sha256": "a6e30859c5dca9009b3d1a3ea0c3091ba5fd23cae4d8161e01f95c03eacda511",
+      "approvedBy": "Virgilio Filho (Claude Code prompt)",
+      "at": "2026-10-09T18:58:20.919Z",
+      "note": ""
+    }
+  ]
+}

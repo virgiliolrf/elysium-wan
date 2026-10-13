@@ -1,0 +1,177 @@
+{
+  "nodes": {
+    "cz": {
+      "sysmon": {
+        "seconds": 320,
+        "gpu_util_mean_pct": 12.4,
+        "gpu_util_mean_when_active_pct": 48.1,
+        "gpu_mem_peak_mb": 33185.0,
+        "gpu_power_mean_w": 123.4,
+        "nic_rx_mbps_mean": 26.72,
+        "nic_tx_mbps_mean": 24.4,
+        "nic_rx_mbps_p95": 96.83,
+        "nic_tx_mbps_p95": 80.64,
+        "nic_total_gb": 2.038
+      }
+    },
+    "us": {
+      "sysmon": {
+        "seconds": 328,
+        "gpu_util_mean_pct": 14.2,
+        "gpu_util_mean_when_active_pct": 47.2,
+        "gpu_mem_peak_mb": 36691.0,
+        "gpu_power_mean_w": 121.9,
+        "nic_rx_mbps_mean": 23.66,
+        "nic_tx_mbps_mean": 25.26,
+        "nic_rx_mbps_p95": 84.31,
+        "nic_tx_mbps_p95": 96.82,
+        "nic_total_gb": 2.007
+      }
+    }
+  },
+  "stages": {
+    "0": {
+      "node": "cz",
+      "steps": 20,
+      "step_ms_median": 8246.9,
+      "step_ms_p10": 5437.5,
+      "step_ms_p90": 14757.5,
+      "stall_ms_median": 6312.2,
+      "stall_share_pct": 78.5,
+      "op_median_ms": {
+        "F": 22.34,
+        "B": 59.41,
+        "W": 13.38,
+        "OPT": 521.1
+      },
+      "hop_bytes_per_step_mb": 43.65,
+      "hop_mbps_while_busy": 72.7,
+      "gpu_mem_peak_gib": 29.62
+    },
+    "1": {
+      "node": "us",
+      "steps": 20,
+      "step_ms_median": 8005.4,
+      "step_ms_p10": 5279.7,
+      "step_ms_p90": 14812.2,
+      "stall_ms_median": 5395.8,
+      "stall_share_pct": 71.5,
+      "op_median_ms": {
+        "F": 32.92,
+        "B": 67.84,
+        "W": 14.1,
+        "OPT": 804.75
+      },
+      "hop_bytes_per_step_mb": 48.96,
+      "hop_mbps_while_busy": 684.3,
+      "gpu_mem_peak_gib": 30.66
+    }
+  },
+  "engine_link_probe": {
+    "fwd_mbps": 41.16,
+    "rev_mbps": 49.3,
+    "bidir_a_mbps": 26.63,
+    "bidir_b_mbps": 49.4,
+    "rtt_ms": 133.83
+  },
+  "plan_predicted": {
+    "s_per_step": 2.739,
+    "bubble_pct": 51.9
+  },
+  "loss": {
+    "first_step": 0,
+    "last_step": 19,
+    "first": 10.9907,
+    "last": 6.2244,
+    "min": 6.1405,
+    "curve": [
+      [
+        0,
+        10.9907
+      ],
+      [
+        1,
+        10.5127
+      ],
+      [
+        2,
+        10.5542
+      ],
+      [
+        3,
+        9.2272
+      ],
+      [
+        4,
+        8.3538
+      ],
+      [
+        5,
+        7.7138
+      ],
+      [
+        6,
+        7.0837
+      ],
+      [
+        7,
+        6.6575
+      ],
+      [
+        8,
+        6.4717
+      ],
+      [
+        9,
+        6.2451
+      ],
+      [
+        10,
+        6.2157
+      ],
+      [
+        11,
+        6.2724
+      ],
+      [
+        12,
+        6.3691
+      ],
+      [
+        13,
+        6.2537
+      ],
+      [
+        14,
+        6.21
+      ],
+      [
+        15,
+        6.2271
+      ],
+      [
+        16,
+        6.3091
+      ],
+      [
+        17,
+        6.1963
+      ],
+      [
+        18,
+        6.1405
+      ],
+      [
+        19,
+        6.2244
+      ]
+    ],
+    "wall_s": 189.9
+  },
+  "throughput": {
+    "tokens_per_step": 16384,
+    "tokens_per_s": 2046.6,
+    "steps_per_min": 7.49,
+    "tokens_per_s_wall": 1725.5
+  }
+}

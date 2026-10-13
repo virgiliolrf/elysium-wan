@@ -1,0 +1,149 @@
+{
+  "milestone": "M2b",
+  "consecutive": 2,
+  "rungs": [
+    "factory",
+    "frozen",
+    "build",
+    "syntax",
+    "fmt",
+    "lint",
+    "types",
+    "discipline",
+    "invariants",
+    "claims",
+    "unit",
+    "integration",
+    "multiworker",
+    "oracle",
+    "identity",
+    "chaos",
+    "wan",
+    "full",
+    "static",
+    "security",
+    "fuzz"
+  ],
+  "pinned": [
+    {
+      "id": "f1-matrix-x20",
+      "cmd": "o=$(node agents-architetura/tools/verify/machine-lock.mjs run --label m2b-f1 --wait 3600 -- 'env -u WANTRAIN_E1_SEED uv run pytest -q -s --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k \"(e1_ or e5_ or native) and not e4_\"' 2>&1); s=$?; grep -oE 'E1_SEED=[0-9]+' <<<\"$o\"; printf '%s\\n' \"$o\" | tail -n 40; [ \"$s\" -eq 0 ] || exit \"$s\"; n=$(grep -oE 'E1_SEED=[0-9]+' <<<\"$o\" | wc -l | tr -d ' '); echo \"E1_SEEDS_PRINTED=$n\"; [ \"$n\" -ge 1 ] || exit 1; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20,
+      "timeoutSec": 10800,
+      "note": "Selection unchanged and never shrunk: it also takes e5_zero1_to_pieces, e5_widen, e5_rebalance_owner and the e1_matrix_<recipe>_* arms. timeoutSec is per repetition. HYPOTHESIS (HANDOUT-M2b): about 140 arms at about 20 s each, so about 47 min per repetition and about 16 h for 20; 10800 s leaves 3.8x. Runs under the exclusive lock, so the 1200 s slot ceiling does not apply."
+    },
+    {
+      "id": "e3-holds-liveness-x3",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k e3_ 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 3,
+      "timeoutSec": 3600
+    },
+    {
+      "id": "e4-exposure-sweep",
+      "cmd": "node agents-architetura/tools/factory/approve.mjs check docs/experiments/m2b-e4/PLAN.json || exit 1; o=$(node agents-architetura/tools/verify/machine-lock.mjs run --label m2b-e4 --wait 3600 -- 'uv run pytest -q --color=no -p no:randomly --runxfail -s tests/integration/test_engine_bitwise.py -k e4_' 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 1,
+      "timeoutSec": 7200,
+      "note": "The human's decision, 2026-10-10 ~19:45 (HANDOUT-M2b D-3): with hardware.json gpu false, F3's band [0.8, 1.2]x and off-configuration arms (interior w8) are MEASURED and printed, not failing; byte identity of every arm, F6, F5 and the emission order at RTT_hi still fail. With gpu true (M1) F3 and w8 fail again. The PLAN's predictions and criteria are unchanged; M2B-E4-F3, -W8-OFFCONFIG, -TODAY-STAGE0 stay open, deferred to M1."
+    },
+    {
+      "id": "e6-exhaustive-cast",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_runtime_spec.py -k e6_ 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 1,
+      "timeoutSec": 3600
+    },
+    {
+      "id": "pieces-armed",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_control_admission.py -k \"pieces_armed or plan_wide_armed\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\" || exit 1; o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_coordinator.py -k \"pieces or plan_wide\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\" || exit 1; ! grep -n 'not armed' tests/integration/test_coordinator.py",
+      "repeat": 1,
+      "timeoutSec": 3600,
+      "note": "D-6: plan_wide_armed is a direct call in tests/unit/test_control_admission.py. test_coordinator.py -k \"pieces or plan_wide\" selects the pieces_armed launches, pieces_plan_oracle, pieces_heal_run, pieces_rebalance, plan_wide_zero1_oracle and plan_wide_spec_fields. The pass line rejects any skip, and the final grep keeps the unarmed assertions out of test_coordinator.py."
+    },
+    {
+      "id": "no-invariant-deferred-to-m2b",
+      "cmd": "node agents-architetura/tools/gates/invariants.mjs --json | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);if(!r||typeof r.deferred!=='object'){console.error('invariants.mjs --json printed no deferred map');process.exit(2)}const l=Object.entries(r.deferred).filter(([,m])=>m==='M2b').map(([i])=>i);if(l.length){console.error('still deferred to M2b: '+l.join(' '));process.exit(1)}console.log('DEFERRED_TO_M2B=0')})\"",
+      "repeat": 1
+    },
+    {
+      "id": "control-i9-pieces-heal",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_fault_tolerance.py -k pieces_heal 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\"",
+      "repeat": 20
+    },
+    {
+      "id": "sc3-identity-recipe-arms-e1",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k \"e1_ and fp16\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 30; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\" || exit 1; o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k \"e1_ and fp32\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 30; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\" || exit 1",
+      "repeat": 1,
+      "timeoutSec": 3600,
+      "note": "SC-3 ruled by the human (2026-10-09): E1's integration arms (sha256 of the final state and every loss hex against the reference) replace the ADR's fp16 and fp32 identity-rung arms; each recipe must select and pass at least one arm"
+    },
+    {
+      "id": "concurrency-amplified",
+      "cmd": "node agents-architetura/tools/verify/amplify.mjs --runs 200 --seed-base 1000 --periods 16,64,256 --timeout 600 -- 'o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_runtime_spec.py tests/unit/test_transport.py tests/unit/test_fault_tolerance.py -k \"need_first or copy_engine or holds or shared_pacer or pieces_heal\" 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800
+    },
+    {
+      "id": "concurrency-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --timeout 600 --require-pass-marker -- 'o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/unit/test_runtime_spec.py tests/unit/test_fault_tolerance.py -k \"need_first or copy_engine or holds or pieces_heal\" 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 14400
+    },
+    {
+      "id": "e3-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --timeout 1800 --require-pass-marker -- 'o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k e3_ 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800
+    },
+    {
+      "id": "pieces-codec-exact-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 1200 --require-pass-marker -- 'o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_engine_bitwise.py -k pieces_codec_exact 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800,
+      "note": "The addition HANDOUT-M2b suggests: BA-56 pieces_codec_exact (wire_codec planes, bf16 boundary, wire native, shard pieces, widths [1,3,1]), 120 runs under 6x self-load. Any run whose pieces or gathers are not bit-identical fails."
+    },
+    {
+      "id": "pieces-heal-rebalance-x5",
+      "cmd": "o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_coordinator.py -k \"pieces_heal_run or pieces_rebalance\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"",
+      "repeat": 5,
+      "timeoutSec": 3600,
+      "note": "Failure paths under pieces: the CONTROL-I10 heal with an identical spare and with a different-model spare, and the BA-44 rebalance, both applied and refused. The final state must equal the oracle by sha256, 5/5, with the machine to itself. Same bar as wave-heal-integration and rebalance-arms in GATES-M2."
+    },
+    {
+      "id": "pieces-heal-run-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 1200 --require-pass-marker -- 'o=$(uv run pytest -q --color=no -p no:randomly --runxfail tests/integration/test_coordinator.py -k pieces_heal_run 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800,
+      "note": "The heal under pieces, 120 runs under 6x self-load (precedent: heal-state-exact-load6 in GATES-M2). pieces_rebalance is left out of the loaded run on purpose: whether M2's rule fires depends on the relative speed that WANTRAIN_SIM_SLOW sets, a timing condition (D-12), not the bytes. pieces-heal-rebalance-x5 pins its bytes."
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "py-devmode"
+    }
+  ],
+  "fuzz": [],
+  "mutation": {
+    "changedSince": "auto"
+  },
+  "notes": [
+    "Rungs that are N/A on this tree are not pinned: a pinned N/A rung fails the gate, and none is faked. matrix: agents-architetura/tools/verify/matrix.json has no modes. bench: bench/suite.json does not exist and hardware.json is gpu false; DESIGN \u00a78 lists bench for M2b, so the SIMULATED E3/E4 arms stand in and real-hardware validation stays pending. redteam: no tests/redteam. multinode: no FACTORY_MULTINODE_HOSTS, and gpu is false. rest: every test folder has its own rung. mutation is pinned through the mutation field.",
+    "Campaigns: py-devmode, amplify-chaos and load-chaos apply and are pinned. py-freethreaded does not apply on this machine: its probe `uv python find 3.14t` exits 2 because no free-threaded interpreter is installed (checked 2026-10-09). Installing one is the human's call. Meanwhile concurrency-amplified and concurrency-loaded cover the copy-engine and need-first threads. rust-tsan, rust-asan and miri need Cargo.toml, and cuda-racecheck needs tests/gpu; both are absent. campaigns.json defines no fuzz-kind campaign, so fuzz is empty; the fuzz rung (tests/fuzz) is pinned.",
+    "The integration failure tests (pieces_heal_run, pieces_rebalance) get repeats plus load6 instead of 600 amplified runs, as GATES-M2 did. The amplifier stays on the unit-level concurrency selections: need_first, copy_engine, holds, shared_pacer and pieces_heal."
+  ],
+  "deferred": [
+    {
+      "campaigns": [
+        "amplify-chaos",
+        "load-chaos"
+      ],
+      "by": "the human, 2026-10-10 ~15:40 (HANDOUT-M2b D-6)",
+      "until": "before the M1 sign-off, with M2's"
+    },
+    {
+      "audit": {
+        "bar": "no-open-tier-a"
+      },
+      "by": "the orchestrating session, delegated by the human (2026-10-10 ~23:40), 2026-10-11 ~09:45 (HANDOUT-M2b D-7); to be confirmed by the human",
+      "until": "before the M1 sign-off (wan-audit malicious-worker, before rented machines)"
+    }
+  ]
+}

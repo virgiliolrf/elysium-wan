@@ -1,0 +1,166 @@
+{
+  "milestone": "M4",
+  "consecutive": 2,
+  "rungs": [
+    "factory",
+    "frozen",
+    "build",
+    "syntax",
+    "fmt",
+    "lint",
+    "types",
+    "discipline",
+    "invariants",
+    "claims",
+    "unit",
+    "integration",
+    "multiworker",
+    "oracle",
+    "identity",
+    "chaos",
+    "wan",
+    "full",
+    "static",
+    "security",
+    "fuzz"
+  ],
+  "pinned": [
+    {
+      "id": "guarded-harness-unchanged",
+      "cmd": "printf '%s  %s\\n' 48eb6402cee96174975a9d2b82fdf017ca1915818795d776c83e3b3cc3350db1 tests/helpers/exact.py 92e20b25f800835f18530b8153c0b7a626eeed17d28c48b56d909113e2251245 tests/helpers/cluster.py 75404403138c3c19ab28f8b9cad9ed32e2780d9e967965cd3051b2db8df8173c tests/helpers/wanproxy.py 8095c430c8d81efc9f7ba99eeb010b12d03d4829c13b4dbef372e4ecde3e6999 tests/helpers/ports.py 3965c6f435aedf26a407b5624383203f5a04c8baaeae00c3f92b25295684d7a7 tests/conftest.py 601de810e4871bac9d9390ac2a254090aee0443ba3a1c249db733d39360fb605 tests/oracle/test_state_identity.py e7ffb96f5ed60dc2246ca65d8b159055d3a20938364856c51d0c208c0a0328b1 tests/chaos/test_recovery.py 051822a55ad4d154378d28e16f5501faf232e800da2e874a84fdd0a2ef4f7b2a tests/multiworker/test_fleet_state_exact.py dcee68ad7e7d5c66d575b94ddf856e26ce76453100c00ef65d130cb89b13f591 tests/wan/test_wan_profiles.py e2ac2f9909232c167661be347d929673abb4f554b71a099fc65a1f89306a6b18 tests/fuzz/test_wire_fuzz.py | shasum -a 256 -c - && uv run --no-sync --offline python -c \"import json; d = json.load(open('agents-architetura/tools/verify/identity.json')); want = {'corpus': ['tests/oracle/**/test_*.py', 'tests/helpers/test_m4_identity_*.py'], 'every': 1, 'max': 40, 'a': 'FACTORY_FEATURES=off uv run pytest -q -p no:randomly {test}', 'b': 'FACTORY_REFERENCE=1 uv run pytest -q -p no:randomly {test}', 'exact': {'cmd': 'uv run pytest -q -p no:randomly {test}', 'state': ['state/**']}, 'normalize': True, 'baseRev': 'origin/main', 'timeoutSec': 600}; assert d == want, ('identity.json differs from the planned corpus', d); R = {r['id']: r for r in json.load(open('agents-architetura/tools/gates/rungs.json'))['rungs']}; o = R['oracle']['steps']; assert [s['cmd'] for s in o] == ['uv run pytest -q tests/oracle', 'uv run pytest -q tests/helpers'] and o[1]['when'] == ['tests/helpers'], ('oracle rung', o); assert '--ignore=tests/helpers' in R['rest']['steps'][0]['cmd'], ('rest rung', R['rest']); print('IDENTITY_CORPUS_CONFIG_OK')\"",
+      "repeat": 1,
+      "note": "No M4 task owns the hashed files (PLAN-M4 scopes). They are the byte-exact oracle, the cluster and WAN harness, the chaos, multiworker, wan and fuzz suites: a change to any of them can mask a failure (NO_MASKING). Hashes read on 3b0d2f8 plus the untracked plan, 2026-10-11. identity.json is planned to change (corpus-wiring, BA-468): instead of its old hash, the entry pins its whole planned content (the corpus gains tests/helpers/test_m4_identity_*.py, nothing else moves) and the two rungs.json steps corpus-wiring adds, so the identity and oracle rungs provably run the M4 arms. A reviewed change (e.g. M2b's closeout merged into factory/m4) re-pins a hash through freeze.mjs amend with the reason; editing the hash to go green is masking."
+    },
+    {
+      "id": "m4-tripwire-and-arm-x20",
+      "cmd": "o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_control_admission.py -k \"m4_unarmed or m4_armed or m4_admission\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1; uv run --offline --extra hf python -c \"import wantrain.coordinator.coordinator as c; assert c.M4_ARMED is True, c.M4_ARMED; print('M4_ARMED=True')\"",
+      "repeat": 20,
+      "timeoutSec": 1800,
+      "note": "The milestone's entry smoke: the m4-unarmed tripwire (refusals with the flag patched False, the CLI entries included), the armed admission and the RECORD check at every admission (CONTROL-I24), 20/20; and the flag is armed on the closing tree (arm-m4)."
+    },
+    {
+      "id": "invariant-coverage-m4",
+      "cmd": "node agents-architetura/tools/gates/invariants.mjs --json | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);if(!r||!r.applicable||typeof r.deferred!=='object'||!Array.isArray(r.uncovered)){console.error('invariants.mjs --json printed no report');process.exit(2)}const ids=process.argv.slice(1);const bad=ids.filter(i=>r.deferred[i]!==undefined||r.uncovered.some(u=>u.startsWith(i+' ')));if(bad.length||!r.ok){console.error('not covered: '+bad.join(' ')+(r.ok?'':' (invariants not ok)'));process.exit(1)}console.log('covered: '+ids.join(' '))})\" MODEL-I4 MODEL-I8 MODEL-I9 MODEL-I10 RUNTIME-I15 RUNTIME-I18 RUNTIME-I19 SCHEDULER-I21 SCHEDULER-I22 CONTROL-I24; s=$?; [ \"$s\" -eq 0 ] || exit \"$s\"; miss=; for i in MODEL-I4 MODEL-I8 MODEL-I9 MODEL-I10 RUNTIME-I15 RUNTIME-I18 RUNTIME-I19 SCHEDULER-I21 SCHEDULER-I22 CONTROL-I24; do grep -rqE \"covers:.*\\b${i}\\b\" tests || miss=\"$miss $i\"; done; [ -z \"$miss\" ] || { echo \"no covers: line under tests/ for:$miss\"; exit 1; }; echo COVERS_LINES_OK",
+      "repeat": 1,
+      "note": "HANDOUT D-5: the ten ids the milestone delivers each have a covers: test, although their spec lines may still say DEFERRED-TO: M4 (invariants.mjs exempts a deferred id only while nothing covers it). The grep also refuses an id that the report would pass only by a typo."
+    },
+    {
+      "id": "hf-family-parity-x2",
+      "cmd": "c=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' --collect-only -q tests/unit/test_finetune.py -k \"hf_family\" 2>&1) || { printf '%s\\n' \"$c\" | tail -n 30; exit 1; }; miss=; for f in llama mistral qwen2 qwen3 gemma gemma2 gemma3_text phi3 olmo2 granite gpt_neox starcoder2; do g=${f//_/-}; grep -qiE \"(${f}|${g})\" <<<\"$c\" || miss=\"$miss $f\"; done; [ -z \"$miss\" ] || { echo \"hf_family families missing:$miss\"; exit 1; }; echo \"hf_family families: all 12 collected\"; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_finetune.py -k \"hf_family or hf_e2 or hf_e6\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 2,
+      "timeoutSec": 7200,
+      "note": "Human item 1: the mandatory per-family parity gate (logits and gradients vs vanilla transformers 5.19.0, run refused on divergence) for all 12 families, E1 extras, E2 controls (threaded state, swapped block skipping experts) and E6 drift arms (refused). The collect check fails a shrunk parametrization (the 'gemma' probe is a substring of gemma2's ids, a known weakness). mps-marked E8 tests are deselected: E8 gates nothing."
+    },
+    {
+      "id": "moe-model-x2",
+      "cmd": "c=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' --collect-only -q tests/unit/test_finetune.py -k \"moe\" 2>&1) || { printf '%s\\n' \"$c\" | tail -n 30; exit 1; }; miss=; for f in mixtral qwen2_moe qwen3_moe deepseek; do g=${f//_/-}; grep -qiE \"(${f}|${g})\" <<<\"$c\" || miss=\"$miss $f\"; done; [ -z \"$miss\" ] || { echo \"moe rows missing:$miss\"; exit 1; }; echo \"moe rows: all 4 collected\"; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_finetune.py -k \"moe\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 2,
+      "timeoutSec": 7200,
+      "note": "Human item 2 (MODEL-I8): native MoEMLP E1, the HF class-swap rows for Mixtral, Qwen2-MoE and Qwen3-MoE with F8 parity against transformers 5.19.0's blocks, the 2-span HF-Mixtral capture, the tiny DeepSeek-V3 native row exact against its oracle plus router fidelity (decision 9). test_moe_e7_* runs here without FACTORY_E7_BOUNDS and asserts only byte counts."
+    },
+    {
+      "id": "hf-identity-x2",
+      "cmd": "c=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' --collect-only -q tests/integration/test_engine_bitwise.py -k \"hf_identity\" 2>&1) || { printf '%s\\n' \"$c\" | tail -n 30; exit 1; }; miss=; for f in llama mistral qwen2 qwen3 gemma gemma2 gemma3_text phi3 olmo2 granite gpt_neox starcoder2; do g=${f//_/-}; grep -qiE \"(${f}|${g})\" <<<\"$c\" || miss=\"$miss $f\"; done; [ -z \"$miss\" ] || { echo \"hf_identity families missing:$miss\"; exit 1; }; echo \"hf_identity families: all 12 collected\"; c2=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' --collect-only -q tests/integration/test_engine_bitwise.py -k \"hf_identity or e4_tied\" 2>&1) || { printf '%s\\n' \"$c2\" | tail -n 30; exit 1; }; miss=; for a in chain2-llama chain2-qwen3 chain2-granite chain2-gemma2-tied chain3-wan chain4-wan gemma2-tied-chain3 recompute wfill bf16 zero1-mid pieces-native resume buffers-edited ckpt-span tied-end; do grep -E 'hf_identity' <<<\"$c2\" | grep -qF -- \"$a\" || miss=\"$miss $a\"; done; for a in a1 a2 a3 a4; do grep -E 'e4_tied' <<<\"$c2\" | grep -qE -- \"[[-]$a[]-]\" || miss=\"$miss e4_tied:$a\"; done; [ -z \"$miss\" ] || { echo \"hf_identity/e4_tied arms missing:$miss\"; exit 1; }; echo \"hf_identity arms: every planned id collected\"; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_engine_bitwise.py -k \"hf_identity or hf_oracle or e4_tied\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 2,
+      "timeoutSec": 10800,
+      "note": "Human item 3, HF: every one of the 12 families' pipeline identity against the single-device oracle by sha256 (weights, AdamW m and v, step, RNG) and every loss hex; 2-4 stage chains under WAN emulation, recompute, W fill, bf16, ZeRO-1 middle stage, gemma2 tied split, pieces, resume, the tampered hf_buffers.json wave, the checkpoint arm (BA-449), E3 and the E4 tied arms' table sha256. The second collect check requires every parametrization id PLAN-M4 identity-m4 names (HANDOUT finding 9: the arms its fast verify cannot run, the 3-stage gemma2 tied chain whose middle stage forwards TIED included), so an arm left out fails the gate instead of passing unrun. The four SPEC-runtime task 7 families also run in the oracle and identity rungs through tests/helpers/test_m4_identity_hf.py (BA-468). HYPOTHESIS (HANDOUT R-2): 6-10 min per family sweep plus the extra arms; 10800 s per repetition leaves > 5x."
+    },
+    {
+      "id": "moe-identity-x2",
+      "cmd": "c=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' --collect-only -q tests/integration/test_engine_bitwise.py -k \"moe_identity\" 2>&1) || { printf '%s\\n' \"$c\" | tail -n 30; exit 1; }; miss=; for f in mixtral qwen3_moe; do g=${f//_/-}; grep -qiE \"(${f}|${g})\" <<<\"$c\" || miss=\"$miss $f\"; done; [ -z \"$miss\" ] || { echo \"HF-MoE adapter arms missing:$miss\"; exit 1; }; echo \"HF-MoE adapter arms: all 2 collected\"; miss=; for a in depth1 depth2 depth4 wfill recompute zero1-batch zero1-stream zero1-native pieces-w1 pieces-w2 pieces-w3 bf16 skew-tie skew-hot e6-frames dense-tables mustfail-topk-stage mustfail-skip-unrouted mustfail-reverse-combine mustfail-descending-rows mustfail-merged-w-gemm mustfail-aux-alpha-m mustfail-bias-float-mean mustfail-bias-one-peer mustfail-group-topk mustfail-pieces-off-qt mustfail-count-dropped mustfail-count-doubled mustfail-fold-neg-zero mustfail-up-stores-x hf-mixtral hf-qwen3-moe; do grep -E 'moe_identity' <<<\"$c\" | grep -qF -- \"$a\" || miss=\"$miss $a\"; done; [ -z \"$miss\" ] || { echo \"moe_identity arms missing:$miss\"; exit 1; }; echo \"moe_identity arms: every planned id collected\"; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_engine_bitwise.py -k \"moe_identity or moe_oracle\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 2,
+      "timeoutSec": 10800,
+      "note": "Human item 3, MoE (RUNTIME-I18): sha256 of the state with selection biases, every CE hex and aux hex at depths 1, 2, 4, ZeRO-1 widths 1 and 2 on the batch, stream_grads and wire-native paths, pieces widths 1-3, fp32 and bf16, skew arms; every ADR-0008 E4 must-fail diverging after its trigger is recorded (the up-stores-X control firing F3); E6 frame classes and unchanged dense tables; the HF-MoE adapter arms (Mixtral, Qwen3-MoE, E2-HF hub-to-fused round trip). test_moe_identity_f7_* runs here without FACTORY_E7_BOUNDS (no timing bound). The collect check requires every parametrization id PLAN-M4 identity-m4 names (each depth, ZeRO-1 path, pieces width, skew arm, E6 class, and every one of the 14 must-fails by name)."
+    },
+    {
+      "id": "m4-identity-corpus-x2",
+      "cmd": "d=$(mktemp -d) || exit 1; o=$(FACTORY_IDENTITY_OUT=\"$d\" uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/helpers/test_m4_identity_hf.py tests/helpers/test_m4_identity_moe.py 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\"$o\" || exit 1; miss=; for a in hf_llama hf_qwen3 hf_gemma2_tied hf_granite hf_mixtral hf_llama_resumed moe_native moe_native_resumed; do [ -s \"$d/state/$a.json\" ] || miss=\"$miss $a\"; done; if ls \"$d/state\" | grep -q refused; then echo \"arms refused on this Mac:\"; ls \"$d/state\"; rm -rf \"$d\"; exit 1; fi; rm -rf \"$d\"; [ -z \"$miss\" ] || { echo \"arms that wrote no state:$miss\"; exit 1; }; echo M4_IDENTITY_CORPUS_STATE_OK",
+      "repeat": 2,
+      "timeoutSec": 3600,
+      "note": "SPEC-runtime task 7 (tiny llama, qwen3, gemma2 tied, granite in the oracle and identity rungs) and ADR-0008's MoE arms, BA-468: the identity-corpus files run in the production mode and every arm must write its state (state/<arm>.json, no .refused.json: this Mac has a TORCH_RECORDS entry), so the identity rung's three-mode sha256 comparison of those files is known to compare real HF and MoE training state, not refusals. The identity rung (pinned above, twice) does the reference / feature-off / production comparison; guarded-harness-unchanged pins the corpus glob and the oracle rung step. HYPOTHESIS: under 400 s per file per mode on this Mac."
+    },
+    {
+      "id": "stage-determinism-waves-x3",
+      "cmd": "o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_runtime_spec.py -k \"m4_stage or m4_wire\" 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_user_model_precision.py -k determinism 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1; o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_fault_tolerance.py -k wave_extra 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 3,
+      "timeoutSec": 3600,
+      "note": "The stage runtime for HF units, the tied fold and relay, MoE aux replay, bias update and count transport (RUNTIME-I15/I18/I19); human item 4, the determinism house fix with every flag and the ISA pin read back (RUNTIME-I19); wave manifests listing hf_buffers.json."
+    },
+    {
+      "id": "m4-coordinator-x5",
+      "cmd": "o=$(uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_coordinator.py -k m4_coordinator 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 5,
+      "timeoutSec": 3600,
+      "note": "Coordinator end to end, hf and MoE, spec and plan mode (a plan-mode MoE job must not train dense, BA-461), the heal onto a gated node of the same device class, the resume under another transformers RECORD refused naming the file (BA-448), the prefix directories removed at exit. Final state equal to the oracle by sha256, 5/5 with the machine to itself (precedent: pieces-heal-rebalance-x5 in GATES-M2b)."
+    },
+    {
+      "id": "m4-coordinator-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 1800 --require-pass-marker -- 'o=$(uv run --no-sync --offline pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_coordinator.py -k m4_coordinator 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800,
+      "note": "The failure paths (heal, resume refusal, admission re-check) under 6x self-load, 120 runs (precedent: pieces-heal-run-loaded in GATES-M2b; the integration failure tests get repeats plus load instead of 600 amplified multi-process runs). HYPOTHESIS: 6 concurrent clusters of HF-importing processes fit the 16 GB Mac (about 0.4-0.5 GB per process); falsified by memory_pressure under 10% during the run, which stops the run per the build resource rules and is recorded, never counted as a pass."
+    },
+    {
+      "id": "m4-concurrency-amplified",
+      "cmd": "node agents-architetura/tools/verify/amplify.mjs --runs 200 --seed-base 1000 --periods 16,64,256 --timeout 600 -- 'o=$(uv run --no-sync --offline pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_runtime_spec.py tests/unit/test_transport.py -k \"m4_stage or tied_frame or unknown_frame_type\" 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800,
+      "note": "600 perturbed runs over the new threaded paths that need no HF import: the tied fold and in-order receipt, TIED forwarding fragment by fragment, the MoE count lane, and the typed decode of frame types. HYPOTHESIS: about 20-40 s per run, so 3.3-6.7 h; amplify's calibration run stops the gate (exit 2) if one clean run takes over half of 600 s."
+    },
+    {
+      "id": "m4-concurrency-loaded",
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --seed-base 1000 --timeout 1200 --require-pass-marker -- 'o=$(uv run --no-sync --offline pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_runtime_spec.py tests/unit/test_resources.py tests/unit/test_transport.py -k \"m4_stage or m4_wire or m4_agent_wire or tied_frame\" 2>&1); s=$?; if [ $s -eq 0 ] && grep -qE \"^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in \" <<<\"$o\"; then echo PASS; else printf \"%s\\n\" \"$o\" | tail -n 60; exit 1; fi'",
+      "repeat": 1,
+      "timeoutSec": 28800,
+      "note": "The same threads on real HF units (m4_wire), plus the agent's GATE served by HF child processes with fresh pycache prefixes (m4_agent_wire), 120 runs under 6x self-load. Any run whose state differs from its oracle, hangs or leaves a prefix fails."
+    },
+    {
+      "id": "hfm-census-f7",
+      "cmd": "f=.factory/runs/M4/census-gate.json; mkdir -p .factory/runs/M4; rm -f \"$f\"; uv run --offline --extra hf python -m wantrain.model.hfm census --out \"$f\" || exit 1; test -s \"$f\" || { echo CENSUS_OUTPUT_MISSING; exit 1; }; uv run --offline --extra hf python - \"$f\" <<'PY'\nimport json, sys\nfrom transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES as M\nIN_SCOPE = set(\"apertus arcee bitnet bloom cohere cohere2 ctrl cwm diffllama ernie4_5 exaone4 falcon falcon_h1 falcon_mamba gemma gemma2 gemma3_text glm glm4 gpt-sw3 gpt2 gpt_bigcode gpt_neo gpt_neox gpt_neox_japanese granite granite_swa helium hunyuan_v1_dense hyperclovax jais2 lfm2 llama mamba minicpm3 ministral ministral3 mistral modernbert-decoder moshi mpt nanochat olmo olmo2 olmo3 olmo_hybrid persimmon phi phi3 qwen2 qwen3 qwen3_5_text recurrent_gemma rwkv seed_oss smollm3 stablelm starcoder2 vaultgemma youtu\".split())\nENCODERS = set(\"bert bert-generation camembert data2vec-text electra ernie megatron-bert rembert roberta roberta-prelayernorm xlm-roberta xlm-roberta-xl\".split())\nrows = {}\ndef walk(x):\n    if isinstance(x, dict):\n        t = x.get(\"model_type\", x.get(\"type\"))\n        v = x.get(\"verdict\", x.get(\"status\"))\n        if isinstance(t, str) and isinstance(v, str):\n            rows.setdefault(t, set()).add(v.split()[0].strip(\":\").upper() if v.split() else \"\")\n        for y in x.values():\n            walk(y)\n    elif isinstance(x, list):\n        for y in x:\n            walk(y)\nwalk(json.load(open(sys.argv[1])))\nmissing = sorted(set(M) - set(rows))\ndiffer = sorted(t for t, v in rows.items() if \"DIFFER\" in v)\nexact = {t for t, v in rows.items() if v == {\"EXACT\"}}\nenc = sorted(exact & ENCODERS)\nins = len(exact & IN_SCOPE)\nprint(f\"CENSUS rows={len(rows)} mapping={len(M)} EXACT={len(exact)} in_scope_EXACT={ins}/{len(IN_SCOPE)} DIFFER={len(differ)} encoders_admitted={len(enc)} missing={len(missing)}\")\nfor name, bad in ((\"DIFFER\", differ), (\"encoder admitted\", enc), (\"type without a row\", missing)):\n    if bad:\n        print(name + \": \" + \" \".join(bad))\nsys.exit(1 if (differ or enc or missing or ins < 55) else 0)\nPY",
+      "repeat": 1,
+      "timeoutSec": 10800,
+      "note": "ADR-0009 F7, census column: every type of transformers 5.19.0's MODEL_FOR_CAUSAL_LM_MAPPING has a row; no DIFFER; at least 55 of the 60 in-scope dense types (docs/research/adr-0009/round2.md section 4) EXACT; none of the 12 bidirectional encoders EXACT (admitted). Contract read from the output: rows are objects with \"model_type\" (or \"type\") and \"verdict\" (or \"status\") whose first word is EXACT, DIFFER, SKIP or a refusal, at any nesting. HYPOTHESIS: 178 types, 10 per subprocess, 10-40 min."
+    },
+    {
+      "id": "e7-bounds-unit",
+      "cmd": "o=$(FACTORY_E7_BOUNDS=1 uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_finetune.py -k hf_e7 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1; o=$(FACTORY_E7_BOUNDS=1 uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/unit/test_finetune.py -k moe_e7 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 1,
+      "timeoutSec": 3600,
+      "note": "ADR-0009 F7 (c_glue <= 1 ms, c_pass <= 10 us, HF host <= 1.5x native, no allocation during stubs, saved bytes 4/6/+2 per b*H*S^2) and ADR-0008 F6 (MoEMLP F+B+W <= 1.15x the v4-style block; the swapped Mixtral F+B <= 1.15x transformers' block plus 3E 0-row calls). MEASURED, local Mac (Apple M4, CPU, 1 thread), quiet: pinned.mjs holds the whole machine. Two invocations so each selection must collect."
+    },
+    {
+      "id": "e7-bounds-integration",
+      "cmd": "o=$(FACTORY_E7_BOUNDS=1 uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_engine_bitwise.py -k e4_tied 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1; o=$(FACTORY_E7_BOUNDS=1 uv run --offline --extra hf pytest -q --color=no -p no:randomly --runxfail -m 'not mps' tests/integration/test_engine_bitwise.py -k moe_identity_f7 2>&1); s=$?; printf '%s\\n' \"$o\" | tail -n 60; [ \"$s\" -eq 0 ] || exit \"$s\"; grep -qE '^[0-9]+ passed(, [0-9]+ deselected)?(, [0-9]+ warnings?)? in ' <<<\\\"$o\\\" || exit 1",
+      "repeat": 1,
+      "timeoutSec": 7200,
+      "note": "ADR-0009 F4: each tied arm's exposed time within max(20%, 2 ms) of Delta T_tied from its measured terms; ADR-0008 F7: an MoE stage's WT_TELEM compute >= 0.9x its analytic c_s. SIMULATED (localhost CPU cluster with emulated links), on a quiet machine; real-hardware validation pending (M1)."
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "py-devmode"
+    },
+    {
+      "id": "amplify-chaos"
+    },
+    {
+      "id": "load-chaos"
+    }
+  ],
+  "fuzz": [],
+  "audit": {
+    "bar": "no-open-tier-a"
+  },
+  "mutation": {
+    "changedSince": "auto"
+  },
+  "notes": [
+    "Hardware: agents-architetura/tools/factory/hardware.json is gpu false. Every entry runs on this Mac's CPU (localhost clusters, emulated WAN). E7 timings are MEASURED (local Mac, Apple M4); E4 tied and MoE F7 numbers are SIMULATED; real-hardware validation stays pending (M1). N/A and never pinned: every CUDA arm, the nvidia/libcuda fingerprint arm, eager attention on H100, MoE GPU kernel facts (ADR-0008 R1, R5), E8 (MPS; gates nothing, deselected with -m 'not mps').",
+    "Rungs: DESIGN section 8's M4 row asks for the M0 rungs plus identity, fuzz and redteam. Pinned rungs that are N/A on this tree would fail the gate, so they are left out with the reason, never faked: redteam (no tests/redteam; a wan-redteam run that creates it adds the rung by freeze.mjs amend), component (no tests/component), rest (every test folder has its own rung), matrix (agents-architetura/tools/verify/matrix.json has no modes), bench (no bench/suite.json and gpu false; the E7 and F4/F7 entries stand in), multinode (no FACTORY_MULTINODE_HOSTS, gpu false). mutation runs through the mutation field.",
+    "HANDOUT D-4 (resolved by BA-468): tests/oracle is a harness directory no plan task may own, so the HF and MoE arms of the oracle and identity rungs live in tests/helpers/test_m4_identity_{hf,moe}.py (control owns tests/helpers/), with test_state_identity's three-mode protocol; corpus-wiring adds them to identity.json's corpus and to the oracle rung. The identity rung therefore compares reference, feature-off and production HF and MoE runs by sha256; m4-identity-corpus-x2 proves every arm writes real state. The wider sweeps (12 families, every MoE mechanism and must-fail) stay in tests/integration: hf-identity-x2, moe-identity-x2 and m4-coordinator-x5. HANDOUT D-9: Linux CI proves only the FP-TORCH-RECORDS refusal; this Mac's closeout is the only HF pipeline evidence.",
+    "HF commands: uv run --offline --extra hf uses the locked .venv with the hf extra (hf-pin); the load and amplify entries use --no-sync after the earlier entries synced it. Every pytest pass line admits only 'N passed[, M deselected][, K warnings]': a skip, xfail or error fails the entry, and --runxfail runs any xfail.",
+    "Campaigns: py-devmode, amplify-chaos and load-chaos apply (pyproject.toml and tests/chaos exist; M4 changes the coordinator, replacement and checkpoint code tests/chaos drives). M2b's deferral of amplify-chaos and load-chaos (the human, 2026-10-10, HANDOUT-M2b D-6) named M2b only; no decision defers them for M4, so they are pinned. Deferring them again is the human's call, recorded here by freeze.mjs amend. py-freethreaded does not apply on this machine: its probe `uv python find 3.14t` exits 2 (checked 2026-10-11). rust-tsan, rust-asan and miri need Cargo.toml; cuda-racecheck needs tests/gpu; both absent. campaigns.json defines no fuzz-kind campaign, so fuzz is empty; the fuzz rung (tests/fuzz, the typed-decode change and the count-lane check_frame) is pinned.",
+    "Audit: M4 crosses trust boundaries (transformers model code and the import and fingerprint guards, the agent's GATE child processes, the TIED frame type and typed decode, the wave's hf_buffers.json). docs/security/AUDIT-RESULTS.json does not exist on this tree, so the audit gate fails until wan-audit runs; closeout routes it there.",
+    "Concurrency bar: the unit-level threaded paths get 200 amplified runs per period; the multi-process HF arms get repeats plus 6x20 load, as GATES-M2 and GATES-M2b did, because 600 amplified multi-process HF runs do not fit (HYPOTHESIS: 1-3 min per run, 10-30 h)."
+  ]
+}

@@ -1,0 +1,23 @@
+{
+ "need_mbps": 281.52477607766974,
+ "pairs": [
+  {
+   "src": "va",
+   "dst": "cz",
+   "min": 968.0,
+   "p10": 968.0,
+   "median": 1993.1,
+   "verdict": "ok"
+  },
+  {
+   "src": "cz",
+   "dst": "va",
+   "min": 904.3,
+   "p10": 904.3,
+   "median": 912.7,
+   "verdict": "ok"
+  }
+ ],
+ "replace": [],
+ "microbatches": 128
+}

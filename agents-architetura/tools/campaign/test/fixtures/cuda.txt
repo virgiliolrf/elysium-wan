@@ -1,0 +1,6 @@
+========= COMPUTE-SANITIZER
+========= Race reported between Write access at 0x1d0 in /work/repo/kernels/reduce.cu:44:reduce_kernel(float*, int)
+=========     and Read access at 0x2a0 in /work/repo/kernels/reduce.cu:51:reduce_kernel(float*, int) [96 hazards]
+=========     at 0x1d0 in reduce_kernel(float*, int)
+========= Invalid __global__ read of size 4 bytes
+=========     at 0x90 in scatter_kernel(float const*, int*, int)

@@ -1,0 +1,21 @@
+## CTRL=inputs_embeds
+granite      float32   {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+granite      bfloat16  {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+llama        float32   {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+llama        bfloat16  {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+gemma2       float32   {'logits': True, 'grads': 46, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 
+gemma2       bfloat16  {'logits': True, 'grads': 46, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': True, 
+## CTRL=to_empty
+granite      float32   {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+granite      bfloat16  {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+llama        float32   {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+llama        bfloat16  {'logits': False, 'grads': 39, 'differ': 39, 'first_bad': ['model.embed_tokens.weight',
+gemma2       float32   {'logits': False, 'grads': 46, 'differ': 46, 'first_bad': ['model.embed_tokens.weight',
+gemma2       bfloat16  {'logits': False, 'grads': 46, 'differ': 46, 'first_bad': ['model.embed_tokens.weight',
+## CTRL=tie_head_only
+granite      float32   {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+granite      bfloat16  {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+llama        float32   {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+llama        bfloat16  {'logits': True, 'grads': 39, 'differ': 0, 'first_bad': [], 'stages': 6, 'tied': False,
+gemma2       float32   {'logits': True, 'grads': 46, 'differ': 1, 'first_bad': ['model.embed_tokens.weight'], 
+gemma2       bfloat16  {'logits': True, 'grads': 46, 'differ': 1, 'first_bad': ['model.embed_tokens.weight'], 

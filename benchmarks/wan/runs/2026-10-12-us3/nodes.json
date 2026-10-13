@@ -1,0 +1,68 @@
+[
+ {
+  "name": "va",
+  "port": 40143,
+  "host": "203.0.113.17",
+  "region": null,
+  "ip": "203.0.113.19",
+  "free_ports": [
+   [
+    8080,
+    40424
+   ],
+   [
+    10100,
+    40593
+   ],
+   [
+    10200,
+    40246
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Dulles Town Center",
+  "country": "US",
+  "org": "AS8069 Microsoft Corporation",
+  "data": [
+   8080,
+   40424
+  ],
+  "probe": [
+   10100,
+   40593
+  ],
+  "coord": [
+   10200,
+   40246
+  ]
+ },
+ {
+  "name": "den",
+  "port": 27531,
+  "host": "203.0.113.25",
+  "region": null,
+  "ip": "203.0.113.25",
+  "free_ports": [
+   [
+    10100,
+    27408
+   ],
+   [
+    10200,
+    27450
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Denver",
+  "country": "US",
+  "org": "AS20029 H5 Data Centers",
+  "data": [
+   10100,
+   27408
+  ],
+  "probe": [
+   10200,
+   27450
+  ]
+ }
+]

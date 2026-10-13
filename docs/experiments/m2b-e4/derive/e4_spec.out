@@ -1,0 +1,82 @@
+input i17_oracle.py: sha256 d01edde9a98972805034c98ada32bc813f3a4e4d02faddd0466a0232984472d7
+input profile_fprime.out: sha256 27c082b539a0fa54658afb7f1563c72dc707bb19d5aaec3983d1c791cc036657
+input conc_w4.out: sha256 2d985771685b547ed6aedb8fda1e6ada953b8af19c7ba6e6351c1244b50e0c6e
+input conc_w8.out: sha256 a9ebccb0c075759453edf5bd0a38b089c4ebe3022bcb8da0850d78b60a113e25
+== (0) round5.md section 6 anchor at round 5's configuration (F' 50 GFLOP/s, split 1:2:1, HBM' paced fold)
+  stage0.pieces_fwd        granted   2.82%  SPEC model   2.846%  ( +0.94%)  E    48.44 ms of C  1701.9, window 0.00 ms
+  stage0.step1             granted  71.31%  SPEC model  77.577%  ( +8.79%)  E  1320.27 ms of C  1701.9, window 0.00 ms
+  stage0.lpt               granted  20.09%  SPEC model  24.978%  (+24.33%)  E   425.10 ms of C  1701.9, window 0.00 ms
+  interior_w4.pieces_fwd   granted   3.66%  SPEC model   3.488%  ( -4.70%)  E    35.96 ms of C  1030.8, window 0.00 ms
+  interior_w4.step1        granted  16.00%  SPEC model  16.210%  ( +1.31%)  E   167.09 ms of C  1030.8, window 0.00 ms
+  interior_w8.pieces_fwd   granted  10.03%  SPEC model  10.028%  ( -0.02%)  E    51.68 ms of C   515.4, window 0.00 ms
+  interior_w8.lpt          granted  25.10%  SPEC model  24.637%  ( -1.84%)  E   126.98 ms of C   515.4, window 0.00 ms
+== (1) E4 configuration (MEASURED inputs; % of each arm's C)
+  w 4: F' 8.357 GFLOP/s, split 0.1022:0.8145:0.0833, cap' = PCIe' 16.7141 MB/s, f' 65536 B, hop latency 7.842 ms, c_block 192.73 ms
+  w 8: F' 5.976 GFLOP/s, split 0.1065:0.8122:0.0813, cap' = PCIe' 11.9530 MB/s, f' 65536 B, hop latency 10.966 ms, c_block 269.49 ms
+  stage-0 period C_B' = 32 c_last' = 10182.3 ms, tau = C_B'/(M/w) = 318.20 ms per microbatch slot
+  sweep: S1 at cap' 6.4609 MB/s; below -1.891 + 153.022/cap', above -89.391 + 718.354/cap' -> threshold cap' 6.4609 MB/s (util 1.0000)
+  stage0.today                       E  13381.42 ms =  131.418% of C  10182.3; window    0.00; util 3.657
+  stage0.step1                       E   7930.96 ms =   77.890% of C  10182.3; window    0.00; util 2.803  F6 half-margin 3797.94 ms (37.300 pts)
+  stage0.lpt                         E   2556.68 ms =   25.109% of C  10182.3; window    0.00; util 1.948  F6 half-margin 1110.80 ms (10.909 pts)
+  stage0.pieces_fwd                  E    335.08 ms =    3.291% of C  10182.3; window    0.00; util 0.945
+  stage0.pieces_bwd                  E    335.08 ms =    3.291% of C  10182.3; window    0.00; util 0.945
+  stage0.fifo_pieces_fwd             E    327.14 ms =    3.213% of C  10182.3; window    0.00; util 0.945
+  stage0.fifo_pieces_bwd             E    340.27 ms =    3.342% of C  10182.3; window    0.00; util 0.945
+  stage0.barrier_pieces_fwd          E    335.08 ms =    3.291% of C  10182.3; window    0.00; util 0.945
+  interior_w4.today                  E   6514.35 ms =  105.629% of C   6167.2; window    0.00; util 1.729
+  interior_w4.step1                  E   1201.14 ms =   19.476% of C   6167.2; window    0.00; util 0.875  F6 half-margin 376.57 ms (6.106 pts)
+  interior_w4.lpt                    E    574.15 ms =    9.310% of C   6167.2; window    0.00; util 0.387
+  interior_w4.pieces_fwd             E    448.00 ms =    7.264% of C   6167.2; window    0.00; util 0.387
+  interior_w4.pieces_bwd             E    441.39 ms =    7.157% of C   6167.2; window    0.00; util 0.387
+  interior_w4.fifo_pieces_fwd        E    440.05 ms =    7.135% of C   6167.2; window    0.00; util 0.387
+  interior_w4.fifo_pieces_bwd        E    513.60 ms =    8.328% of C   6167.2; window    0.00; util 0.387
+  interior_w4.barrier_pieces_fwd     E    448.00 ms =    7.264% of C   6167.2; window    0.00; util 0.387
+  interior_w8.today                  E   7523.96 ms =  174.494% of C   4311.9; window    0.00; util 2.014
+  interior_w8.step1                  E   2090.82 ms =   48.490% of C   4311.9; window    0.00; util 1.017
+  interior_w8.lpt                    E   1155.60 ms =   26.800% of C   4311.9; window    0.00; util 0.519  F6 half-margin 205.48 ms (4.765 pts)
+  interior_w8.pieces_fwd             E    744.64 ms =   17.270% of C   4311.9; window    0.00; util 0.448
+  interior_w8.pieces_bwd             E    746.47 ms =   17.312% of C   4311.9; window    0.00; util 0.448
+  interior_w8.fifo_pieces_fwd        E    744.64 ms =   17.270% of C   4311.9; window    0.00; util 0.448
+  interior_w8.fifo_pieces_bwd        E    851.75 ms =   19.754% of C   4311.9; window    0.00; util 0.448
+  interior_w8.barrier_pieces_fwd     E    755.69 ms =   17.526% of C   4311.9; window    0.00; util 0.448
+  interior_w4.emission_fwd.rtt0      E    448.00 ms =    7.264% of C   6167.2; window    0.00; util 0.387
+  interior_w4.emission_bwd.rtt0      E    441.39 ms =    7.157% of C   6167.2; window    0.00; util 0.387
+  interior_w4.emission_fwd.rtt_2cw   E    505.87 ms =    8.203% of C   6167.2; window    0.00; util 0.387
+  interior_w4.emission_bwd.rtt_2cw   E    566.02 ms =    9.178% of C   6167.2; window    0.00; util 0.387
+  stage0.emission_fwd.rtt0           E    335.08 ms =    3.291% of C  10182.3; window    0.00; util 0.945
+  stage0.emission_bwd.rtt0           E    335.08 ms =    3.291% of C  10182.3; window    0.00; util 0.945
+  stage0.emission_fwd.rtt_2cw        E    343.67 ms =    3.375% of C  10182.3; window    0.00; util 0.945
+  stage0.emission_bwd.rtt_2cw        E    343.67 ms =    3.375% of C  10182.3; window    0.00; util 0.945
+  interior_w4.uplink_pieces_fwd      E    636.21 ms =   10.316% of C   6167.2; window    0.00; util 0.387
+  interior_w4.uplink_pieces_bwd      E    629.60 ms =   10.209% of C   6167.2; window    0.00; util 0.387
+  interior_w4.tree                   E    730.28 ms =   11.841% of C   6167.2; window    0.00; util 0.387
+  stage0.tree                        E    405.63 ms =    3.984% of C  10182.3; window    0.00; util 0.945
+  sweep.util_0.5                     E    613.70 ms =    9.951% of C   6167.2; window    0.00; util 0.500
+  sweep.util_0.7                     E    905.83 ms =   14.688% of C   6167.2; window    0.00; util 0.700
+  sweep.util_0.9                     E   1197.96 ms =   19.425% of C   6167.2; window    0.00; util 0.900
+  sweep.util_1.1                     E   2029.72 ms =   32.912% of C   6167.2; window    0.00; util 1.100
+  sweep.util_1.3                     E   3401.11 ms =   55.148% of C   6167.2; window    0.00; util 1.300
+  sweep.util_1.6                     E   5458.20 ms =   88.504% of C   6167.2; window    0.00; util 1.600
+  sweep.util_2.0                     E   8200.98 ms =  132.977% of C   6167.2; window    0.00; util 2.000
+== (2) sensitivity of the F6 arms (% of C)
+  pinned (measured split and fold)  : stage0 pieces 3.29 vs step1 77.89; stage0 pieces 3.29 vs lpt 25.11; interior_w4 pieces 7.26 vs step1 19.48; interior_w8 pieces 17.27 vs lpt 26.80
+  split 1:2:1, measured fold        : stage0 pieces 2.79 vs step1 77.39; stage0 pieces 2.79 vs lpt 24.79; interior_w4 pieces 3.62 vs step1 15.83; interior_w8 pieces 10.03 vs lpt 25.80
+  measured split, HBM' paced fold   : stage0 pieces 3.35 vs step1 78.08; stage0 pieces 3.35 vs lpt 25.29; interior_w4 pieces 7.14 vs step1 19.86; interior_w8 pieces 17.27 vs lpt 27.78
+  W fraction x0.75                  : stage0 pieces 3.33 vs step1 77.92; stage0 pieces 3.33 vs lpt 25.15; interior_w4 pieces 7.47 vs step1 19.68; interior_w8 pieces 17.67 vs lpt 27.09
+  W fraction x1.25                  : stage0 pieces 3.26 vs step1 77.86; stage0 pieces 3.26 vs lpt 25.07; interior_w4 pieces 7.07 vs step1 19.28; interior_w8 pieces 16.89 vs lpt 26.53
+== (3) scale invariance (measured split, HBM' paced): full B vs B', % of C
+  stage0: full B [131.568, 78.079, 25.294, 3.348, 3.348] | B' [131.568, 78.079, 25.294, 3.348, 3.348]  (today, step1, lpt, pieces fwd, pieces bwd)
+  interior_w4: full B [105.921, 19.857, 9.69, 7.135, 7.19] | B' [105.921, 19.857, 9.69, 7.135, 7.19]  (today, step1, lpt, pieces fwd, pieces bwd)
+  interior_w8: full B [175.442, 49.796, 27.78, 17.27, 17.312] | B' [175.442, 49.796, 27.78, 17.27, 17.312]  (today, step1, lpt, pieces fwd, pieces bwd)
+== (4) diagnostics (not predictions): (a) stage 0 packed, E - window_s; (b) one fold after the last arrival
+  E4     stage0.pieces_fwd        spec 3.291%, packed_stage0 0.000%, single_fold 3.290%
+  E4     stage0.step1             spec 77.890%, packed_stage0 76.657%, single_fold 77.888%
+  E4     stage0.lpt               spec 25.109%, packed_stage0 23.877%, single_fold 25.109%
+  E4     interior_w4.pieces_fwd   spec 7.264%, single_fold 7.263%
+  E4     interior_w8.lpt          spec 26.800%, single_fold 26.793%
+  round5 stage0.pieces_fwd        spec 2.846%, packed_stage0 0.000%, single_fold 2.815%
+  round5 stage0.step1             spec 77.577%, packed_stage0 76.345%, single_fold 77.494%
+  round5 stage0.lpt               spec 24.978%, packed_stage0 23.746%, single_fold 24.978%
+  round5 interior_w4.pieces_fwd   spec 3.488%, single_fold 3.661%
+  round5 interior_w8.lpt          spec 24.637%, single_fold 25.104%
+== (5) JSON written: e4_spec.json

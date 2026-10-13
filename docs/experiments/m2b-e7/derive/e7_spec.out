@@ -1,0 +1,144 @@
+input e7_spec.py: sha256 a1511627e8c90ce44a39237e6a8cf65b19e5230d34f8abfda894235324eca551
+input i17_oracle.py: sha256 d01edde9a98972805034c98ada32bc813f3a4e4d02faddd0466a0232984472d7
+input lane_solve.py: sha256 7f7bf688380e0039da5c283aa7d6ae4217d1ac18348db6aed3a7fc335e4044b6
+input asbuilt_lanes.json: sha256 59405aeb2c07533cdb660e52c5151e3e22636a268aefb7be0e6fd3421ed18747
+== mode spec
+  [spec] 32xH100-400G-1gph-k10              S 16 w 2 zero1 + native      1232.1 ms | runner-up S 32 w 1   1316.0 (+6.81%)
+  [spec] 32xH100-400G-2gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   1394.3 (+5.95%)
+  [spec] 32xH100-400G-4gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   1830.4 (+39.08%)
+  [spec] 32xH100-400G-8gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   2700.5 (+105.2%)
+  [spec] 32xH100-400G-8gph-k2               S 16 w 2 pieces + native     1155.4 ms | runner-up S 16 w 2 zero1 + native   1230.3 (+6.48%)
+  [spec] 32xH100-100G-1gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   2471.5 (+71.53%)
+  [spec] 32xH100-100G-8gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   3199.5 (+122.06%)
+  [spec] 128xH100-400G-1gph-k10             S 32 w 4 zero1 + native      2270.2 ms | runner-up S 32 w 2 pieces + native   2358.7 (+3.9%)
+  [spec] 128xH100-400G-1gph-k6              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2209.6 (+65.12%)
+  [spec] 128xH100-400G-1gph-k2              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2209.6 (+65.12%)
+  [spec] 128xH100-400G-8gph-k10             S 32 w 1                     4365.4 ms | runner-up S 32 w 4 zero1 + native   5305.6 (+21.54%)
+  [spec] 128xH100-400G-8gph-k2              S 32 w 4 zero1 + native      2245.9 ms | runner-up S 32 w 2 pieces + native   2344.5 (+4.39%)
+  [spec] 128xH100-100G-1gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   5709.0 (+27.14%)
+  [spec] 128xH100-100G-8gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   7601.9 (+69.3%)
+  [spec] 32xH100-2sites-10G-uplink          S 16 w 2 zero1 + native      1388.2 ms | runner-up S 32 w 1   1418.4 (+2.18%)
+  [spec] 32xGPU-mixed-classes               S 32 w 1                     1316.0 ms | runner-up None      nan (+None%)
+  [spec] 32xH100-400G-1gph-k10-memhost20    S 16 w 2 zero1 + native      1232.1 ms | runner-up S 32 w 1   1316.0 (+6.81%)
+== mode comm0
+  [comm0] 32xH100-400G-1gph-k10              S 16 w 2 zero1 + native      1212.0 ms | runner-up S 32 w 1   1274.4 (+5.15%)
+  [comm0] 32xH100-400G-2gph-k10              S 32 w 1                     1274.4 ms | runner-up S 16 w 2 zero1 + native   1374.1 (+7.83%)
+  [comm0] 32xH100-400G-4gph-k10              S 32 w 1                     1274.4 ms | runner-up S 16 w 2 zero1 + native   1810.9 (+42.1%)
+  [comm0] 32xH100-400G-8gph-k10              S 32 w 1                     1274.4 ms | runner-up S 16 w 2 zero1 + native   2682.3 (+110.48%)
+  [comm0] 32xH100-400G-8gph-k2               S 16 w 2 pieces + native     1135.3 ms | runner-up S 16 w 2 zero1 + native   1210.2 (+6.6%)
+  [comm0] 32xH100-100G-1gph-k10              S 32 w 1                     1274.4 ms | runner-up S 16 w 2 zero1 + native   2390.9 (+87.61%)
+  [comm0] 32xH100-100G-8gph-k10              S 32 w 1                     1274.4 ms | runner-up S 16 w 2 zero1 + native   3123.3 (+145.08%)
+  [comm0] 128xH100-400G-1gph-k10             S 32 w 4 zero1 + native      2228.6 ms | runner-up S 32 w 2 pieces + native   2317.1 (+3.97%)
+  [comm0] 128xH100-400G-1gph-k6              S 32 w 4 pieces + native     1296.5 ms | runner-up S 32 w 4 zero1 + native   2168.0 (+67.21%)
+  [comm0] 128xH100-400G-1gph-k2              S 32 w 4 pieces + native     1296.5 ms | runner-up S 32 w 4 zero1 + native   2168.0 (+67.21%)
+  [comm0] 128xH100-400G-8gph-k10             S 32 w 1                     4323.8 ms | runner-up S 32 w 4 zero1 + native   5264.6 (+21.76%)
+  [comm0] 128xH100-400G-8gph-k2              S 32 w 4 zero1 + native      2213.2 ms | runner-up S 32 w 2 pieces + native   2302.9 (+4.05%)
+  [comm0] 128xH100-100G-1gph-k10             S 32 w 1                     4323.8 ms | runner-up S 32 w 2 zero1 + native   5542.6 (+28.19%)
+  [comm0] 128xH100-100G-8gph-k10             S 32 w 1                     4323.8 ms | runner-up S 32 w 2 zero1 + native   7600.2 (+75.77%)
+  [comm0] 32xH100-2sites-10G-uplink          S 16 w 2 zero1 + native      1369.4 ms | runner-up S 32 w 1   1378.1 (+0.64%)
+  [comm0] 32xGPU-mixed-classes               S 32 w 1                     1274.4 ms | runner-up None      nan (+None%)
+  [comm0] 32xH100-400G-1gph-k10-memhost20    S 16 w 2 zero1 + native      1212.0 ms | runner-up S 32 w 1   1274.4 (+5.15%)
+== mode nodram
+  [nodram] 32xH100-400G-1gph-k10              S 16 w 2 pieces + native     1155.4 ms | runner-up S 16 w 2 zero1 + native   1230.3 (+6.48%)
+  [nodram] 32xH100-400G-2gph-k10              S 16 w 2 zero1 + native      1230.3 ms | runner-up S 32 w 1   1316.0 (+6.96%)
+  [nodram] 32xH100-400G-4gph-k10              S 16 w 2 zero1 + native      1230.3 ms | runner-up S 32 w 1   1316.0 (+6.96%)
+  [nodram] 32xH100-400G-8gph-k10              S 16 w 2 zero1 + native      1230.3 ms | runner-up S 32 w 1   1316.0 (+6.96%)
+  [nodram] 32xH100-400G-8gph-k2               S 16 w 2 pieces + native     1155.4 ms | runner-up S 16 w 2 zero1 + native   1230.3 (+6.48%)
+  [nodram] 32xH100-100G-1gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   2471.5 (+71.53%)
+  [nodram] 32xH100-100G-8gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   2471.5 (+71.53%)
+  [nodram] 128xH100-400G-1gph-k10             S 32 w 4 zero1 + native      2209.6 ms | runner-up S 32 w 2 pieces + native   2344.5 (+6.11%)
+  [nodram] 128xH100-400G-1gph-k6              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2209.6 (+65.12%)
+  [nodram] 128xH100-400G-1gph-k2              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2209.6 (+65.12%)
+  [nodram] 128xH100-400G-8gph-k10             S 32 w 4 zero1 + native      2209.6 ms | runner-up S 32 w 2 zero1 + native   2478.8 (+12.19%)
+  [nodram] 128xH100-400G-8gph-k2              S 32 w 4 zero1 + native      2209.6 ms | runner-up S 32 w 2 pieces + native   2344.5 (+6.11%)
+  [nodram] 128xH100-100G-1gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   5709.0 (+27.14%)
+  [nodram] 128xH100-100G-8gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   5709.0 (+27.14%)
+  [nodram] 32xH100-2sites-10G-uplink          S 16 w 2 pieces + native     1311.5 ms | runner-up S 16 w 2 zero1 + native   1386.4 (+5.71%)
+  [nodram] 32xGPU-mixed-classes               S 32 w 1                     1316.0 ms | runner-up None      nan (+None%)
+  [nodram] 32xH100-400G-1gph-k10-memhost20    S 16 w 2 zero1 + native      1230.3 ms | runner-up S 32 w 1   1316.0 (+6.96%)
+== mode embed_p0  (diagnostic, not a prediction: the as-built zero1 Embed ownership)
+  [embed_p0] 32xH100-400G-1gph-k10              S 16 w 2 zero1 + native      1233.0 ms | runner-up S 32 w 1   1316.0 (+6.73%)
+  [embed_p0] 32xH100-400G-2gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   1394.3 (+5.95%)
+  [embed_p0] 32xH100-400G-4gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   1830.4 (+39.08%)
+  [embed_p0] 32xH100-400G-8gph-k10              S 32 w 1                     1316.0 ms | runner-up S 16 w 2 zero1 + native   2700.5 (+105.2%)
+  [embed_p0] 32xH100-400G-8gph-k2               S 16 w 2 pieces + native     1155.4 ms | runner-up S 16 w 2 zero1 + native   1233.0 (+6.71%)
+  [embed_p0] 32xH100-100G-1gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   2562.7 (+77.86%)
+  [embed_p0] 32xH100-100G-8gph-k10              S 32 w 1                     1440.8 ms | runner-up S 16 w 2 zero1 + native   3255.0 (+125.91%)
+  [embed_p0] 128xH100-400G-1gph-k10             S 32 w 2 pieces + native     2358.7 ms | runner-up S 32 w 4 zero1 + native   2379.3 (+0.88%)
+  [embed_p0] 128xH100-400G-1gph-k6              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2342.4 (+75.05%)
+  [embed_p0] 128xH100-400G-1gph-k2              S 32 w 4 pieces + native     1338.1 ms | runner-up S 32 w 4 zero1 + native   2342.4 (+75.05%)
+  [embed_p0] 128xH100-400G-8gph-k10             S 32 w 1                     4365.4 ms | runner-up S 32 w 4 zero1 + native   5305.6 (+21.54%)
+  [embed_p0] 128xH100-400G-8gph-k2              S 32 w 4 zero1 + native      2344.0 ms | runner-up S 32 w 2 pieces + native   2344.5 (+0.02%)
+  [embed_p0] 128xH100-100G-1gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   6058.0 (+34.91%)
+  [embed_p0] 128xH100-100G-8gph-k10             S 32 w 1                     4490.3 ms | runner-up S 32 w 2 zero1 + native   7807.7 (+73.88%)
+  [embed_p0] 32xH100-2sites-10G-uplink          S 16 w 2 zero1 + native      1389.1 ms | runner-up S 32 w 1   1418.4 (+2.11%)
+  [embed_p0] 32xGPU-mixed-classes               S 32 w 1                     1316.0 ms | runner-up None      nan (+None%)
+  [embed_p0] 32xH100-400G-1gph-k10-memhost20    S 16 w 2 zero1 + native      1233.0 ms | runner-up S 32 w 1   1316.0 (+6.73%)
+== lanes: the independent lane solve (lane_solve.py) against its closed-form bound P* and the as-built record
+   (asbuilt_lanes.json: the same candidates priced with src/wantrain/scheduler/zero_bubble.py, sha256 a93a8bedf977c454...)
+  S  4 w 8 M  32 hop comm max   0.000 ms: period   911.822 ms, P*   911.822 ms (attained)
+  S  4 w 8 M  32 hop comm max 239.748 ms: period  1391.318 ms, P*  1391.318 ms (attained)
+  S  4 w 8 M  32 hop comm max   0.671 ms: period   915.848 ms, P*   915.848 ms (attained)
+  S  4 w 8 M  32 hop comm max 239.748 ms: period  1394.003 ms, P*  1394.003 ms (attained)
+  S  4 w 8 M  32 hop comm max   2.684 ms: period   927.928 ms, P*   927.928 ms (attained)
+  S  8 w 4 M  32 hop comm max   0.000 ms: period   988.014 ms, P*   988.014 ms (attained)
+  S  8 w 4 M  32 hop comm max 132.374 ms: period  1252.763 ms, P*  1252.763 ms (attained)
+  S  8 w 4 M  32 hop comm max   0.671 ms: period   997.410 ms, P*   997.410 ms (attained)
+  S  8 w 4 M  32 hop comm max 132.374 ms: period  1260.816 ms, P*  1260.816 ms (attained)
+  S  8 w 4 M  32 hop comm max   2.684 ms: period  1025.595 ms, P*  1025.595 ms (attained)
+  S 16 w 2 M  32 hop comm max   0.000 ms: period  1074.429 ms, P*  1074.429 ms (attained)
+  S 16 w 2 M  32 hop comm max  78.687 ms: period  1231.803 ms, P*  1231.803 ms (attained)
+  S 16 w 2 M  32 hop comm max   0.671 ms: period  1094.562 ms, P*  1094.562 ms (attained)
+  S 16 w 2 M  32 hop comm max  78.687 ms: period  1250.594 ms, P*  1250.594 ms (attained)
+  S 16 w 2 M  32 hop comm max   2.684 ms: period  1154.960 ms, P*  1154.960 ms (attained)
+  S 16 w 8 M 128 hop comm max   0.000 ms: period  1074.429 ms, P*  1074.429 ms (attained)
+  S 16 w 8 M 128 hop comm max   0.671 ms: period  1094.562 ms, P*  1094.562 ms (attained)
+  S 16 w 8 M 128 hop comm max   2.684 ms: period  1154.960 ms, P*  1154.960 ms (attained)
+  S 32 w 1 M  32 hop comm max   0.000 ms: period  1214.273 ms, P*  1214.273 ms (attained)
+  S 32 w 1 M  32 hop comm max  51.844 ms: period  1317.960 ms, P*  1317.960 ms (attained)
+  S 32 w 1 M  32 hop comm max   0.671 ms: period  1255.881 ms, P*  1255.881 ms (attained)
+  S 32 w 1 M  32 hop comm max  51.844 ms: period  1358.226 ms, P*  1358.226 ms (attained)
+  S 32 w 1 M  32 hop comm max   2.684 ms: period  1380.703 ms, P*  1380.703 ms (attained)
+  S 32 w 1 M 128 hop comm max   0.000 ms: period  4092.245 ms, P*  4092.245 ms (attained)
+  S 32 w 1 M 128 hop comm max   0.671 ms: period  4133.852 ms, P*  4133.852 ms (attained)
+  S 32 w 1 M 128 hop comm max   2.684 ms: period  4258.675 ms, P*  4258.675 ms (attained)
+  S 32 w 2 M 128 hop comm max   0.000 ms: period  2173.597 ms, P*  2173.597 ms (attained)
+  S 32 w 2 M 128 hop comm max   0.671 ms: period  2215.205 ms, P*  2215.205 ms (attained)
+  S 32 w 2 M 128 hop comm max   2.684 ms: period  2340.027 ms, P*  2340.027 ms (attained)
+  S 32 w 4 M 128 hop comm max   0.000 ms: period  1214.273 ms, P*  1214.273 ms (attained)
+  S 32 w 4 M 128 hop comm max   0.671 ms: period  1255.881 ms, P*  1255.881 ms (attained)
+  S 32 w 4 M 128 hop comm max   2.684 ms: period  1380.703 ms, P*  1380.703 ms (attained)
+  644 priced candidates compared over modes spec, comm0, nodram, embed_p0:
+    largest relative difference in period: 0.00e+00
+    largest relative difference in step  : 8.20e-02 (spec|128xH100-400G-8gph-k2|S 32 w 2 zero1 + fp32)
+    largest relative difference in E     : 1.09e+01 (comm0|128xH100-400G-8gph-k2|S 32 w 2 zero1 + fp32)
+    largest relative difference in window: 1.75e-01 (comm0|32xH100-400G-1gph-k10|S 16 w 2 pieces + native)
+  candidates whose period or step differs by more than 0.1%: 8
+    spec 32xH100-400G-8gph-k2 S 16 w 2 zero1 + fp32: step as-built 1467.331 -> 1476.353
+    spec 128xH100-400G-8gph-k2 S 32 w 2 zero1 + fp32: step as-built 2736.618 -> 2961.031
+    spec 128xH100-400G-8gph-k2 S 32 w 4 zero1 + fp32: step as-built 2871.445 -> 2914.116
+    comm0 32xH100-400G-4gph-k10 S 16 w 2 zero1 + fp32: step as-built 2692.864 -> 2706.005
+    comm0 32xH100-400G-8gph-k2 S 16 w 2 zero1 + fp32: step as-built 1448.019 -> 1475.94
+    comm0 128xH100-400G-8gph-k2 S 32 w 2 zero1 + fp32: step as-built 2737.066 -> 2960.342
+    comm0 128xH100-400G-8gph-k2 S 32 w 4 zero1 + fp32: step as-built 2842.603 -> 2915.616
+    embed_p0 128xH100-400G-8gph-k2 S 32 w 2 zero1 + fp32: step as-built 2744.461 -> 2968.874
+== per-stage S1 on host DRAM per GPU (I16, planner c_s), and S2 at the binding stage (mode spec)
+  S 32 w 4 first (1 blocks): c_s  19.24 ms; DRAM per GPU k 2/6/10:  162.0 /  485.9 /  809.8 GB/s; a 1-GPU 600 GB/s host admits k <= 7.41
+  S 32 w 4 mid   (1 blocks): c_s  19.24 ms; DRAM per GPU k 2/6/10:   76.7 /  230.2 /  383.6 GB/s; a 1-GPU 600 GB/s host admits k <= 15.64
+  S 32 w 4 last  (1 blocks): c_s  29.98 ms; DRAM per GPU k 2/6/10:   71.0 /  213.0 /  355.0 GB/s; a 1-GPU 600 GB/s host admits k <= 16.90
+  S 32 w 2 first (1 blocks): c_s  19.24 ms; DRAM per GPU k 2/6/10:  110.3 /  330.9 /  551.5 GB/s; a 1-GPU 600 GB/s host admits k <= 10.88
+  S 32 w 2 mid   (1 blocks): c_s  19.24 ms; DRAM per GPU k 2/6/10:   55.8 /  167.4 /  279.0 GB/s; a 1-GPU 600 GB/s host admits k <= 21.50
+  S 32 w 2 last  (1 blocks): c_s  29.98 ms; DRAM per GPU k 2/6/10:   48.8 /  146.5 /  244.1 GB/s; a 1-GPU 600 GB/s host admits k <= 24.58
+  S 16 w 2 first (2 blocks): c_s  38.48 ms; DRAM per GPU k 2/6/10:   76.1 /  228.2 /  380.4 GB/s; a 1-GPU 600 GB/s host admits k <= 15.77
+  S 16 w 2 mid   (2 blocks): c_s  38.48 ms; DRAM per GPU k 2/6/10:   48.8 /  146.5 /  244.1 GB/s; a 1-GPU 600 GB/s host admits k <= 24.58
+  S 16 w 2 last  (2 blocks): c_s  49.22 ms; DRAM per GPU k 2/6/10:   46.1 /  138.3 /  230.5 GB/s; a 1-GPU 600 GB/s host admits k <= 26.03
+  S  8 w 4 first (4 blocks): c_s  76.97 ms; DRAM per GPU k 2/6/10:   87.6 /  262.7 /  437.9 GB/s; a 1-GPU 600 GB/s host admits k <= 13.70
+  S  8 w 4 mid   (4 blocks): c_s  76.97 ms; DRAM per GPU k 2/6/10:   66.3 /  198.8 /  331.3 GB/s; a 1-GPU 600 GB/s host admits k <= 18.11
+  S  8 w 4 last  (4 blocks): c_s  87.70 ms; DRAM per GPU k 2/6/10:   65.6 /  196.8 /  328.0 GB/s; a 1-GPU 600 GB/s host admits k <= 18.30
+  S  4 w 8 first (8 blocks): c_s 153.93 ms; DRAM per GPU k 2/6/10:   87.6 /  262.7 /  437.8 GB/s; a 1-GPU 600 GB/s host admits k <= 13.70
+  S  4 w 8 mid   (8 blocks): c_s 153.93 ms; DRAM per GPU k 2/6/10:   75.0 /  225.0 /  374.9 GB/s; a 1-GPU 600 GB/s host admits k <= 16.00
+  S  4 w 8 last  (8 blocks): c_s 164.67 ms; DRAM per GPU k 2/6/10:   74.9 /  224.6 /  374.3 GB/s; a 1-GPU 600 GB/s host admits k <= 16.03
+  S 16 w 8 first (2 blocks): c_s  38.48 ms; DRAM per GPU k 2/6/10:  130.5 /  391.6 /  652.6 GB/s; a 1-GPU 600 GB/s host admits k <= 9.19
+  S 16 w 8 mid   (2 blocks): c_s  38.48 ms; DRAM per GPU k 2/6/10:   80.2 /  240.7 /  401.1 GB/s; a 1-GPU 600 GB/s host admits k <= 14.96
+  S 16 w 8 last  (2 blocks): c_s  49.22 ms; DRAM per GPU k 2/6/10:   78.6 /  235.9 /  393.2 GB/s; a 1-GPU 600 GB/s host admits k <= 15.26
+== JSON written: e7_spec.json

@@ -1,0 +1,58 @@
+{
+ "model": {
+  "params_b": 15.79,
+  "d_model": 5632,
+  "n_layer": 40,
+  "n_head": 44,
+  "seq_len": 1024,
+  "vocab": 50257,
+  "compute_dtype": "bf16",
+  "attn": "sdpa/flash"
+ },
+ "partition": [
+  [
+   0,
+   22
+  ],
+  [
+   22,
+   42
+  ]
+ ],
+ "microbatches": 128,
+ "tokens_per_step": 131072,
+ "steps_logged": 34,
+ "steady_steps": 32,
+ "step_s_median": 39.198674664500004,
+ "tokens_per_s_median": 3343.786628224786,
+ "mfu_vs_peak": 0.18971185717229344,
+ "loss_first": 11.001376993954182,
+ "loss_last": 6.045354872941971,
+ "loss_steps": 35,
+ "stages": {
+  "1": {
+   "node": "cz",
+   "idle_median": 0.20094412979503318,
+   "idle_mean": 0.1987489949682824,
+   "gpu_not_computing_median": 0.22243387965228245,
+   "peak_mem_gib": 68.19,
+   "ops_median_ms": {
+    "F": 52.72577761206776,
+    "B": 147.51556259579957,
+    "W": 33.21897087153047
+   }
+  },
+  "0": {
+   "node": "va",
+   "idle_median": 0.05924396917453359,
+   "idle_mean": 0.06364989927260396,
+   "gpu_not_computing_median": 0.09667539825476801,
+   "peak_mem_gib": 70.49,
+   "ops_median_ms": {
+    "F": 86.49285875014812,
+    "B": 131.87048275017332,
+    "W": 63.679749750235715
+   }
+  }
+ }
+}

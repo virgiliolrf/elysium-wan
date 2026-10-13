@@ -1,0 +1,13 @@
+diff --git a/src/wantrain/runtime/accumulate.py b/src/wantrain/runtime/accumulate.py
+index 59bb27f..1db2703 100644
+--- a/src/wantrain/runtime/accumulate.py
++++ b/src/wantrain/runtime/accumulate.py
+@@ -22,7 +22,7 @@ class OrderedAccumulator:
+     """
+ 
+     def __init__(self, order):
+-        self.order = list(order)  # microbatch ids in the exact fold order
++        self.order = list(order)[::-1]  # microbatch ids in the exact fold order
+         self.pos = 0  # next position in `order` to fold
+         self.acc = None  # running sum (list of tensors)
+         self.hold = {}  # out-of-order contributions awaiting prefix

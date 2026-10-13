@@ -1,0 +1,1681 @@
+{
+ "id": "m2b-e7",
+ "hypothesis": "ADR-0006 F9: on each pinned fleet, the planner (plan_job, SCHEDULER task 4, I16 as written with epsilon 3%, k counted, R10/R13 deferred) chooses the plan pinned here, whose expected step time the round-5 model re-derives with the planner's own attention-inclusive costs (partition.layer_costs for the cut, zero_bubble.analytic_costs with recompute for F/B/W), names every refused candidate with its link, number, class or MEM-HOST, and never chooses a plan whose simulated step is more than 1% above the best admitted candidate's.",
+ "expected": {
+  "choices_matching": 17,
+  "refusals_matching": 48,
+  "f9_violations": 0
+ },
+ "lowerIsBetter": [
+  "f9_violations"
+ ],
+ "primary": "choices_matching",
+ "tolerancePct": 1,
+ "local": {
+  "correctness": "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k e1_features_on",
+  "performance": "uv run pytest -q -p no:randomly -s tests/unit/test_scheduler.py -k e7_ | grep -E '^\\{\"choices_matching\"' | tail -n 1",
+  "failure": "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k \"plan_wide and refuse\""
+ },
+ "localNotes": "None of these tests exist yet: task plan-wide-e7 (docs/design/PLAN-M2b.json) writes the e7_ and plan_wide tests; e1_features_on is written by task pieces-identity-e1-e2, a dependency. The e7_ test prints one JSON line {\"choices_matching\", \"refusals_matching\", \"f9_violations\"} before it asserts; it reads every config below from this file.",
+ "cloud": null,
+ "costs": "layer_costs (partition.py) for the cut; analytic_costs (zero_bubble.py, recompute on) for F/B/W",
+ "costModel": {
+  "F_flops_per_s": 400000000000000.0,
+  "T_mb": 4096,
+  "seq_len": 4096,
+  "d_model": 4096,
+  "vocab": 32000,
+  "n_layer": 32,
+  "recompute": true,
+  "epsilon": 0.03,
+  "host_dram_GBps": 600,
+  "nic": "min(NIC, PCIe 50 GB/s)",
+  "label": "every input HYPOTHESIS (rounds 3-5); every output DERIVED"
+ },
+ "derivation": {
+  "script": "docs/experiments/m2b-e7/derive/e7.py",
+  "script_sha256": "7e2b7729eb3d19256830c479d570d571a0f45e3727b35d93bdcfc381b25abbe5",
+  "output_sha256": "cdc4e496a96a7656fce285e238c1848f26a13b8e1de8f87286ac273cd317e920",
+  "command": "python3 -I docs/experiments/m2b-e7/derive/e7.py docs/experiments/m2b-e7/derive/r5.py docs/experiments/m2b-e7/derive/r4.py docs/experiments/m2b-e7/derive/r3.py docs/experiments/m2b-e7/derive/r2.py src/wantrain/scheduler/zero_bubble.py src/wantrain/scheduler/partition.py docs/experiments/m2b-e7/derive/e7.json"
+ },
+ "tieRule": {
+  "margin_pct_max": 2.0,
+  "within_best_pct": 1.0,
+  "rule": "the human's ruling, 2026-10-09: where a config's pinned margin_pct to its runner-up is at most 2%, the runner-up also counts as matching if its simulated step is within 1% of the best admitted candidate's (F9's second clause)"
+ },
+ "configs": [
+  {
+   "id": "32xH100-400G-1gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "step_ms": 1136.3,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 1163.7
+   },
+   "margin_pct": 2.41,
+   "refused": [
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "adr_step_ms": 966.8,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 2.85,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-400G-2gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 2,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "step_ms": 1163.7,
+   "runner_up": {
+    "S": 8,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 1176.0
+   },
+   "margin_pct": 1.06,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 760.8,
+       "where": "host 0 (stages [0])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 760.8 GB/s > 600 GB/s (stages [0])"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 875.7,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 875.7 GB/s > 600 GB/s (stages [0]) | S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 875.6,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 875.6 GB/s > 600 GB/s (stages [0]) | S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "adr_step_ms": 994.4,
+   "adr_runner_up": "S 32 w 1",
+   "adr_margin_pct": 10.84,
+   "changed": false,
+   "tie": true
+  },
+  {
+   "id": "32xH100-400G-4gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 4,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 1355.2
+   },
+   "margin_pct": 6.26,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 1249.0,
+       "where": "host 0 (stages [0, 1])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 1249.0 GB/s > 600 GB/s (stages [0, 1])"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 1751.5,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 1751.5 GB/s > 600 GB/s (stages [0]) | S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 1751.2,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 1751.2 GB/s > 600 GB/s (stages [0]) | S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 1102.2,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 22.95,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-400G-8gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 8,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 2411.0
+   },
+   "margin_pct": 89.04,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 2225.6,
+       "where": "host 0 (stages [0, 1, 2, 3])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 2225.6 GB/s > 600 GB/s (stages [0, 1, 2, 3])"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 3076.8,
+       "where": "host 0 (stages [0, 1])"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 3076.8 GB/s > 600 GB/s (stages [0, 1]) | S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 3502.4,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 3502.4 GB/s > 600 GB/s (stages [0]) | S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 1102.2,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 118.74,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-400G-8gph-k2",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 8,
+   "k": 2,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "step_ms": 1136.3,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 1163.7
+   },
+   "margin_pct": 2.41,
+   "refused": [
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 615.4,
+       "where": "host 0 (stages [0, 1])"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 615.4 GB/s > 600 GB/s (stages [0, 1]) | S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 700.5,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 700.5 GB/s > 600 GB/s (stages [0]) | S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "adr_step_ms": 966.8,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 2.85,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-100G-1gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 100,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 2107.8
+   },
+   "margin_pct": 65.27,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.522,
+       "where": "first stage"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 226.62,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (2 blocks) 1.52x cap*c_s | S2: E 226.6 ms > eps*C 23.6 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.751,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.325,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.312,
+       "where": "last stage"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 551.08,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (4 blocks) 1.75x cap*c_s; mid stage (4 blocks) 1.33x cap*c_s; last stage (4 blocks) 1.31x cap*c_s | S2: E 551.1 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.751,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.5,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.497,
+       "where": "last stage"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 769.91,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (8 blocks) 1.75x cap*c_s; mid stage (8 blocks) 1.50x cap*c_s; last stage (8 blocks) 1.50x cap*c_s | S2: E 769.9 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 1102.2,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 83.38,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-100G-8gph-k10",
+   "fleet": "32 H100",
+   "link_gbps": 100,
+   "gpus_per_host": 8,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 2411.0
+   },
+   "margin_pct": 89.04,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.522,
+       "where": "first stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 2225.6,
+       "where": "host 0 (stages [0, 1, 2, 3])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 226.62,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (2 blocks) 1.52x cap*c_s | S1 host DRAM: host 0 2225.6 GB/s > 600 GB/s (stages [0, 1, 2, 3]) | S2: E 226.6 ms > eps*C 23.6 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.751,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.325,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.312,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 3076.8,
+       "where": "host 0 (stages [0, 1])"
+      },
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 551.08,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (4 blocks) 1.75x cap*c_s; mid stage (4 blocks) 1.33x cap*c_s; last stage (4 blocks) 1.31x cap*c_s | S1 host DRAM: host 0 3076.8 GB/s > 600 GB/s (stages [0, 1]) | S2: E 551.1 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.751,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.5,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.497,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 3502.4,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 769.91,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (8 blocks) 1.75x cap*c_s; mid stage (8 blocks) 1.50x cap*c_s; last stage (8 blocks) 1.50x cap*c_s | S1 host DRAM: host 0 3502.4 GB/s > 600 GB/s (stages [0]) | S2: E 769.9 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 1102.2,
+   "adr_runner_up": "S 16 w 2 zero1 + native",
+   "adr_margin_pct": 118.74,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-400G-1gph-k10",
+   "fleet": "128 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "step_ms": 1808.6,
+   "runner_up": {
+    "S": 16,
+    "w": 8,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 2079.9
+   },
+   "margin_pct": 15.0,
+   "refused": [
+    {
+     "candidate": "S 32 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 809.8,
+       "where": "host 0 (stages [0])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 809.8 GB/s > 600 GB/s (stages [0])"
+    },
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 652.6,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.29,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 652.6 GB/s > 600 GB/s (stages [0]) | S2: E 33.3 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "adr_step_ms": 1721.3,
+   "adr_runner_up": "S 16 w 8 zero1 + native",
+   "adr_margin_pct": 15.8,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-400G-1gph-k6",
+   "fleet": "128 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 6,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "step_ms": 1297.2,
+   "runner_up": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 1808.6
+   },
+   "margin_pct": 39.42,
+   "refused": [
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.29,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 33.3 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "adr_step_ms": 1124.5,
+   "adr_runner_up": "S 32 w 4 zero1 + native",
+   "adr_margin_pct": 53.07,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-400G-1gph-k2",
+   "fleet": "128 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 2,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "step_ms": 1297.2,
+   "runner_up": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 1808.6
+   },
+   "margin_pct": 39.42,
+   "refused": [
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.29,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 33.3 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "adr_step_ms": 1124.5,
+   "adr_runner_up": "S 32 w 4 zero1 + native",
+   "adr_margin_pct": 53.07,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-400G-8gph-k10",
+   "fleet": "128 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 8,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 4324.8,
+   "runner_up": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 5038.6
+   },
+   "margin_pct": 16.5,
+   "refused": [
+    {
+     "candidate": "S 32 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 4773.8,
+       "where": "host 0 (stages [0, 1])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 4773.8 GB/s > 600 GB/s (stages [0, 1])"
+    },
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 5220.7,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.29,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 5220.7 GB/s > 600 GB/s (stages [0]) | S2: E 33.3 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 3887.8,
+   "adr_runner_up": "S 32 w 4 zero1 + native",
+   "adr_margin_pct": 29.6,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-400G-8gph-k2",
+   "fleet": "128 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 8,
+   "k": 2,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "step_ms": 1808.6,
+   "runner_up": {
+    "S": 16,
+    "w": 8,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 2079.9
+   },
+   "margin_pct": 15.0,
+   "refused": [
+    {
+     "candidate": "S 32 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 954.8,
+       "where": "host 0 (stages [0, 1])"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 954.8 GB/s > 600 GB/s (stages [0, 1])"
+    },
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 1044.1,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.29,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 host DRAM: host 0 1044.1 GB/s > 600 GB/s (stages [0]) | S2: E 33.3 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128
+   },
+   "adr_step_ms": 1721.3,
+   "adr_runner_up": "S 16 w 8 zero1 + native",
+   "adr_margin_pct": 15.8,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-100G-1gph-k10",
+   "fleet": "128 H100",
+   "link_gbps": 100,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 4324.8,
+   "runner_up": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 6259.9
+   },
+   "margin_pct": 44.74,
+   "refused": [
+    {
+     "candidate": "S 32 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 3.239,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.535,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.42,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 809.8,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 28.78,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 1105.79,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (1 blocks) 3.24x cap*c_s; mid stage (1 blocks) 1.53x cap*c_s; last stage (1 blocks) 1.42x cap*c_s | S1 host DRAM: host 0 809.8 GB/s > 600 GB/s (stages [0]) | S2: E 1105.8 ms > eps*C 28.8 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 2.61,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.604,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.573,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 652.6,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 938.94,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (2 blocks) 2.61x cap*c_s; mid stage (2 blocks) 1.60x cap*c_s; last stage (2 blocks) 1.57x cap*c_s | S1 host DRAM: host 0 652.6 GB/s > 600 GB/s (stages [0]) | S2: E 938.9 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 3887.8,
+   "adr_runner_up": "S 32 w 4 zero1 + native",
+   "adr_margin_pct": 58.77,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "128xH100-100G-8gph-k10",
+   "fleet": "128 H100",
+   "link_gbps": 100,
+   "gpus_per_host": 8,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 4324.8,
+   "runner_up": {
+    "S": 32,
+    "w": 4,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 128,
+    "step_ms": 6259.9
+   },
+   "margin_pct": 44.74,
+   "refused": [
+    {
+     "candidate": "S 32 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 3.239,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.535,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.42,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 4773.8,
+       "where": "host 0 (stages [0, 1])"
+      },
+      {
+       "bound": 28.78,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 1105.79,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (1 blocks) 3.24x cap*c_s; mid stage (1 blocks) 1.53x cap*c_s; last stage (1 blocks) 1.42x cap*c_s | S1 host DRAM: host 0 4773.8 GB/s > 600 GB/s (stages [0, 1]) | S2: E 1105.8 ms > eps*C 28.8 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 16 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 2.61,
+       "where": "first stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.604,
+       "where": "mid stage"
+      },
+      {
+       "bound": 1.0,
+       "kind": "S1 NIC",
+       "unit": "x cap*c_s",
+       "value": 1.573,
+       "where": "last stage"
+      },
+      {
+       "bound": 600.0,
+       "kind": "S1 host DRAM",
+       "unit": "GB/s",
+       "value": 5220.7,
+       "where": "host 0 (stages [0])"
+      },
+      {
+       "bound": 23.63,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 938.94,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S1 NIC: first stage (2 blocks) 2.61x cap*c_s; mid stage (2 blocks) 1.60x cap*c_s; last stage (2 blocks) 1.57x cap*c_s | S1 host DRAM: host 0 5220.7 GB/s > 600 GB/s (stages [0]) | S2: E 938.9 ms > eps*C 23.6 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "adr_step_ms": 3887.8,
+   "adr_runner_up": "S 32 w 4 zero1 + native",
+   "adr_margin_pct": 58.77,
+   "changed": false,
+   "tie": false
+  },
+  {
+   "id": "32xH100-2sites-10G-uplink",
+   "fleet": "32 H100 (2 sites x 16)",
+   "link_gbps": 400,
+   "uplink_gbps": 10,
+   "uplink_rtt_ms": 50,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous, site-major",
+   "sites": 2,
+   "expected_choice": {
+    "S": 16,
+    "w": 2,
+    "shard": "pieces",
+    "wire": "native",
+    "gpus_used": 32
+   },
+   "step_ms": 1293.7,
+   "runner_up": {
+    "S": 16,
+    "w": 2,
+    "shard": "zero1",
+    "wire": "native",
+    "gpus_used": 32,
+    "step_ms": 1321.1
+   },
+   "margin_pct": 2.12,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces, straddling",
+     "reasons": [
+      {
+       "bound": 1.25,
+       "kind": "S1 uplink",
+       "unit": "GB/s",
+       "value": 175.5,
+       "where": "site0-site1"
+      }
+     ],
+     "text": "S1 uplink site0-site1: 175.5 GB/s > 1.25 GB/s (140x)"
+    },
+    {
+     "candidate": "S 8 w 4 pieces, straddling",
+     "reasons": [
+      {
+       "bound": 1.25,
+       "kind": "S1 uplink",
+       "unit": "GB/s",
+       "value": 175.5,
+       "where": "site0-site1"
+      }
+     ],
+     "text": "S1 uplink site0-site1: 175.5 GB/s > 1.25 GB/s (140x)"
+    },
+    {
+     "candidate": "S 4 w 8 pieces, straddling",
+     "reasons": [
+      {
+       "bound": 1.25,
+       "kind": "S1 uplink",
+       "unit": "GB/s",
+       "value": 175.5,
+       "where": "site0-site1"
+      }
+     ],
+     "text": "S1 uplink site0-site1: 175.5 GB/s > 1.25 GB/s (140x)"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      }
+     ],
+     "text": "S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first))"
+    }
+   ],
+   "adr_choice": null,
+   "adr_step_ms": null,
+   "adr_runner_up": null,
+   "adr_margin_pct": null,
+   "changed": false,
+   "note": "ADR-0006 names only the refusal (the uplink, for every candidate whose wide stage straddles it); no choice.",
+   "tie": false
+  },
+  {
+   "id": "32xGPU-mixed-classes",
+   "fleet": "32 GPUs: 17 class A then 15 class B (equal rates)",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": null,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": null,
+   "margin_pct": null,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 8"
+      }
+     ],
+     "text": "class: stage 8 peers span classes A and B (GPUs 16..17)"
+    },
+    {
+     "candidate": "S 16 w 2 zero1 + native",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 8"
+      }
+     ],
+     "text": "class: stage 8 peers span classes A and B (GPUs 16..17)"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 4"
+      }
+     ],
+     "text": "class: stage 4 peers span classes A and B (GPUs 16..19)"
+    },
+    {
+     "candidate": "S 8 w 4 zero1 + native",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 4"
+      }
+     ],
+     "text": "class: stage 4 peers span classes A and B (GPUs 16..19)"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 2"
+      }
+     ],
+     "text": "class: stage 2 peers span classes A and B (GPUs 16..23)"
+    },
+    {
+     "candidate": "S 4 w 8 zero1 + native",
+     "reasons": [
+      {
+       "bound": "one class",
+       "kind": "class",
+       "unit": "",
+       "value": "A+B",
+       "where": "stage 2"
+      }
+     ],
+     "text": "class: stage 2 peers span classes A and B (GPUs 16..23)"
+    }
+   ],
+   "adr_choice": null,
+   "adr_step_ms": null,
+   "adr_runner_up": null,
+   "adr_margin_pct": null,
+   "changed": false,
+   "note": "Every wide candidate mixes classes in the stage holding GPUs 16 and 17; width 1 is the only admitted plan.",
+   "tie": false
+  },
+  {
+   "id": "32xH100-400G-1gph-k10-memhost20",
+   "fleet": "32 H100",
+   "link_gbps": 400,
+   "gpus_per_host": 1,
+   "k": 10,
+   "host_dram_gbps": 600,
+   "host_ram_avail_gb": 20.0,
+   "packing": "stage-contiguous",
+   "sites": 1,
+   "expected_choice": {
+    "S": 32,
+    "w": 1,
+    "shard": null,
+    "wire": null,
+    "gpus_used": 32
+   },
+   "step_ms": 1275.4,
+   "runner_up": null,
+   "margin_pct": null,
+   "refused": [
+    {
+     "candidate": "S 16 w 2 pieces",
+     "reasons": [
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (2 blocks) peer",
+       "value": 23.74,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "MEM-HOST: 23.74 GB one-step bound > 20.0 GB available (first (2 blocks))"
+    },
+    {
+     "candidate": "S 16 w 2 zero1 + native",
+     "reasons": [
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (2 blocks) peer",
+       "value": 23.74,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "MEM-HOST: 23.74 GB one-step bound > 20.0 GB available (first (2 blocks))"
+    },
+    {
+     "candidate": "S 8 w 4 pieces",
+     "reasons": [
+      {
+       "bound": 21.05,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 33.51,
+       "where": "stage 0 (first)"
+      },
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (4 blocks) peer",
+       "value": 29.73,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "S2: E 33.5 ms > eps*C 21.0 ms (stage 0 (first)) | MEM-HOST: 29.73 GB one-step bound > 20.0 GB available (first (4 blocks))"
+    },
+    {
+     "candidate": "S 8 w 4 zero1 + native",
+     "reasons": [
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (4 blocks) peer",
+       "value": 46.17,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "MEM-HOST: 46.17 GB one-step bound > 20.0 GB available (first (4 blocks))"
+    },
+    {
+     "candidate": "S 4 w 8 pieces",
+     "reasons": [
+      {
+       "bound": 19.76,
+       "kind": "S2",
+       "unit": "ms",
+       "value": 64.25,
+       "where": "stage 0 (first)"
+      },
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (8 blocks) peer",
+       "value": 33.36,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "S2: E 64.2 ms > eps*C 19.8 ms (stage 0 (first)) | MEM-HOST: 33.36 GB one-step bound > 20.0 GB available (first (8 blocks))"
+    },
+    {
+     "candidate": "S 4 w 8 zero1 + native",
+     "reasons": [
+      {
+       "kind": "MEM-HOST",
+       "where": "host of a first (8 blocks) peer",
+       "value": 62.98,
+       "bound": 20.0,
+       "unit": "GB"
+      }
+     ],
+     "text": "MEM-HOST: 62.98 GB one-step bound > 20.0 GB available (first (8 blocks))"
+    }
+   ],
+   "adr_choice": null,
+   "adr_step_ms": null,
+   "adr_runner_up": null,
+   "adr_margin_pct": null,
+   "changed": false,
+   "note": "MEM-HOST charged on every wide candidate (pieces and zero1 + native both stage exchange bytes in host memory); if the spec exempts zero1, the choice is S 16 w 2 zero1 + native (1163.7 ms): a question for the human.",
+   "tie": false
+  }
+ ]
+}

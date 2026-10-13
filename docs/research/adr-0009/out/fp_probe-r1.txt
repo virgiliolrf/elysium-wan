@@ -1,0 +1,2 @@
+transformers 5.19.0: 2725 files 50.1 MB verified in 0.31s, mismatched 0, RECORD entries without hash 1, files outside RECORD (non-.pyc) 0 []
+torch 2.14.1: 12863 files 522.6 MB verified in 2.87s, mismatched 0, RECORD entries without hash 1, files outside RECORD (non-.pyc) 0 []

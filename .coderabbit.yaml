@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: true
+  path_filters:
+    - "!.claude/workflows/**"
+    - "!**/*.lock"
+    - "!docs/design/*-history.md"
+  path_instructions:
+    - path: "agents-architetura/tools/wf/**"
+      instructions: |
+        Workflow orchestration. Scripts must stay deterministic (no Date.now/Math.random/new Date), agent-produced
+        text must reach other prompts only through fence()/clean(), parallel agents must have disjoint owned paths,
+        and every behavior change needs a matching simulation test in agents-architetura/tools/wf/test.
+    - path: "agents-architetura/tools/gates/**"
+      instructions: |
+        Verification gates. Flag anything that can report green without running the check, swallow a failure,
+        or loosen a budget.
+    - path: "docs/design/**"
+      instructions: |
+        Design documents of record. Flag quantitative claims without a measurement or a falsifiable hypothesis,
+        invariants without a test, and overlapping workstream ownership.
+  tools:
+    ruff:
+      enabled: true
+    clippy:
+      enabled: true
+    gitleaks:
+      enabled: true
+    actionlint:
+      enabled: true
+chat:
+  auto_reply: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "docs/design/DESIGN.md"
+      - "docs/design/SPEC-*.md"

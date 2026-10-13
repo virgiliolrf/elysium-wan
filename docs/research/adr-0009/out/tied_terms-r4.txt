@@ -1,0 +1,7 @@
+Gemma2-2B worst  S4 M8 L20 10G: t_s 39.8 t_F 13.3 a/B 30.2 | throughput 165 warmup 51 round-trip 189 scan 9 back-link 0 (burst 211 vs idle 290) | dT_tied 414 ms, base step 438 ms
+Gemma2-2B text   S4 M8 L20 10G: t_s 39.8 t_F 13.3 a/B 30.2 | throughput 32 warmup 0 round-trip 155 scan 9 back-link 0 (burst 32 vs idle 290) | dT_tied 197 ms, base step 438 ms
+Gemma2-2B worst  S2 M8 L0  10G: t_s 79.6 t_F 26.5 a/B 30.2 | throughput 0 warmup 4 round-trip 69 scan 9 back-link 75 (burst 211 vs idle 136) | dT_tied 157 ms, base step 716 ms
+Gemma2-2B worst  S4 M16 L0 10G: t_s 39.8 t_F 13.3 a/B 30.2 | throughput 330 warmup 51 round-trip 69 scan 19 back-link 283 (burst 453 vs idle 170) | dT_tied 751 ms, base step 756 ms
+Gemma3-27B worst S8 M16 L20 10G: t_s 207.4 t_F 69.1 a/B 70.5 | throughput 0 warmup 9 round-trip 441 scan 45 back-link 0 (burst 1057 vs idle 1465) | dT_tied 495 ms, base step 4771 ms
+V placement Gemma2-2B S4 M8 (relay case frac 1.0): 165 ms each way
+V placement Gemma2-2B S4 M8 (relay case frac 0.45): 165 ms each way

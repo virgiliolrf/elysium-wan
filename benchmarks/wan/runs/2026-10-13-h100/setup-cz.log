@@ -1,0 +1,6 @@
+== cz
+debconf: delaying package configuration, since apt-utils is not installed
+NODE {"gpu": "NVIDIA H100 NVL, 95830 MiB", "cpus": 224, "public_ip": "203.0.113.12", "city": "Rakovn\u00edk", "region": "Central Bohemia", "country": "CZ", "org": "AS47232 ISP Alliance a.s.", "ports": {"VAST_TCP_PORT_10100": "53820", "VAST_TCP_PORT_10200": "47700", "VAST_TCP_PORT_1111": "42692", "VAST_TCP_PORT_22": "53060", "VAST_TCP_PORT_6006": "42178", "VAST_TCP_PORT_72299": "51097", "VAST_TCP_PORT_8080": "52279", "VAST_TCP_PORT_8384": "48297"}, "corpus_sha256": "ed8f812ecb2de6610f7de69492044a2488d0f9f7d04061fce885085152d51107", "torch": "2.14.1+cu130 True"}
+BIG 105112084 50257 uint16
+2525ff978f39ec7e
+free 75G

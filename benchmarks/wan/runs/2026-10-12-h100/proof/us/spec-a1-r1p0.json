@@ -1,0 +1,605 @@
+{
+  "model": {
+    "vocab_size": 50257,
+    "n_layer": 32,
+    "n_head": 32,
+    "d_model": 2560,
+    "seq_len": 1024,
+    "compute_dtype": "bf16",
+    "boundary_dtype": "bf16",
+    "attn_impl": "naive",
+    "sdpa_backend": "math",
+    "arch": "builtin",
+    "hf_model": null,
+    "hf_model_sha256": null,
+    "user_model": null,
+    "user_model_sha256": null,
+    "lora_rank": 0,
+    "lora_alpha": 16.0,
+    "lora_targets": "attn",
+    "n_kv_head": null,
+    "d_ff": null,
+    "norm": "layernorm",
+    "mlp": "gelu",
+    "pos": "learned",
+    "bias": true,
+    "tie_embeddings": false,
+    "rope_theta": 10000.0,
+    "init_scheme": "torch_default",
+    "init_std": 0.02,
+    "hf_config": null,
+    "hf_buffers": null,
+    "hf_census": null,
+    "hf_code": null,
+    "hf_impl": "modules",
+    "moe_experts": 0,
+    "moe_top_k": 1,
+    "moe_d_ff": null,
+    "moe_shared_d_ff": 0,
+    "moe_shared_gate": "sigmoid",
+    "moe_layers": null,
+    "moe_router_dtype": "compute",
+    "moe_router_bias": false,
+    "moe_score": "softmax",
+    "moe_select": "score",
+    "moe_groups": 1,
+    "moe_topk_groups": 1,
+    "moe_norm": false,
+    "moe_norm_eps": 0.0,
+    "moe_scale": 1.0,
+    "moe_apply": "output",
+    "moe_expert": "swiglu",
+    "moe_limit": 7.0,
+    "moe_alpha": 1.702,
+    "moe_lbl_coef": 0.0,
+    "moe_lbl_scope": "layer",
+    "moe_z_coef": 0.0,
+    "moe_bias_rate": 0.0,
+    "fp8_boundaries": false
+  },
+  "init_seed": 1234,
+  "data_seed": 5678,
+  "lr": 0.0003,
+  "optimizer": "adamw-host",
+  "device": "cuda",
+  "devices": [
+    [
+      "cuda"
+    ],
+    [
+      "cuda"
+    ]
+  ],
+  "device_classes": null,
+  "dataset_path": "/workspace/data/big.bin",
+  "dataset_sha256": "2525ff978f39ec7e1353128f81e94287ba5af2e6aba74e4ae36b27e81eef72a9",
+  "data_shards": 2,
+  "dataset_source": null,
+  "steps": 20,
+  "microbatches": 16,
+  "mb_size": 1,
+  "recompute": true,
+  "ckpt_every": 0,
+  "resume": false,
+  "resume_step": null,
+  "stages": 2,
+  "stage_widths": [
+    1,
+    1
+  ],
+  "partition": [
+    [
+      0,
+      18
+    ],
+    [
+      18,
+      34
+    ]
+  ],
+  "peer_weights": [
+    [
+      1.0
+    ],
+    [
+      1.0
+    ]
+  ],
+  "mb_owner": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "stream_grads": false,
+  "schedule_order": [
+    [
+      [
+        [
+          "F",
+          0
+        ],
+        [
+          "F",
+          1
+        ],
+        [
+          "F",
+          2
+        ],
+        [
+          "F",
+          3
+        ],
+        [
+          "F",
+          4
+        ],
+        [
+          "F",
+          5
+        ],
+        [
+          "F",
+          6
+        ],
+        [
+          "F",
+          7
+        ],
+        [
+          "F",
+          8
+        ],
+        [
+          "F",
+          9
+        ],
+        [
+          "F",
+          10
+        ],
+        [
+          "F",
+          11
+        ],
+        [
+          "F",
+          12
+        ],
+        [
+          "F",
+          13
+        ],
+        [
+          "F",
+          14
+        ],
+        [
+          "F",
+          15
+        ],
+        [
+          "B",
+          0
+        ],
+        [
+          "W",
+          0
+        ],
+        [
+          "B",
+          1
+        ],
+        [
+          "W",
+          1
+        ],
+        [
+          "B",
+          2
+        ],
+        [
+          "W",
+          2
+        ],
+        [
+          "B",
+          3
+        ],
+        [
+          "W",
+          3
+        ],
+        [
+          "B",
+          4
+        ],
+        [
+          "W",
+          4
+        ],
+        [
+          "B",
+          5
+        ],
+        [
+          "W",
+          5
+        ],
+        [
+          "B",
+          6
+        ],
+        [
+          "W",
+          6
+        ],
+        [
+          "B",
+          7
+        ],
+        [
+          "W",
+          7
+        ],
+        [
+          "B",
+          8
+        ],
+        [
+          "W",
+          8
+        ],
+        [
+          "B",
+          9
+        ],
+        [
+          "W",
+          9
+        ],
+        [
+          "B",
+          10
+        ],
+        [
+          "W",
+          10
+        ],
+        [
+          "B",
+          11
+        ],
+        [
+          "W",
+          11
+        ],
+        [
+          "B",
+          12
+        ],
+        [
+          "W",
+          12
+        ],
+        [
+          "B",
+          13
+        ],
+        [
+          "W",
+          13
+        ],
+        [
+          "B",
+          14
+        ],
+        [
+          "W",
+          14
+        ],
+        [
+          "B",
+          15
+        ],
+        [
+          "W",
+          15
+        ]
+      ]
+    ],
+    [
+      [
+        [
+          "F",
+          0
+        ],
+        [
+          "B",
+          0
+        ],
+        [
+          "F",
+          1
+        ],
+        [
+          "B",
+          1
+        ],
+        [
+          "F",
+          2
+        ],
+        [
+          "B",
+          2
+        ],
+        [
+          "F",
+          3
+        ],
+        [
+          "B",
+          3
+        ],
+        [
+          "F",
+          4
+        ],
+        [
+          "B",
+          4
+        ],
+        [
+          "F",
+          5
+        ],
+        [
+          "B",
+          5
+        ],
+        [
+          "F",
+          6
+        ],
+        [
+          "B",
+          6
+        ],
+        [
+          "F",
+          7
+        ],
+        [
+          "B",
+          7
+        ],
+        [
+          "F",
+          8
+        ],
+        [
+          "B",
+          8
+        ],
+        [
+          "F",
+          9
+        ],
+        [
+          "B",
+          9
+        ],
+        [
+          "F",
+          10
+        ],
+        [
+          "B",
+          10
+        ],
+        [
+          "F",
+          11
+        ],
+        [
+          "B",
+          11
+        ],
+        [
+          "F",
+          12
+        ],
+        [
+          "B",
+          12
+        ],
+        [
+          "F",
+          13
+        ],
+        [
+          "B",
+          13
+        ],
+        [
+          "F",
+          14
+        ],
+        [
+          "B",
+          14
+        ],
+        [
+          "F",
+          15
+        ],
+        [
+          "B",
+          15
+        ],
+        [
+          "W",
+          0
+        ],
+        [
+          "W",
+          1
+        ],
+        [
+          "W",
+          2
+        ],
+        [
+          "W",
+          3
+        ],
+        [
+          "W",
+          4
+        ],
+        [
+          "W",
+          5
+        ],
+        [
+          "W",
+          6
+        ],
+        [
+          "W",
+          7
+        ],
+        [
+          "W",
+          8
+        ],
+        [
+          "W",
+          9
+        ],
+        [
+          "W",
+          10
+        ],
+        [
+          "W",
+          11
+        ],
+        [
+          "W",
+          12
+        ],
+        [
+          "W",
+          13
+        ],
+        [
+          "W",
+          14
+        ],
+        [
+          "W",
+          15
+        ]
+      ]
+    ]
+  ],
+  "schedule_fill": true,
+  "port_base": 29000,
+  "host": "127.0.0.1",
+  "p2p_streams": 4,
+  "endpoints": [
+    [
+      [
+        "203.0.113.12",
+        53154,
+        8080
+      ]
+    ],
+    [
+      [
+        "203.0.113.25",
+        27554,
+        10100
+      ]
+    ]
+  ],
+  "trusted_peers": [
+    "002b7ed2a67f6560c278a47f40bc8362",
+    "329f0d4dec0af1d456fd608d224a433d"
+  ],
+  "slot_peers": [
+    [
+      "329f0d4dec0af1d456fd608d224a433d"
+    ],
+    [
+      "002b7ed2a67f6560c278a47f40bc8362"
+    ]
+  ],
+  "dial_timeout_s": 300.0,
+  "wire_codec": "planes",
+  "adapt_budget_ms": 0.0,
+  "frag_min_bytes": 4096,
+  "links": [
+    {
+      "latency_ms": 0.0,
+      "bw_mbps": 0.0,
+      "jitter_ms": 0.0,
+      "jitter_seed": 0
+    },
+    {
+      "latency_ms": 0.0,
+      "bw_mbps": 0.0,
+      "jitter_ms": 0.0,
+      "jitter_seed": 0
+    }
+  ],
+  "wire": "fp32",
+  "shard": "zero1",
+  "emission_order": [
+    "store",
+    "store"
+  ],
+  "piece_bounds": null,
+  "pacing": "link",
+  "peer_egress_mbps": null,
+  "peer_ingress_mbps": null,
+  "sites": null,
+  "uplink_mbps": null,
+  "out_dir": "/workspace/run/w/runs/run-20261012-200210-70ae68/out",
+  "tag": "h100proof"
+}

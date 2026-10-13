@@ -1,0 +1,28 @@
+{
+ "plan": {
+  "model": "gpt760m",
+  "n_layer": 32,
+  "n_head": 48,
+  "d_model": 6144,
+  "seq_len": 1024,
+  "compute_dtype": "bf16",
+  "boundary_dtype": "bf16",
+  "dataset": "/workspace/data/big.bin",
+  "steps": 5000,
+  "lr": 0.00015,
+  "recompute": true,
+  "mb_size": 1,
+  "microbatches": 32,
+  "p2p_streams": 16,
+  "extras": {
+   "optimizer": "adamw-host"
+  },
+  "require_margin": false,
+  "out_dir": "/workspace/run/out",
+  "ckpt_every": 0,
+  "tag": "us15b",
+  "policy": "balanced",
+  "device": "cuda"
+ },
+ "stages": 2
+}

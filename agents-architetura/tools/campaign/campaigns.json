@@ -1,0 +1,93 @@
+{
+  "campaigns": [
+    {
+      "id": "rust-tsan",
+      "kind": "sanitizer",
+      "when": [
+        "Cargo.toml"
+      ],
+      "probe": "cargo +nightly --version",
+      "cmd": "RUSTFLAGS='-Zsanitizer=thread' RUSTDOCFLAGS='-Zsanitizer=thread' CARGO_TARGET_DIR=target/tsan TSAN_OPTIONS=\"halt_on_error=0 history_size=7 second_deadlock_stack=1 log_path=$FACTORY_CAMPAIGN_REPORTS/tsan\" cargo +nightly test -Zbuild-std --target \"$(rustc -vV | sed -n 's/host: //p')\" --workspace",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/rust-tsan.txt",
+      "timeoutSec": 14400
+    },
+    {
+      "id": "rust-asan",
+      "kind": "sanitizer",
+      "when": [
+        "Cargo.toml"
+      ],
+      "probe": "cargo +nightly --version",
+      "cmd": "RUSTFLAGS='-Zsanitizer=address' RUSTDOCFLAGS='-Zsanitizer=address' CARGO_TARGET_DIR=target/asan ASAN_OPTIONS=\"detect_leaks=1 log_path=$FACTORY_CAMPAIGN_REPORTS/asan\" cargo +nightly test -Zbuild-std --target \"$(rustc -vV | sed -n 's/host: //p')\" --workspace",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/rust-asan.txt",
+      "timeoutSec": 14400
+    },
+    {
+      "id": "miri",
+      "kind": "sanitizer",
+      "when": [
+        "Cargo.toml"
+      ],
+      "probe": "cargo +nightly miri --version",
+      "cmd": "CARGO_TARGET_DIR=target/miri MIRIFLAGS='-Zmiri-strict-provenance' cargo +nightly miri test --workspace --no-fail-fast",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/miri.txt",
+      "timeoutSec": 14400
+    },
+    {
+      "id": "py-freethreaded",
+      "kind": "sanitizer",
+      "when": [
+        "pyproject.toml",
+        "tests"
+      ],
+      "probe": "uv python find 3.14t",
+      "cmd": "UV_PROJECT_ENVIRONMENT=.venv-ft PYTHON_GIL=0 uv run --python 3.14t python -c \"import sys; print('GIL', sys._is_gil_enabled())\" && UV_PROJECT_ENVIRONMENT=.venv-ft PYTHON_GIL=0 uv run --python 3.14t python -X faulthandler -m pytest -q -p no:randomly -p no:cacheprovider --basetemp=\"$FACTORY_CAMPAIGN_REPORTS/bt\" --junitxml=\"$FACTORY_CAMPAIGN_REPORTS/junit.xml\" tests",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/py-freethreaded.txt",
+      "timeoutSec": 7200,
+      "sentinel": "GIL False"
+    },
+    {
+      "id": "py-devmode",
+      "kind": "sanitizer",
+      "when": [
+        "pyproject.toml",
+        "tests"
+      ],
+      "cmd": "PYTHONDEVMODE=1 uv run python -c \"import sys; print('DEVMODE', sys.flags.dev_mode)\" && PYTHONDEVMODE=1 PYTHONASYNCIODEBUG=1 uv run python -X faulthandler -W error::ResourceWarning -m pytest -q -p no:randomly -p no:cacheprovider --basetemp=\"$FACTORY_CAMPAIGN_REPORTS/bt\" --junitxml=\"$FACTORY_CAMPAIGN_REPORTS/junit.xml\" tests",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/py-devmode.txt",
+      "timeoutSec": 7200,
+      "sentinel": "DEVMODE True"
+    },
+    {
+      "id": "cuda-racecheck",
+      "kind": "sanitizer",
+      "when": [
+        "tests/gpu"
+      ],
+      "probe": "compute-sanitizer --version",
+      "cmd": "for tool in racecheck memcheck synccheck initcheck; do compute-sanitizer --tool $tool --log-file \"$FACTORY_CAMPAIGN_REPORTS/$tool.log\" uv run pytest -q -p no:randomly tests/gpu; done",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/cuda.txt",
+      "timeoutSec": 14400
+    },
+    {
+      "id": "amplify-chaos",
+      "kind": "amplify",
+      "when": [
+        "tests/chaos"
+      ],
+      "cmd": "node agents-architetura/tools/verify/amplify.mjs --runs 30 --seed-base 1000 --periods 16,64,256 --timeout 300 --out \"$FACTORY_CAMPAIGN_REPORTS\" -- uv run pytest -q -p no:randomly -p no:cacheprovider tests/chaos",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/amplify-chaos.txt",
+      "timeoutSec": 28800
+    },
+    {
+      "id": "load-chaos",
+      "kind": "load",
+      "when": [
+        "tests/chaos"
+      ],
+      "cmd": "node agents-architetura/tools/verify/load.mjs --workers 6 --runs-per-worker 20 --out \"$FACTORY_CAMPAIGN_REPORTS\" -- uv run pytest -q -p no:randomly -p no:cacheprovider tests/chaos",
+      "suppressions": "agents-architetura/tools/campaign/suppressions/load-chaos.txt",
+      "timeoutSec": 28800
+    }
+  ]
+}

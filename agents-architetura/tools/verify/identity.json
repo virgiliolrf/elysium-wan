@@ -1,0 +1,11 @@
+{
+  "corpus": ["tests/oracle/**/test_*.py", "tests/helpers/test_m4_identity_*.py"],
+  "every": 1,
+  "max": 40,
+  "a": "FACTORY_FEATURES=off uv run pytest -q -p no:randomly {test}",
+  "b": "FACTORY_REFERENCE=1 uv run pytest -q -p no:randomly {test}",
+  "exact": { "cmd": "uv run pytest -q -p no:randomly {test}", "state": ["state/**"] },
+  "normalize": true,
+  "baseRev": "origin/main",
+  "timeoutSec": 600
+}

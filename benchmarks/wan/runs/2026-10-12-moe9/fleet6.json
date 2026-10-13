@@ -1,0 +1,184 @@
+[
+ {
+  "name": "n0",
+  "port": 43020,
+  "host": "203.0.113.30",
+  "region": null,
+  "ip": "203.0.113.30",
+  "free_ports": [
+   [
+    8080,
+    8893
+   ],
+   [
+    10100,
+    54286
+   ],
+   [
+    10200,
+    37735
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Richardson",
+  "country": "US",
+  "org": "AS7018 AT&T Enterprises, LLC",
+  "data": [
+   8080,
+   8893
+  ],
+  "probe": [
+   10100,
+   54286
+  ],
+  "coord": [
+   10200,
+   37735
+  ]
+ },
+ {
+  "name": "n1",
+  "port": 20453,
+  "host": "203.0.113.7",
+  "region": null,
+  "ip": "203.0.113.7",
+  "free_ports": [
+   [
+    10100,
+    20447
+   ],
+   [
+    10200,
+    20434
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Los Angeles",
+  "country": "US",
+  "org": "AS8796 FASTNET DATA INC",
+  "data": [
+   10100,
+   20447
+  ],
+  "probe": [
+   10200,
+   20434
+  ]
+ },
+ {
+  "name": "n3",
+  "port": 13824,
+  "host": "203.0.113.8",
+  "region": null,
+  "ip": "203.0.113.8",
+  "free_ports": [
+   [
+    10100,
+    22745
+   ],
+   [
+    10200,
+    5118
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Tustin",
+  "country": "US",
+  "org": "AS53336 BSQL Networking",
+  "data": [
+   10100,
+   22745
+  ],
+  "probe": [
+   10200,
+   5118
+  ]
+ },
+ {
+  "name": "n5",
+  "port": 53081,
+  "host": "203.0.113.24",
+  "region": null,
+  "ip": "203.0.113.24",
+  "free_ports": [
+   [
+    10100,
+    53034
+   ],
+   [
+    10200,
+    53045
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Bay View",
+  "country": "US",
+  "org": "AS7922 Comcast Cable Communications, LLC",
+  "data": [
+   10100,
+   53034
+  ],
+  "probe": [
+   10200,
+   53045
+  ]
+ },
+ {
+  "name": "n8",
+  "port": 40232,
+  "host": "203.0.113.20",
+  "region": null,
+  "ip": "203.0.113.20",
+  "free_ports": [
+   [
+    10100,
+    40267
+   ],
+   [
+    10200,
+    40250
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "Vancouver",
+  "country": "CA",
+  "org": "AS852 TELUS Communications Inc.",
+  "data": [
+   10100,
+   40267
+  ],
+  "probe": [
+   10200,
+   40250
+  ]
+ },
+ {
+  "name": "n4",
+  "port": 50426,
+  "host": "203.0.113.4",
+  "region": null,
+  "ip": "203.0.113.4",
+  "free_ports": [
+   [
+    10100,
+    50438
+   ],
+   [
+    10200,
+    50466
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "San Jose",
+  "country": "US",
+  "org": "AS54600 PEG TECH INC",
+  "data": [
+   10100,
+   50438
+  ],
+  "probe": [
+   10200,
+   50466
+  ]
+ }
+]

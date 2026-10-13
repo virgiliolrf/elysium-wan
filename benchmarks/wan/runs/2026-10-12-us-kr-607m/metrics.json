@@ -1,0 +1,279 @@
+{
+  "nodes": {
+    "kr": {
+      "sysmon": {
+        "seconds": 1854,
+        "gpu_util_mean_pct": 44.9,
+        "gpu_util_mean_when_active_pct": 92.1,
+        "gpu_mem_peak_mb": 10197.0,
+        "gpu_power_mean_w": 81.1,
+        "nic_rx_mbps_mean": 23.19,
+        "nic_tx_mbps_mean": 23.2,
+        "nic_rx_mbps_p95": 65.73,
+        "nic_tx_mbps_p95": 62.27,
+        "nic_total_gb": 10.763
+      }
+    },
+    "us": {
+      "netprobe": {
+        "tcp_rtt_ms": {
+          "n": 20,
+          "min": 148.6,
+          "median": 155.91,
+          "p90": 161.46
+        },
+        "send_P1": {
+          "mbps": 110.4
+        },
+        "send_P4": {
+          "mbps": 222.0
+        },
+        "recv_P4": {
+          "mbps": 178.8
+        },
+        "peer": "kr 203.0.113.2"
+      },
+      "sysmon": {
+        "seconds": 1845,
+        "gpu_util_mean_pct": 20.5,
+        "gpu_util_mean_when_active_pct": 66.4,
+        "gpu_mem_peak_mb": 6235.0,
+        "gpu_power_mean_w": 63.7,
+        "nic_rx_mbps_mean": 23.16,
+        "nic_tx_mbps_mean": 22.85,
+        "nic_rx_mbps_p95": 63.27,
+        "nic_tx_mbps_p95": 66.38,
+        "nic_total_gb": 10.606
+      }
+    }
+  },
+  "stages": {
+    "1": {
+      "node": "kr",
+      "steps": 606,
+      "step_ms_median": 2352.5,
+      "step_ms_p10": 1895.3,
+      "step_ms_p90": 3663.6,
+      "stall_ms_median": 1173.6,
+      "stall_share_pct": 60.1,
+      "op_median_ms": {
+        "F": 27.11,
+        "B": 90.56,
+        "W": 31.28,
+        "OPT": 13.82
+      },
+      "hop_bytes_per_step_mb": 8.61,
+      "hop_mbps_while_busy": 1173.3,
+      "gpu_mem_peak_gib": 9.01
+    },
+    "0": {
+      "node": "us",
+      "steps": 602,
+      "step_ms_median": 2378.7,
+      "step_ms_p10": 1903.4,
+      "step_ms_p90": 3588.1,
+      "stall_ms_median": 1904.2,
+      "stall_share_pct": 84.1,
+      "op_median_ms": {
+        "F": 16.81,
+        "B": 30.54,
+        "W": 2.53,
+        "OPT": 1.2
+      },
+      "hop_bytes_per_step_mb": 8.6,
+      "hop_mbps_while_busy": 1525.3,
+      "gpu_mem_peak_gib": 5.39
+    }
+  },
+  "engine_link_probe": {
+    "fwd_mbps": 39.2,
+    "rev_mbps": 32.95,
+    "bidir_a_mbps": 39.81,
+    "bidir_b_mbps": 33.47,
+    "rtt_ms": 156.91
+  },
+  "plan_predicted": {
+    "s_per_step": 1.684,
+    "bubble_pct": 51.2
+  },
+  "loss": {
+    "first_step": 0,
+    "last_step": 605,
+    "first": 11.0273,
+    "last": 3.0682,
+    "min": 2.9203,
+    "curve": [
+      [
+        0,
+        11.0273
+      ],
+      [
+        15,
+        13.142
+      ],
+      [
+        30,
+        5.4859
+      ],
+      [
+        45,
+        4.8137
+      ],
+      [
+        60,
+        4.6489
+      ],
+      [
+        75,
+        4.4097
+      ],
+      [
+        90,
+        4.3098
+      ],
+      [
+        105,
+        4.2035
+      ],
+      [
+        120,
+        3.9437
+      ],
+      [
+        135,
+        4.2144
+      ],
+      [
+        150,
+        3.9463
+      ],
+      [
+        165,
+        3.9428
+      ],
+      [
+        180,
+        4.0389
+      ],
+      [
+        195,
+        3.9407
+      ],
+      [
+        210,
+        3.9035
+      ],
+      [
+        225,
+        3.8025
+      ],
+      [
+        240,
+        3.7491
+      ],
+      [
+        255,
+        3.9357
+      ],
+      [
+        270,
+        3.8079
+      ],
+      [
+        285,
+        3.6436
+      ],
+      [
+        300,
+        3.8033
+      ],
+      [
+        315,
+        3.5773
+      ],
+      [
+        330,
+        3.3916
+      ],
+      [
+        345,
+        3.4779
+      ],
+      [
+        360,
+        3.5168
+      ],
+      [
+        375,
+        3.5042
+      ],
+      [
+        390,
+        3.4359
+      ],
+      [
+        405,
+        3.2897
+      ],
+      [
+        420,
+        3.1553
+      ],
+      [
+        435,
+        3.5726
+      ],
+      [
+        450,
+        3.3505
+      ],
+      [
+        465,
+        3.3974
+      ],
+      [
+        480,
+        3.4139
+      ],
+      [
+        495,
+        3.3561
+      ],
+      [
+        510,
+        3.0834
+      ],
+      [
+        525,
+        3.2872
+      ],
+      [
+        540,
+        3.0516
+      ],
+      [
+        555,
+        2.9988
+      ],
+      [
+        570,
+        2.9346
+      ],
+      [
+        585,
+        2.9512
+      ],
+      [
+        600,
+        2.9556
+      ]
+    ],
+    "wall_s": 1788.2
+  },
+  "throughput": {
+    "tokens_per_step": 4096,
+    "tokens_per_s": 1741.1,
+    "steps_per_min": 25.5,
+    "tokens_per_s_wall": 1388.1
+  }
+}

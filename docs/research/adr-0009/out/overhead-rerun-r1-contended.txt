@@ -1,0 +1,2 @@
+native  per-layer F+B host time     480 us   (2 layers 1.21 ms, 10 layers 5.05 ms)
+hf      per-layer F+B host time     477 us   (2 layers 1.19 ms, 10 layers 5.01 ms)

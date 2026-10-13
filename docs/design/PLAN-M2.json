@@ -1,0 +1,1076 @@
+{
+  "milestone": "M2",
+  "binding": [
+    {
+      "id": "BA-1",
+      "what": "The agent samples the slot's single mutable shard every 0.5 s instead of shipping every saved wave (suspected cause of M2-P2-NO-COMMON-WAVE: two slots can ship disjoint steps before a kill)",
+      "where": "src/wantrain/worker/agent.py:542-548 (_supervise)",
+      "ruling": "Replaced (human decision 2026-10-09, no experiment gate: the recorded exploratory data in .factory/runs/M2/wave-exp-tree.json showed both 'unseen' and 'race', and the redesign removes both) by event-driven shipping of every committed wave in ascending step order, woken by the stage's WT_WAVE line and by a backstop scan each supervise pass; no shipper reads the legacy pair again. Proven by the causal closure (GATES causal-pre-fix-has-symptom on the tree immediately before wave-ship-restore, causal-fixed-tree-clean on the fixed tree)."
+    },
+    {
+      "id": "BA-2",
+      "what": "The shipper copies the mutable legacy shard and brackets the copy with two sidecar reads (seqlock); a copy that races a newer save is skipped (the alternative hypothesis)",
+      "where": "src/wantrain/worker/agent.py:609-648 (_ship_checkpoint_locked)",
+      "ruling": "Ships only committed, immutable wave directories as a unit: one CKPT_PART per file listed in wave.json (each with its sha256) and then one CKPT carrying the wave.json manifest; nothing that can be rewritten is read, so no copy can race a save. The before/after sidecar bracket goes with the path that needed it."
+    },
+    {
+      "id": "BA-3",
+      "what": "save_shard seqlock writes the one mutable shard per slot (the legacy pair) that resume, the oracle readers and the shipper all read today",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py:84-94 (save_shard), 62-81 (sidecar helpers)",
+      "ruling": "Demoted to a derived alias for the oracle readers only (BA-13): link_legacy(wave_dir) hard-links (copy fallback) the wave's state.pt onto <tag>_ckpt_rank<r>p<p>.pt through save_shard's seqlock order and writes the .step.json from wave.json's step. Resume and shipping never read it; wave.json is the only step binding."
+    },
+    {
+      "id": "BA-4",
+      "what": "The stage writes each checkpoint over the same path, prints nothing the agent can wake on, and checkpoints the last step twice when steps % ckpt_every == 0 (periodic save at stage.py:1082-1083, unconditional final save at :1089)",
+      "where": "src/wantrain/runtime/stage.py:704-730 (_ckpt_path, _checkpoint), 1082-1089 (run)",
+      "ruling": "Every save commits an immutable wave out_dir/waves/<tag>/r<r>p<p>/step-<n:08d>/ (state.pt first, wave.json with per-file sha256 last, directory renamed into place), then links the alias, then prints WT_WAVE <n>. commit_wave on a step the slot has already committed writes nothing and returns committed=False; the stage prints WT_WAVE only for a new commit, so the final save of an already-committed last step is a no-op and no committed directory is ever removed or replaced. The slot keeps its newest 3 committed waves."
+    },
+    {
+      "id": "BA-5",
+      "what": "Resume reads the legacy pair and refuses a shard its sidecar does not name",
+      "where": "src/wantrain/runtime/stage.py:732-765 (_resume), src/wantrain/fault_tolerance/checkpoint.py:97-110 (check_resume_step)",
+      "ruling": "Two legs, each consistent on its own. wave-stage-write keeps _resume on the alias, which link_legacy derives byte for byte from the newest committed wave and every RESTORE rewrites (so heal and restart-in-place resume exactly as today while the agent still restores the legacy pair). wave-resume, which depends on wave-ship-restore (the task that makes RESTORE wave-based and sets resume_step), rebuilds resume on the wave (RUNTIME-I12's 'the manifest is the wave's sidecar'): it reads the committed wave of spec.resume_step (the newest committed wave when resume_step is None, local mode) through validate_wave and refuses, before any state is applied, a missing wave directory, a missing or unparsable wave.json, a wave.json naming another step, a listed file missing or with another sha256 or size, or a file present but not listed; it never reads the alias. The two phase-2 refusal tests are ported to the wave input in wave-resume with the same assertions (HANDOUT §8 'Ported tests')."
+    },
+    {
+      "id": "BA-6",
+      "what": "Committed waves of an abandoned timeline stay on disk: after a resume from step n, the slot's waves newer than n; after a launch from step 0 (resume false, e.g. a heal with no common wave), every wave the slot committed before. Because commit_wave writes nothing for a step already committed, the new timeline would silently keep the old timeline's wave under that step",
+      "where": "new state introduced by BA-4 (out_dir/waves/...)",
+      "ruling": "A resume from step n removes the slot's committed waves newer than n before its first step; a launch with resume false removes every committed wave of the slot under its tag before its first step; both log the dropped steps (wave-stage-write, kept by wave-resume)."
+    },
+    {
+      "id": "BA-7",
+      "what": "RESTORE replaces the shard and sidecar while the slot's stage may be alive, outside the ship lock, leaks the body on a malformed step, and does not mark the restored wave as shipped (M2-P2-RESTORE-LIVE-STAGE, -RESTORE-BODY-LEAK, -SHIP-SPANS-RESTORE, -RESTORE-RESHIP)",
+      "where": "src/wantrain/worker/agent.py:663-686 (_on_restore)",
+      "ruling": "Two deliveries. Verdict-independent, on the legacy pair (restore-hardening, before the gated chain): _on_restore refuses (RESTORE_ACK ok=false, reason names the live stage) while the slot's stage is alive, runs under _ship_lock, refuses a missing or non-integer step, unlinks the received body on every exit path (try/finally), and records the restored (run_id, rank, peer, step) in _shipped. On waves (wave-ship-restore): RESTORE becomes a wave transfer (RESTORE_PART per listed file, then RESTORE with the manifest) that keeps every one of those properties, verifies every file's sha256 and the manifest step, commits with commit_received_wave and links the alias; a local committed wave of the same step whose manifest differs is refused loudly, an equal one is kept untouched."
+    },
+    {
+      "id": "BA-8",
+      "what": "_shipped, the per-agent record of shipped waves, and the ship lock shared by the supervisor and ABORT",
+      "where": "src/wantrain/worker/agent.py:182-185, 620, 646, 650-661 (_on_abort)",
+      "ruling": "Per (run_id, rank, peer, step); shared by supervisor, WT_WAVE wake-up, ABORT and RESTORE under one lock; ABORT ships every committed, unshipped wave in order before acknowledging."
+    },
+    {
+      "id": "BA-9",
+      "what": "The coordinator's checkpoint store: one file per slot per step, common_step and prune",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py:113-180 (CheckpointStore)",
+      "ruling": "Rebuilt to hold waves: (slot, step) -> root/r<r>p<p>/step-<n:08d>/ with wave.json and its files, committed by rename only after every listed file's sha256 and the manifest's step verify; index/common_step/prune read committed waves only; a wave with any mismatch is refused (CONTROL-I8 corrupt-shard rule, per file). A unit test pins that common_step over waves shipped in order is the newest step every slot shipped."
+    },
+    {
+      "id": "BA-10",
+      "what": "CKPT intake takes rank and peer from the message and never checks the attempt (M2-P1-CKPT-IDENTITY)",
+      "where": "src/wantrain/coordinator/coordinator.py:387-396 (_dispatch, CKPT)",
+      "ruling": "Slot and attempt come from the connection (_slot_for); a CKPT (and later every CKPT_PART) whose rank/peer disagree with the connection's slot, or of another attempt, is dropped, logged and its body unlinked."
+    },
+    {
+      "id": "BA-11",
+      "what": "RESULT intake takes rank and peer from the message",
+      "where": "src/wantrain/coordinator/coordinator.py:413-415 (_dispatch, RESULT)",
+      "ruling": "Slot from the connection; a RESULT naming another slot is dropped and logged."
+    },
+    {
+      "id": "BA-12",
+      "what": "A request's reply is accepted from any connection that knows its rid",
+      "where": "src/wantrain/coordinator/coordinator.py:379-381 (_dispatch), 512-553 (_request)",
+      "ruling": "_pending maps rid to (queue, node_id); a reply from any other worker's connection is dropped, logged and its body unlinked; the real reply is still accepted."
+    },
+    {
+      "id": "BA-13",
+      "what": "The oracle readers of final checkpoints: validation/state.py reads <tag>_ckpt_rank<r>p<p>.pt; tests/helpers/exact.py globs out/*_ckpt_rank*p*.pt and reads its .step.json; test_coordinator.py:341-344 reads the replacement's restored pair",
+      "where": "src/wantrain/validation/state.py:116; tests/helpers/exact.py:76-90 (fleet_manifest); tests/integration/test_coordinator.py:341-344",
+      "ruling": "Carried unchanged: the alias (BA-3) is written after every commit and every RESTORE, from the wave, so the readers see the same bytes and step as today; waves live under out/waves/ so no wave file matches the non-recursive glob. tests/helpers/exact.py is outside every task's scope and its sha256 9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d is checked by every task that runs a fleet."
+    },
+    {
+      "id": "BA-14",
+      "what": "export_wave writes the coordinator's wave into engine layout for a local resume",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py:182-195 (export_wave)",
+      "ruling": "Rebuilt: writes the committed wave directory (wave.json and files, hashes verified) under out_dir/waves/... and then its alias, so a local resume reads the wave like any other."
+    },
+    {
+      "id": "BA-15",
+      "what": "Local disk and control-link backlog when every wave is shipped (shipping slower than saving)",
+      "where": "new behaviour of BA-1/BA-4",
+      "ruling": "The stage keeps its newest 3 committed waves; a wave pruned before the agent shipped it is logged as '[agent <name>] ship gap r<r>p<p> step=<n>' and never skipped silently; the experiment and the GATES count gaps (0 expected)."
+    },
+    {
+      "id": "BA-16",
+      "what": "solve() raises a stage's measured activation budget to the 1F1B floor, so a tight budget over-commits memory instead of degrading",
+      "where": "src/wantrain/scheduler/zero_bubble.py:516-520 (solve, floor_)",
+      "ruling": "Removed: the measured budget is used as is; a budget the heuristic cannot fit goes to the degrade path (BA-17)."
+    },
+    {
+      "id": "BA-17",
+      "what": "zero_bubble() raises when no grid candidate fits the budget; _manual_order raises on memory",
+      "where": "src/wantrain/scheduler/zero_bubble.py:304, 321 (_manual_order), 392-393 (zero_bubble)",
+      "ruling": "Degrade: search the largest per-stage warm-up (non-increasing down the pipeline) whose memory replay fits every budget, validated by simulate; return it with params.degraded, the warm-ups and the bubble; refuse only when one microbatch's F plus pending state exceeds a stage's budget, naming stage, need and budget in bytes."
+    },
+    {
+      "id": "BA-18",
+      "what": "Per-attempt ownership and order the stage reads: mb_owner for routing, schedule_order for execution, peer_weights",
+      "where": "src/wantrain/runtime/stage.py:122 (owned), 782, 791 (_route_fwd/_route_bwd), 1118 (_run_step); src/wantrain/runtime/spec.py:66-71, 121, 137-146",
+      "ruling": "Rebuilt at the boundary: they may change only at a resume (between-step rebalancing), read from the attempt's spec; the fold order stays the microbatch index (runtime/accumulate.py), so the bytes do not move."
+    },
+    {
+      "id": "BA-19",
+      "what": "ZeRO-1 optimizer-state ownership and its manifest mapping",
+      "where": "src/wantrain/runtime/stage.py:151-156 (shard_params = params[peer::w]); src/wantrain/validation/state.py (names[p::w])",
+      "ruling": "Carried unchanged across a rebalance: it depends on the peer index and width, never on mb_owner; a byte-exact resume-with-new-owner test proves it."
+    },
+    {
+      "id": "BA-20",
+      "what": "RNG draws whose order could depend on ownership: torch global RNG saved per slot; data generator per (seed, step, mb)",
+      "where": "src/wantrain/runtime/stage.py:722-723 (rng in payload); src/wantrain/model/data.py:31-34",
+      "ruling": "Carried unchanged: no training op draws the global RNG and the data RNG is keyed by (seed, step, mb), so ownership cannot reorder a draw; the resume test compares the RNG state by sha256."
+    },
+    {
+      "id": "BA-21",
+      "what": "Nothing records under which recipe a shard was written; a resume under another partition or batch would load the wrong weights with every digest matching",
+      "where": "src/wantrain/runtime/stage.py:709-730 (_checkpoint payload), 732-765 (_resume); src/wantrain/runtime/spec.py",
+      "ruling": "The state file records the recipe pins (model, seeds, data, microbatches, mb_size, seq_len, optimizer hyperparameters, precision, wire codec, recompute, steps, partition) plus 'zero1_widths' (stage_widths), which binds whole-tensor ZeRO-1 shards only because their names[k::w] depend on w; a logical-layout checkpoint (RUNTIME-I12, M2b) is width-free and checked through its manifest, and M2b drops this one pin for it. Resume refuses differing pins (or none) before applying any state, naming the field."
+    },
+    {
+      "id": "BA-22",
+      "what": "patch_spec_for_resume pins everything except endpoints and devices",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py:198-210",
+      "ruling": "Extended in three separately tested ways: resume_step names the wave every slot resumes from, set by heal and restart (wave-ship-restore) and by rebalance (rebalance-loop); slot_peers and trusted_peers are re-pinned to the attempt's nodes (slot-key-pinning); peer_weights, mb_owner and schedule_order are replaced only by an explicit ownership argument (rebalance-loop). Every other field stays pinned."
+    },
+    {
+      "id": "BA-23",
+      "what": "Live per-step telemetry kept per run and per slot, consumed by nobody, and never reset between attempts, so after a heal or a rebalance it would still hold the dead node's or the old ownership's summaries",
+      "where": "src/wantrain/coordinator/coordinator.py:61 (TELEM_WINDOW), 190 (telem_window), 439 (_telem_step), 1021-1062 (_launch resets states and results only)",
+      "ruling": "Cleared under run.lock by every _launch (first launch, heal, restart, rebalance), so the window holds only the current attempt's summaries of its current owners; consumed by the rebalance decision only, read under run.lock, never trusted beyond CONTROL-I18's validation."
+    },
+    {
+      "id": "BA-24",
+      "what": "Rebalancing shares the abort/restore/relaunch path and the attempt counter with heal and restart",
+      "where": "src/wantrain/coordinator/coordinator.py:1197-1244 (_abort_all, _restore_and_relaunch), 1321-1331 (_restart_in_place), 1021-1062 (_launch)",
+      "ruling": "A rebalance is its own attempt kind, applied only on the _monitor thread (BA-45). After _abort_all it re-reads common_step, as _heal and _restart_in_place do (coordinator.py:1298, 1329), because ABORT ships every unshipped wave and the CKPT intake's prune then drops waves older than the new common step, the decided one included; it restores that re-read wave with resume_step, relaunches with the patched ownership (ownership does not depend on the step, so the decision stays valid), is recorded in run.replans, and never consumes max_restarts or max_heals; liveness starts the new attempt at wave+1 through the existing _launch path (CONTROL-I17 unchanged). If the re-read common_step is None the rebalance is abandoned and logged, never a restart from step 0."
+    },
+    {
+      "id": "BA-25",
+      "what": "Mesh accept loop: any socket consumes one of n_in accept slots and its HELLO (st, pe) is trusted with no authentication, range or duplicate check (M2-P1-MESH-AUTH, focus fact a)",
+      "where": "src/wantrain/runtime/stage.py:525-559 (_connect_mesh)",
+      "ruling": "Each accepted socket is authenticated in its own thread under a bounded handshake timeout; refused (closed, WT_P2P_REFUSED line and p2p_refused event) when the key fails, the authenticated id is not slot_peers[st][pe], st is outside {rank-1, rank}, pe is out of range or not higher than ours for intra, or (st, pe) is already bound; the loop keeps accepting until every expected (st, pe) is bound."
+    },
+    {
+      "id": "BA-26",
+      "what": "Chain: one failed authentication raises and brings the stage down (focus fact b)",
+      "where": "src/wantrain/runtime/stage.py:240-317 (_connect_chain, _auth threads, errors[0])",
+      "ruling": "The chain acceptor follows the mesh rule (BA-25): each accepted socket is authenticated in its own thread under the bounded handshake timeout and the listener keeps accepting until n = p2p_streams sockets whose authenticated id is slot_peers[rank-1][0] are bound; a socket that fails authentication, holds another id, or stays silent is refused, logged and closed without consuming a stream slot; when every expected socket is bound the listener and every still-pending socket are closed. Only the dial side, whose target is fixed, fails when the acceptor is not slot_peers[rank+1][0]. Stream identity needs no binding: fragments reassemble to the exact payload in any order across streams (TRANSPORT-I2)."
+    },
+    {
+      "id": "BA-27",
+      "what": "The mesh dialer sends its HELLO only after its own accepts complete, chaining boot delays into the acceptor's handshake timeout (focus fact g)",
+      "where": "src/wantrain/runtime/stage.py:552-556",
+      "ruling": "The dial thread authenticates and sends the HELLO right after verification; wiring happens after all sockets are bound."
+    },
+    {
+      "id": "BA-28",
+      "what": "trusted_peers exists in the spec but no code in src/ fills it; the key is per host, so a host's slots share one id (focus fact c)",
+      "where": "src/wantrain/runtime/spec.py:97; src/wantrain/runtime/stage.py:280; src/wantrain/transport/identity.py:57-61 (default_key_path)",
+      "ruling": "The coordinator pins slot_peers[stage][peer] (and trusted_peers) from the peer id each agent proved in its control handshake (BA-40); heal, restart and rebalance re-pin; a coordinator-run spec (endpoints set) without slot_peers is refused by the stage."
+    },
+    {
+      "id": "BA-29",
+      "what": "The stage inherits the host-wide key path from the environment",
+      "where": "src/wantrain/worker/agent.py:424-429 (_env); tests/conftest.py:15-16 (test key)",
+      "ruling": "Per agent: the agent's key is <workdir>/peer_key (0600, atomic create), used for its control handshake (ctrl-mutual-auth) and passed to its stage explicitly as WANTRAIN_PEER_KEY (slot-key-pinning)."
+    },
+    {
+      "id": "BA-30",
+      "what": "peer_id depends on whether the optional blake3 module imports on that host (focus fact d)",
+      "where": "src/wantrain/transport/identity.py:33-45 (fingerprint)",
+      "ruling": "Fixed to SHA-256 (hashlib, always present): peer_id = sha256(pub)[:32 hex]; no optional dependency decides an identity."
+    },
+    {
+      "id": "BA-31",
+      "what": "HMAC fallback returns 'hmac-anon' and silently ignores trusted_peers (focus fact e)",
+      "where": "src/wantrain/transport/identity.py:146-166",
+      "ruling": "Removed: cryptography is a hard dependency (pyproject.toml:15) and AEAD needs X25519; authenticate refuses when ed25519 is unavailable."
+    },
+    {
+      "id": "BA-32",
+      "what": "Data-plane handshake: each side signs b'wantrain-auth|' + the peer's challenge, a symmetric message that a second connection can reflect",
+      "where": "src/wantrain/transport/identity.py:126-137 (authenticate)",
+      "ruling": "Each side signs a role-tagged hash of the whole transcript (domain, both public keys, both challenges, both X25519 ephemerals) under a per-plane domain ('wantrain-p2p|v2|' or 'wantrain-ctl|v2|'); a peer challenge equal to ours is refused; per-direction session keys come from X25519 + HKDF-SHA256 over that transcript."
+    },
+    {
+      "id": "BA-33",
+      "what": "token_mac: the worker's MAC uses one domain and one nonce; the same function would serve a coordinator proof (focus fact f)",
+      "where": "src/wantrain/transport/control.py:138-145 (token_mac, check_mac)",
+      "ruling": "The worker's token MAC is HMAC(token, 'wantrain-control-worker|v3|' + transcript hash of the sealed control handshake); the coordinator never proves itself with the token: it proves its own ed25519 key (BA-42), so no token-derived value can be reflected between roles. Hex inputs are validated (exact length, lowercase)."
+    },
+    {
+      "id": "BA-34",
+      "what": "Coordinator handshake and agent connect use the shared MAC, the coordinator never proves itself, a worker accepts auth=false from anyone",
+      "where": "src/wantrain/coordinator/coordinator.py:273-294 (_handshake); src/wantrain/worker/agent.py:213-234 (_connect)",
+      "ruling": "Rebuilt: TCP connect -> control-plane identity handshake (worker role, expect_peer = the pinned coordinator id; coordinator role, any worker key) -> both sides seal -> CHALLENGE{auth} -> HELLO{mac or session_mac} -> WELCOME, all inside the sealed channel. A worker holding a token refuses auth=false; a worker refuses a coordinator whose key is not the pinned id (required off loopback)."
+    },
+    {
+      "id": "BA-35",
+      "what": "The coordinator starts on 0.0.0.0 without a token and only warns",
+      "where": "src/wantrain/coordinator/coordinator.py:229-245 (start); src/wantrain/cli.py:145 (default --host 0.0.0.0)",
+      "ruling": "Refused: start() raises without a token unless the coordinator binds a loopback address (local mode); the CLI reports it and exits non-zero."
+    },
+    {
+      "id": "BA-36",
+      "what": "The control channel is plaintext and unauthenticated after the handshake: an on-path host could rewrite ASSIGN (and the pinned slot keys in it) or read waves",
+      "where": "src/wantrain/transport/control.py:47-130 (Channel)",
+      "ruling": "Always sealed (loopback included) with the AEAD record layer under the keys of the control handshake, before the first message; send_file included."
+    },
+    {
+      "id": "BA-37",
+      "what": "The reconnect HELLO carries the session secret in clear, and WELCOME sends it in clear",
+      "where": "src/wantrain/worker/agent.py:189-211 (_hello); src/wantrain/coordinator/coordinator.py:296-312 (_register, WELCOME at :306 and :319)",
+      "ruling": "WELCOME travels only inside the sealed channel; a reconnect sends session_mac = HMAC(session, 'wantrain-control-session|v3|' + transcript hash), never the session, compared in constant time, and is accepted only from the peer id the node registered with."
+    },
+    {
+      "id": "BA-38",
+      "what": "Data-plane frames travel in plaintext over every chain, mesh and multi-stream socket",
+      "where": "src/wantrain/transport/framing.py (send_frame, recv_frame, send_end); src/wantrain/runtime/stage.py:223-238 (_wire_shared), 319-340 (_wire_multi), 424-462 (_frag_sender, _reader_shared), 498-523 (_wire, _send_end)",
+      "ruling": "Every socket is wrapped after authentication in a SecureSocket with its own per-direction keys and counters (multi-stream sockets each their own); END and half-close pass through; payload bytes delivered to the runtime are unchanged; the socket counts its seal and open time for the measured cost (BA-44)."
+    },
+    {
+      "id": "BA-39",
+      "what": "Local mode: run_local launches every slot on localhost with no coordinator, so no slot_peers",
+      "where": "src/wantrain/launch/local.py (run_local)",
+      "ruling": "Carried unchanged: endpoints None means local mode, authenticated and sealed, slot_peers optional (enforced when set)."
+    },
+    {
+      "id": "BA-40",
+      "what": "The slot's data-plane identity would travel as an unauthenticated HELLO field (peer_pub) that an on-path host could swap while keeping a MAC that covers only the nonces",
+      "where": "src/wantrain/worker/agent.py:189-211 (_hello); src/wantrain/coordinator/coordinator.py:296-325 (_register, NodeInfo.from_hello)",
+      "ruling": "No identity field in HELLO: the coordinator takes the worker's peer id from the control handshake's verified ed25519 key (bound to the token MAC by the transcript) and stores it on the Worker; slot pinning reads only that."
+    },
+    {
+      "id": "BA-41",
+      "what": "HELLO's endpoint and capability fields (advertise_host, data_port, listen/probe ports, declarations) decide where other slots dial",
+      "where": "src/wantrain/worker/agent.py:189-211 (_hello); src/wantrain/coordinator/coordinator.py:283 (advertise_host default), NodeInfo.from_hello",
+      "ruling": "Travel only inside the sealed, transcript-bound channel; a dial to a swapped address now fails the data-plane slot check (BA-25/26) instead of reaching an impostor."
+    },
+    {
+      "id": "BA-42",
+      "what": "Coordinator identity: the coordinator has no key a worker could pin, so any holder of the token (every admitted worker) could pose as it",
+      "where": "src/wantrain/coordinator/coordinator.py:229-294; src/wantrain/cli.py (coordinator and worker subcommands)",
+      "ruling": "The coordinator loads or creates <state_dir>/coord_key (0600) and prints 'COORDINATOR_ID <32 hex>' at start; workers take --coordinator-id (or WANTRAIN_COORD_ID) and pass it as expect_peer; a worker refuses to connect off loopback without it."
+    },
+    {
+      "id": "BA-43",
+      "what": "CKPT_PART staging at the coordinator: parts of a wave wait for the CKPT that commits them",
+      "where": "new state introduced by BA-2/BA-9 (store root/.incoming/)",
+      "ruling": "Staged per connection slot and step; at most the files of 2 uncommitted steps per slot, each at most the size the manifest later declares; a part of another attempt, a duplicate name, a third open step, or a CKPT whose manifest lists a file not staged or with another sha256 drops the staged parts, logs and unlinks them (CONTROL-I18 style: the reader keeps reading)."
+    },
+    {
+      "id": "BA-44",
+      "what": "The AEAD cost on the step has no measurement point (focus item 5: cost < 1% of the step, measured)",
+      "where": "src/wantrain/transport/secure.py (new); src/wantrain/runtime/stage.py (_finish)",
+      "ruling": "SecureSocket counts records, bytes and the nanoseconds spent sealing and opening; each slot prints one 'WT_AEAD' line at finish. validation/aead_cost.py measures the overlap-aware cost (sealed step wall time minus unsealed, interleaved pairs on the same seed, median with a distribution-free CI) per configuration and the serialized (seal+open)/steps_wall; on the toy both are MEASURED with no bound (the human's decision 2026-10-10, HANDOUT §2c); the unsealed arm exists only inside the validation tool's measurement process. Follow-up ADR: take the cipher off the critical path."
+    },
+    {
+      "id": "BA-45",
+      "what": "Where a rebalance executes: the CKPT that completes a common wave is handled on that worker's own connection thread (_conn_loop -> _dispatch), whose replies (ABORT_ACK, RESTORE_ACK) only that same thread can deliver; heal and restart run on the _monitor thread",
+      "where": "src/wantrain/coordinator/coordinator.py:330-336 (_conn_loop), 372-396 (_dispatch CKPT), 512-553 (_request), 1089-1127 (_monitor -> _heal, _restart_in_place)",
+      "ruling": "The CKPT intake never decides or applies a rebalance. _monitor, the one thread that already owns heal and restart, evaluates the rule between judge passes when common_step has advanced past the last evaluated step and every slot has >= 4 accepted summaries, and applies it there; a convict or stall verdict in the same pass wins and the evaluation waits for the next attempt's window (cleared by _launch). Two attempt-changing actions can therefore never run at once."
+    },
+    {
+      "id": "BA-46",
+      "what": "The alias <tag>_ckpt_rank<r>p<p>.pt becomes a hard link to a committed wave's state.pt; any writer that opened the alias for writing in place would write into the immutable wave",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py:84-94 (save_shard: temp + os.replace), 182-195 (export_wave); src/wantrain/worker/agent.py:663-686 (_on_restore: os.replace onto the alias)",
+      "ruling": "Every alias writer replaces the directory entry (temp name + os.replace), never opens the alias for writing; link_legacy creates the link under a temp name and renames it over the alias; a test writes the alias through every writer and asserts the wave's sha256 is unchanged (wave-layout)."
+    },
+    {
+      "id": "BA-47",
+      "what": "Coordinator staging of CKPT_PART bodies before the CKPT that commits them is fed by admitted workers (CONTROL-I20 slot from the connection, BA-43 bounds); no earlier task tests them because CKPT_PART does not exist before wave-ship-restore",
+      "where": "new state introduced by BA-2/BA-9 (store root/.incoming/), coordinator.py _dispatch",
+      "ruling": "wave-ship-restore delivers both with tests that would fail on the message-trusting or unbounded mutant: a part sent on another slot's connection, a part of another attempt, a third open step, an oversized or duplicate part; each is dropped, logged and unlinked while the reader keeps reading."
+    }
+  ],
+  "tripwires": [],
+  "tasks": [
+    {
+      "id": "degrade-memory",
+      "title": "Degrade instead of refusing under a tight activation budget (SCHEDULER-I13)",
+      "objective": "Make the zero-bubble solver return the best schedule that fits a tight per-stage activation budget, with its larger bubble reported, and refuse only below one microbatch.",
+      "workstream": "scheduler",
+      "deps": [],
+      "scope": [
+        "src/wantrain/scheduler/zero_bubble.py",
+        "tests/unit/test_zero_bubble.py"
+      ],
+      "acceptance": [
+        "solve() no longer raises a stage's budget to the 1F1B floor (zero_bubble.py:516-520); the measured budget is used as given",
+        "when no grid candidate fits, zero_bubble returns a schedule built from the largest per-stage warm-ups (non-increasing down the pipeline, at least 1) whose memory replay fits every max_mem, validated by simulate; params carry degraded=True, the warm-ups and the bubble",
+        "a new peak_memory(cfg, orders) replays the memory model per stage; every returned schedule (degraded or not) has peak <= max_mem per stage",
+        "a stage whose budget is below one microbatch's mem_f plus its pending-W share raises ValueError naming the stage, the bytes needed and the budget",
+        "the SPEC-scheduler task-1 example (7B preset on H100, 200 ms one-way, 8 GB per stage) returns a degraded valid schedule whose bubble is >= the 16 GB solve's; the bubble is non-increasing as the budget grows on a 4-stage grid of budgets",
+        "SCHEDULER-I1 golden orders and SCHEDULER-I2 bubble formulas still pass unmodified",
+        "tests: test_tight_budget_degrades_instead_of_refusing, test_degraded_schedule_fits_every_budget, test_bubble_never_grows_with_the_budget, test_below_one_microbatch_refuses_with_the_numbers, test_measured_budget_is_never_raised_to_the_floor; each with covers: SCHEDULER-I13 and a WOULD-FAIL-IF"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k \"degrades or fits_every_budget or never_grows or below_one_microbatch or never_raised\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_schedule.py tests/unit/test_scheduler.py"
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "SCHEDULER-I13"
+      ],
+      "binding": [
+        "BA-16",
+        "BA-17"
+      ],
+      "risk": "medium"
+    },
+    {
+      "id": "resume-ownership",
+      "title": "Resume across an ownership change, guarded by recipe pins; slot_peers and resume_step fields",
+      "objective": "Let a resume change only peer weights, microbatch ownership and slot orders (plus addresses and slot keys) and continue byte-identically, while a state file written under different recipe pins is refused before any state is applied.",
+      "workstream": "runtime",
+      "deps": [],
+      "scope": [
+        "src/wantrain/runtime/spec.py",
+        "src/wantrain/runtime/stage.py",
+        "tests/unit/test_runtime_spec.py",
+        "tests/integration/test_engine_bitwise.py"
+      ],
+      "acceptance": [
+        "JobSpec gains slot_peers: list[list[str]] | None and resume_step: int | None; finalize() checks slot_peers' shape equals stage_widths with every entry 32 lowercase hex, and resume_step is None or a non-negative int with resume true; both round-trip through JSON",
+        "JobSpec.pins() returns the recipe pins (model config, init and data seeds, dataset, steps, microbatches, mb_size, seq_len, lr and optimizer hyperparameters, compute and boundary precision, wire codec, recompute, partition) plus 'zero1_widths' = stage_widths, documented in the code as binding whole-tensor ZeRO-1 shards only (names[k::w] depend on w; RUNTIME-I12 logical checkpoints are width-free and M2b drops this pin for them); _checkpoint stores pins in the payload; _resume compares them with its spec's before load_state_dict and refuses a mismatch naming the first differing field, and refuses a payload without pins",
+        "peer_weights, mb_owner, schedule_order, endpoints, devices, slot_peers, trusted_peers, resume_step and out_dir are not pins",
+        "test_resume_with_new_ownership_is_byte_identical (test_engine_bitwise.py): a toy 1-2-1 wide run checkpointed at step 3 under equal weights, resumed under weights [1, 3] (new mb_owner and orders from reschedule) gives losses equal to the oracle bit for bit and a final state manifest (validation/state.py) equal to the reference's by sha256; covers: RUNTIME-I15",
+        "test_resume_refuses_changed_pins (microbatches, partition, zero1_widths) and test_resume_refuses_a_shard_without_pins: the refusal happens before any parameter, optimizer or RNG state changes; covers: RUNTIME-I15",
+        "test_slot_peers_and_resume_step_are_checked; all existing runtime spec, bitwise and oracle tests pass unmodified"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"new_ownership or resume or checkpoint\"",
+        "uv run pytest -q -p no:randomly tests/oracle"
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "oracle",
+        "identity",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "RUNTIME-I15"
+      ],
+      "binding": [
+        "BA-18",
+        "BA-19",
+        "BA-20",
+        "BA-21"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "identity-handshake",
+      "title": "Transcript-bound ed25519 + X25519 handshake per plane, SHA-256 ids, no HMAC fallback",
+      "objective": "Make the handshake bind a plane domain, both identities, both challenges and both ephemeral keys under role-tagged signatures, derive per-direction session keys and the cipher, fix peer ids to SHA-256 and remove the HMAC fallback.",
+      "workstream": "transport",
+      "deps": [],
+      "scope": [
+        "src/wantrain/transport/identity.py",
+        "tests/unit/test_codecs_identity.py"
+      ],
+      "acceptance": [
+        "peer_id(pub) = sha256(pub).hexdigest()[:32] on every host; blake3 is no longer imported; fingerprint_algo is 'sha256'",
+        "authenticate(sock, key_path=None, trusted_peers=None, expect_peer=None, aes_hw=False, domain='wantrain-p2p|v2|', role=None) exchanges pub, a 16-byte challenge (exact length, else refused) and an X25519 ephemeral; with role None the roles are the lower and higher challenge, with role 'worker' or 'coordinator' each side declares its role and complementary roles are required; a peer challenge equal to ours is refused; each side signs SHA-256 of domain + own role + both pubs + both challenges + both ephemerals in role order",
+        "it returns {peer_id, mode: 'ed25519', fingerprint_algo, cipher, send_key, recv_key, send_prefix, recv_prefix, transcript}: keys from HKDF-SHA256 over the X25519 secret with the transcript hash as salt and per-direction info; cipher is 'aes-256-gcm' iff both sides declared aes_hw else 'chacha20-poly1305'; the two ends' send/recv keys mirror",
+        "a peer id outside trusted_peers, or different from expect_peer, raises ConnectionError after the signature check; without ed25519 (cryptography missing) authenticate raises; there is no shared-token mode",
+        "tests: test_handshake_binds_transcript_and_derives_mirrored_keys, test_reflected_challenge_is_refused, test_signature_over_another_transcript_is_refused, test_p2p_and_control_domains_never_cross (a transcript signed under one domain fails under the other), test_roles_must_be_complementary, test_expect_peer_refuses_another_key, test_allowlist_refuses_an_unknown_peer (kept), test_peer_id_is_sha256_without_blake3, test_cipher_is_aes_only_when_both_ends_have_it, and test_hmac_fallback_has_no_default_token replaced by test_handshake_refuses_without_ed25519 (strictly stronger); covers: TRANSPORT-I5"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_codecs_identity.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_codecs_identity.py -k \"transcript or reflected or domains_never_cross or complementary or expect_peer or allowlist or sha256_without_blake3 or cipher_is_aes or refuses_without_ed25519\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"chain\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "TRANSPORT-I5"
+      ],
+      "binding": [
+        "BA-30",
+        "BA-31",
+        "BA-32"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "aead-records",
+      "title": "AEAD record layer: AES-256-GCM with hardware AES, ChaCha20-Poly1305 fallback (TRANSPORT-I7)",
+      "objective": "Provide a socket wrapper that seals every byte in AEAD records with counter nonces that never repeat, a deterministic rekey before the cipher's limit, measured seal/open time, and a per-core throughput benchmark.",
+      "workstream": "transport",
+      "deps": [],
+      "scope": [
+        "src/wantrain/transport/secure.py",
+        "tests/unit/test_transport.py"
+      ],
+      "acceptance": [
+        "hardware_aes() is true only with AES-NI (x86 'aes' cpu flag) or ARMv8 AES (Linux aarch64 'aes' feature, macOS arm64 hw.optional.arm.FEAT_AES) and false when it cannot tell",
+        "SecureSocket(sock, cipher, send_key, recv_key, send_prefix, recv_prefix) offers sendall, recv, recv_into, shutdown, close, settimeout, setsockopt and fileno; it seals in records of at most 1 MiB plaintext framed as u32 length + ciphertext||tag; nonce = 4-byte prefix || 8-byte big-endian record counter per direction",
+        "the counter never repeats under one key: each direction rekeys deterministically (HKDF-Expand of the current key with 'wantrain rekey' and the epoch) after 2^24 records or 2^36 bytes, whichever first, and refuses to send past the counter's limit; thresholds are constructor arguments for tests, never environment variables; there is no plaintext or null-cipher mode",
+        "a failed tag, a truncated record, a length above the record limit, a replayed or reordered record raise ConnectionError; the stream never resynchronizes",
+        "SecureSocket.stats() returns {records_out, records_in, bytes_out, bytes_in, seal_ns, open_ns}, counted with time.perf_counter_ns around each seal and open only",
+        "python -m wantrain.transport.secure --bench --link-gbps G prints JSON {cipher, hw_aes, seal_gbps, open_gbps, link_gbps, ok, label: 'SIMULATED'} measured on one core and exits 1 when seal or open throughput is below G",
+        "tests in tests/unit/test_transport.py: test_secure_socket_round_trips_frames_exactly (FWD/BWD/GRADS/END and half-close over a socketpair, both ciphers, byte-identical payloads), test_tampered_record_is_refused, test_replayed_or_reordered_record_is_refused, test_nonces_never_repeat_across_rekeys (forced small thresholds, three epochs), test_no_plaintext_mode, test_stats_count_every_record; covers: TRANSPORT-I7"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_transport.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_transport.py -k \"secure_socket or tampered or replayed or nonces_never_repeat or no_plaintext or stats_count\"",
+        "uv run python -m wantrain.transport.secure --bench --link-gbps 10"
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "TRANSPORT-I7"
+      ],
+      "binding": [
+        "BA-38",
+        "BA-44"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "ctrl-msg-identity",
+      "title": "CKPT, RESULT and replies take the slot from the connection (M2-P1-CKPT-IDENTITY)",
+      "objective": "Bind every CKPT, RESULT and request reply to the connection that sent it, and refuse a CKPT of another attempt.",
+      "workstream": "control",
+      "deps": [],
+      "scope": [
+        "src/wantrain/coordinator/coordinator.py",
+        "tests/unit/test_control_admission.py"
+      ],
+      "acceptance": [
+        "CKPT: slot and attempt from _slot_for(w, msg); a message whose rank/peer differ from the connection's slot, whose attempt is not run.attempt, or whose step is not a non-negative int is dropped, logged and its body unlinked; nothing enters the store",
+        "RESULT: stored under the connection's slot only; a RESULT naming another slot is dropped and logged",
+        "_request records the node_id the request went to; _dispatch hands a reply to the waiting request only from that worker's connection; another connection's reply with the same rid is dropped, logged and its body unlinked, and the real reply still completes the request",
+        "tests: test_ckpt_from_another_slots_connection_is_refused, test_ckpt_of_another_attempt_is_refused, test_forged_result_is_refused, test_reply_from_another_worker_is_ignored; each WOULD-FAIL-IF names the message-trusting mutant; covers: CONTROL-I20",
+        "existing coordinator and admission tests pass unmodified; CKPT_PART does not exist yet and gets the same rule, with its own tests, in wave-ship-restore (BA-47)"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k \"another_slots_connection or another_attempt or forged_result or another_worker\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"lifecycle or wide_stage\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "CONTROL-I20"
+      ],
+      "binding": [
+        "BA-10",
+        "BA-11",
+        "BA-12"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "restore-hardening",
+      "title": "RESTORE is exclusive, leak-free and recorded (M2-P2 restore minors, verdict-independent)",
+      "objective": "Make the agent's RESTORE refuse a live stage, run under the ship lock, unlink its body on every path and mark the restored wave shipped, and make the concurrent-ship test deterministic, independently of the experiment's verdict.",
+      "workstream": "control",
+      "deps": [],
+      "scope": [
+        "src/wantrain/worker/agent.py",
+        "tests/unit/test_fault_tolerance.py"
+      ],
+      "acceptance": [
+        "_on_restore refuses (RESTORE_ACK ok=false, error names the live stage) while self.stage is alive; ABORT already waits for the stage's exit (StageProcess.kill waits), so a heal or restart is never refused by this rule (M2-P2-RESTORE-LIVE-STAGE)",
+        "_on_restore runs under _ship_lock, so no ship can span a restore (M2-P2-SHIP-SPANS-RESTORE)",
+        "a missing or non-integer step is refused with RESTORE_ACK ok=false, and the received body is unlinked on every exit path (try/finally) (M2-P2-RESTORE-BODY-LEAK)",
+        "the restored (run_id, rank, peer, step) enters _shipped, so the restored wave is never shipped back (M2-P2-RESTORE-RESHIP)",
+        "test_concurrent_ships_never_cross_waves synchronizes on an Event set after the second ship's copy instead of a timed join, with every assertion kept (M2-P2-SHIP-TEST-TIMING)",
+        "tests: test_restore_is_refused_while_the_stage_is_alive, test_restore_and_ship_never_interleave (Event-synchronized: a ship blocked inside send holds the lock and the restore waits for it), test_restore_unlinks_the_body_on_every_path (malformed step, sha mismatch, success), test_restored_wave_is_not_reshipped; each covers: CONTROL-I23 with a WOULD-FAIL-IF naming the mutant (no alive check, no lock, no finally, no _shipped entry)",
+        "the experiment's 'seen' and SHIP_RE lines are unchanged; every other test in tests/unit/test_fault_tolerance.py passes unmodified"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k \"refused_while_the_stage_is_alive or never_interleave or every_path or not_reshipped or never_cross_waves\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [],
+      "binding": [
+        "BA-7",
+        "BA-8"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "replan-solver",
+      "title": "Re-solve ownership and order from runtime telemetry (SCHEDULER-I15)",
+      "objective": "Provide a pure, deterministic re-plan that turns phase 1's WT_TELEM windows into measured costs, predicts the current and the re-solved step, and returns new peer weights, ownership and order only when the predicted gain clears the threshold.",
+      "workstream": "scheduler",
+      "deps": [
+        "degrade-memory"
+      ],
+      "scope": [
+        "src/wantrain/scheduler/zero_bubble.py",
+        "tests/unit/test_zero_bubble.py"
+      ],
+      "acceptance": [
+        "profiles_from_telemetry(spec, windows) maps each slot's window of validated summaries to {t_f, t_b, t_w} seconds (median of med_ms over the window); hops_from_telemetry(spec, windows) gives per-hop seconds per transfer (busy_ms / frames, median, chain order)",
+        "predict_step(spec, profiles, hops) simulates the spec's current slot orders and owners with the measured costs (simulate_slots); replan(spec, windows, min_gain=0.10) solves a copy through schedule_for_spec and returns {decision, pred_cur_s, pred_new_s, peer_weights, mb_owner, schedule_order, owner_changed, why}",
+        "decision is true only when pred_new_s <= (1 - min_gain) * pred_cur_s and the ownership or an order differs; every other JobSpec field of the copy equals the input's (asserted), and the returned orders pass JobSpec.finalize and simulate_slots",
+        "deterministic: the same windows give byte-identical output across two calls and a JSON round trip",
+        "tests: test_replan_shifts_microbatches_away_from_a_slow_peer (w=2, one peer 4x slower: its share drops and pred_new < 0.9 pred_cur), test_replan_keeps_a_balanced_fleet, test_replan_touches_only_ownership_and_order, test_replan_is_deterministic, test_replanned_orders_are_valid_for_any_window; covers: SCHEDULER-I15"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k \"replan\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "SCHEDULER-I15"
+      ],
+      "binding": [],
+      "risk": "medium"
+    },
+    {
+      "id": "control-auth-primitives",
+      "title": "Control-channel handshake, token and session MACs bound to the transcript, sealed Channel",
+      "objective": "Give the control channel a coordinator-authenticated identity handshake, worker token and session MACs in distinct domains bound to its transcript, validated inputs, and a Channel that is sealed before its first message.",
+      "workstream": "transport",
+      "deps": [
+        "aead-records",
+        "identity-handshake"
+      ],
+      "scope": [
+        "src/wantrain/transport/control.py",
+        "tests/unit/test_transport.py"
+      ],
+      "acceptance": [
+        "control_dial(sock, key_path, coordinator_id=None, aes_hw=False) runs identity.authenticate with domain 'wantrain-ctl|v2|', role 'worker' and expect_peer=coordinator_id, then returns (Channel sealed with the handshake's keys, info); control_accept(sock, key_path, aes_hw=False) does the same with role 'coordinator' and no allowlist",
+        "token_mac(token, transcript) = HMAC-SHA256(token, 'wantrain-control-worker|v3|' + transcript) and session_mac(session, transcript) = HMAC-SHA256(session, 'wantrain-control-session|v3|' + transcript); check_mac and check_session_mac compare in constant time and refuse a mac that is not 64 lowercase hex; no token-derived coordinator proof exists",
+        "Channel.seal(cipher, send_key, recv_key, send_prefix, recv_prefix) switches send, send_file and recv to SecureSocket records; a flipped byte raises ChannelClosed",
+        "tests: test_token_and_session_macs_never_cross, test_mac_is_bound_to_the_transcript (a MAC from one handshake fails on another), test_macs_validate_their_input, test_control_dial_refuses_another_coordinator_key, test_sealed_channel_round_trips_messages_and_files, test_sealed_channel_refuses_a_flipped_byte; covers: TRANSPORT-I9"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_transport.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_transport.py -k \"never_cross or bound_to_the_transcript or validate_their_input or another_coordinator_key or sealed_channel\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "TRANSPORT-I9"
+      ],
+      "binding": [
+        "BA-33",
+        "BA-36"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "wave-layout",
+      "title": "Immutable step-named waves with a hashed manifest in checkpoint.py",
+      "objective": "Give checkpoints an immutable, step-named wave directory per slot whose wave.json, written last, names the step and every file with its sha256, with a validator that is the only step binding and a legacy alias derived from it for the oracle readers.",
+      "workstream": "control",
+      "deps": [
+        "restore-hardening"
+      ],
+      "scope": [
+        "src/wantrain/fault_tolerance/checkpoint.py",
+        "tests/unit/test_fault_tolerance.py"
+      ],
+      "acceptance": [
+        "wave_dir(out_dir, tag, rank, peer, step) is out_dir/waves/<tag>/r<rank>p<peer>/step-<step:08d>/; commit_wave(out_dir, tag, rank, peer, step, save_fn, keep=3) returns (dir, committed): when the slot already holds a valid committed wave of that step it writes nothing and returns committed=False; otherwise it writes state.pt into a private temp directory, fsyncs it, writes wave.json {\"v\": 1, \"step\": step, \"files\": [{\"name\": \"state.pt\", \"sha256\": ..., \"bytes\": ...}]} last, renames the directory into place, calls link_legacy, removes committed waves beyond the newest keep, and returns committed=True; no committed directory is ever removed except by keep or drop_waves_after",
+        "commit_received_wave(out_dir, tag, rank, peer, manifest, staged_dir) commits files received over the network the same way after checking every listed file's sha256 and size, the manifest's v and step, and that no unlisted file is staged; an existing committed wave of the same step with an equal manifest is kept untouched, one with another manifest raises",
+        "validate_wave(dir, step) raises (naming the reason) on a missing wave.json, an unparsable one, one naming another step, a listed file missing or with another sha256 or size, or a file present but not listed; committed_waves(out_dir, tag, rank, peer) returns [(step, dir)] ascending over directories that validate, and drop_waves_after(out_dir, tag, rank, peer, step) removes committed waves newer than step and returns their steps",
+        "link_legacy(wave_dir, out_dir, tag, rank, peer) writes the alias <tag>_ckpt_rank<r>p<p>.pt as a hard link (copy fallback on EXDEV/EPERM) created under a temp name and renamed over the alias, and its .step.json naming wave.json's step, in save_shard's seqlock order; it is the only writer of the alias in this module, and no alias writer (link_legacy, save_shard, export_wave) ever opens the alias for writing in place (BA-46)",
+        "no wave file matches out_dir/*_ckpt_rank*p*.pt (the glob of tests/helpers/exact.py:76)",
+        "new tests: test_wave_commit_is_immutable_and_wave_json_last, test_final_step_is_committed_once (a second commit of the same step writes nothing and returns committed=False), test_validate_wave_refuses_every_mislabel (missing, other step, missing file, other hash, unlisted file), test_received_wave_commits_only_when_every_hash_matches, test_alias_follows_the_newest_wave, test_commit_keeps_the_newest_three_waves, test_wave_files_never_match_the_oracle_glob, test_alias_writers_never_write_into_a_wave (save_shard and an os.replace onto the alias leave the wave's sha256 unchanged); each with covers: and WOULD-FAIL-IF:"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k \"wave_commit or committed_once or every_mislabel or received_wave or alias_follows or newest_three or oracle_glob or never_write_into_a_wave\"",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [],
+      "binding": [
+        "BA-3",
+        "BA-15",
+        "BA-46"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "wave-stage-write",
+      "title": "Stage commits a wave per checkpoint, announces it, and resumes from a validated wave",
+      "objective": "Make every stage checkpoint an immutable committed wave followed by its alias and a WT_WAVE line, and drop an abandoned timeline's waves, while resume keeps reading the alias derived from the wave until RESTORE and resume_step are wave-based.",
+      "workstream": "runtime",
+      "deps": [
+        "wave-layout",
+        "resume-ownership"
+      ],
+      "scope": [
+        "src/wantrain/runtime/stage.py",
+        "tests/unit/test_runtime_spec.py"
+      ],
+      "acceptance": [
+        "_checkpoint(step) calls commit_wave (with the recipe pins in the payload, as resume-ownership stores them) and prints 'WT_WAVE <step>' only when it returns committed=True, after wave.json and the alias are in place; the periodic and the final checkpoint both go through it, so the last step is committed and announced once when steps % ckpt_every == 0",
+        "_resume still reads the alias with check_resume_step (the alias is derived byte for byte from the newest committed wave, and the agent's RESTORE still rewrites it), so heal, restart-in-place and every coordinator test resume exactly as on the base tree; reading the wave of resume_step is wave-resume's leg, after RESTORE is wave-based",
+        "a resume from step n removes the slot's committed waves newer than n before its first step; a launch with resume false removes every committed wave of the slot under its tag before its first step; both log the dropped steps (BA-6)",
+        "new tests: test_checkpoint_commits_a_wave_before_announcing_it (WT_WAVE never precedes wave.json), test_last_step_is_announced_once, test_saved_waves_are_byte_equal_to_the_alias, test_resume_drops_waves_of_the_abandoned_timeline, test_fresh_launch_drops_every_old_wave; test_checkpoint_writes_through_the_seqlock kept for the alias with its seqlock-order assertion unchanged; covers: RUNTIME-I17",
+        "the bitwise, oracle and coordinator suites stay green unmodified: losses and final state unchanged",
+        "the verify leaves the causal closure's pre-fix arm: a snapshot of the tree immediately before wave-ship-restore at .factory/runs/M2/wave-prefix.tree (wave_experiment.make_snapshot: src, tests, pyproject.toml), which GATES causal-pre-fix-has-symptom runs as --base-tree"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k \"commits_a_wave or announced_once or byte_equal_to_the_alias or abandoned_timeline or every_old_wave or seqlock or sidecar\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"checkpoint or resume\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"final_wave or lifecycle\"",
+        "uv run pytest -q -p no:randomly tests/oracle",
+        "uv run python -c \"import sys; sys.path.insert(0, 'tests/helpers'); import wave_experiment as w; w.make_snapshot('.', '.factory/runs/M2/wave-prefix.tree')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "oracle",
+        "identity",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "RUNTIME-I17"
+      ],
+      "binding": [
+        "BA-4",
+        "BA-6"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "wave-ship-restore",
+      "title": "Waves move as units: in-order shipping, a wave store, wave RESTORE (M2-P2 minors)",
+      "objective": "Replace the agent's 0.5 s sampling with in-order shipping of every committed wave as a manifest-bound unit, hold and restore waves as units at the coordinator, and make RESTORE exclusive, leak-free and recorded.",
+      "workstream": "control",
+      "deps": [
+        "wave-stage-write",
+        "ctrl-msg-identity",
+        "restore-hardening"
+      ],
+      "scope": [
+        "src/wantrain/worker/agent.py",
+        "src/wantrain/coordinator/coordinator.py",
+        "src/wantrain/fault_tolerance/checkpoint.py",
+        "tests/unit/test_fault_tolerance.py",
+        "tests/integration/test_coordinator.py"
+      ],
+      "acceptance": [
+        "the shipper sends every committed wave not yet in _shipped, in ascending step order, woken by each WT_WAVE line and by a backstop scan every supervise pass, at exit and on ABORT; it never opens the alias; a wave is sent as one CKPT_PART {run_id, attempt, step, name, sha256} per file listed in its wave.json followed by one CKPT {run_id, attempt, step, manifest}; after the CKPT is sent it prints exactly one line matching wave_experiment.SHIP_RE with 'shipped' (no 'seen' or 'race-skip' line remains); a wave missing from disk below the newest committed step and never shipped is logged once as a GAP_RE line",
+        "CheckpointStore holds (slot, step) -> root/r<r>p<p>/step-<n:08d>/ committed by commit_received_wave after every hash and the manifest step verify; index, has, common_step and prune read committed waves only",
+        "CKPT_PART and CKPT take slot and attempt from the connection (_slot_for, CONTROL-I20); staging under root/.incoming/ is per connection slot and step, holds at most the parts of 2 uncommitted steps per slot, each part at most the bytes the manifest later declares; a part of another slot's connection or attempt, a duplicate name, a third open step, an oversized part, or a CKPT whose manifest lists a file not staged or with another sha256 drops the staged parts, logs and unlinks them while the reader keeps reading (BA-43, BA-47)",
+        "RESTORE sends the stored wave as RESTORE_PART per file then RESTORE {run_id, tag, rank, peer, step, manifest}; the agent keeps every restore-hardening property (refused while the stage is alive, under _ship_lock, every body unlinked on every path, malformed step refused, restored wave recorded in _shipped), checks every file's sha256 and the manifest step, commits with commit_received_wave and links the alias; a local committed wave of the same step with another manifest is refused loudly, an equal one kept untouched",
+        "heal and restart-in-place relaunch with patch_spec_for_resume(..., resume_step=step) (the stage reads the alias of that same restored wave until wave-resume); export_wave writes committed waves and their aliases",
+        "ported tests (same property on the wave unit, HANDOUT §8 'Ported tests'): test_ship_never_labels_a_newer_shard_with_an_older_step -> test_ship_labels_each_wave_from_its_manifest; test_concurrent_ships_never_cross_waves rewritten on waves, keeping its Event synchronization; test_restore_rewrites_the_sidecar -> test_restore_writes_the_wave_and_its_alias; test_export_wave_writes_each_sidecar -> test_export_wave_writes_each_wave_and_alias; test_checkpoint_store_common_step_and_prune and test_corrupt_shard_is_refused adapted to wave directories with every assertion kept; restore-hardening's four tests adapted to the wave RESTORE with every assertion kept",
+        "new tests: test_every_committed_wave_ships_in_order_under_fast_saves (10 waves committed 20 ms apart while shipping: all 10 shipped ascending, no gap), test_ship_logs_each_wave_in_the_experiment_format (every line parses with wave_experiment.SHIP_RE), test_ship_never_opens_the_alias, test_store_refuses_a_wave_with_a_mislabeled_manifest_or_file, test_ckpt_part_from_another_slots_connection_is_refused, test_ckpt_part_of_another_attempt_is_refused, test_third_open_step_drops_staged_parts, test_oversized_or_duplicate_part_is_refused_and_unlinked, test_healed_replacement_holds_the_restored_wave (test_coordinator.py: the replacement's waves/... of resume_step validates, its alias names the same step and resumed_from_step equals resume_step); covers: CONTROL-I23, CONTROL-I20, CONTROL-I8 or CONTROL-I10, each WOULD-FAIL-IF naming the sampling, message-trusting or unbounded mutant",
+        "the would-fail evidence is mechanical: with the pre-task _supervise (0.5 s sampling) in place, test_every_committed_wave_ships_in_order_under_fast_saves fails",
+        "the chaos dead-worker test passes unmodified and the experiment's --expect-fixed arm reports no unshipped saved wave, no gap and a common wave at every heal"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k \"ships_in_order or experiment_format or never_opens_the_alias or mislabeled_manifest or restore_is_refused or refused_while_the_stage_is_alive or every_path or not_reshipped or never_cross_waves or from_its_manifest or wave_and_its_alias or wave_and_alias or never_interleave or ckpt_part or open_step or oversized_or_duplicate\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"restored_wave or final_wave or lifecycle or wide_stage\"",
+        "uv run pytest -q -p no:randomly tests/chaos/test_recovery.py -k \"dead_worker or killed_stage or frozen_stage\"",
+        "uv run python tests/helpers/wave_experiment.py --runs 5 --expect-fixed --out .factory/runs/M2/wave-exp-fixed.json",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "chaos",
+        "multiworker",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "CONTROL-I23"
+      ],
+      "binding": [
+        "BA-1",
+        "BA-2",
+        "BA-7",
+        "BA-8",
+        "BA-9",
+        "BA-13",
+        "BA-14",
+        "BA-15",
+        "BA-22",
+        "BA-43",
+        "BA-47"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "wave-resume",
+      "title": "Resume reads the validated wave of resume_step, never the alias (RUNTIME-I17, RUNTIME-I12-compatible)",
+      "objective": "Make the stage resume only from the committed wave its spec names, validated through its manifest before any state is applied, now that RESTORE writes waves and every relaunch sets resume_step.",
+      "workstream": "runtime",
+      "deps": [
+        "wave-ship-restore"
+      ],
+      "scope": [
+        "src/wantrain/runtime/stage.py",
+        "tests/unit/test_runtime_spec.py"
+      ],
+      "acceptance": [
+        "_resume reads the committed wave of spec.resume_step (the newest committed wave when resume_step is None, local mode), runs validate_wave and the recipe-pin check before any state is applied, and never reads the alias: an alias whose wave is missing is refused like a missing shard",
+        "the abandoned-timeline drops of wave-stage-write are kept (resume from n drops waves newer than n; a fresh launch drops every old wave)",
+        "ported tests (same assertions on the new input, HANDOUT §8 'Ported tests'): test_resume_refuses_a_shard_its_sidecar_does_not_name -> test_resume_refuses_a_wave_whose_manifest_names_another_step; test_resume_refuses_a_shard_without_a_sidecar -> test_resume_refuses_a_wave_without_a_manifest",
+        "new tests: test_resume_refuses_an_unlisted_or_mismatching_file, test_resume_reads_the_named_wave_not_the_alias (an alias naming another step is ignored; a missing wave with a present alias is refused); covers: RUNTIME-I17",
+        "the coordinator heal and final-wave relaunch tests, the chaos dead-worker test, the bitwise and oracle suites pass unmodified"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k \"names_another_step or without_a_manifest or unlisted or not_the_alias or abandoned_timeline or every_old_wave\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"restored_wave or final_wave or lifecycle\"",
+        "uv run pytest -q -p no:randomly tests/chaos/test_recovery.py -k \"dead_worker\"",
+        "uv run pytest -q -p no:randomly tests/oracle",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "oracle",
+        "identity",
+        "chaos",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "RUNTIME-I17"
+      ],
+      "binding": [
+        "BA-5"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "ctrl-mutual-auth",
+      "title": "Coordinator identity pinned by workers, token required off loopback, sealed control channel",
+      "objective": "Make the coordinator prove its own pinned key to every worker, require a token outside local mode bound to the sealed session, carry every identity-bearing message only inside the sealed channel, and stop sending the session secret in clear.",
+      "workstream": "control",
+      "deps": [
+        "control-auth-primitives",
+        "wave-ship-restore"
+      ],
+      "scope": [
+        "src/wantrain/coordinator/coordinator.py",
+        "src/wantrain/worker/agent.py",
+        "src/wantrain/cli.py",
+        "tests/unit/test_control_admission.py"
+      ],
+      "acceptance": [
+        "the coordinator loads or creates <state_dir>/coord_key (0600, atomic) and logs 'COORDINATOR_ID <32 hex>' at start; Coordinator.start() raises without a token unless it binds a loopback address (127.0.0.0/8, ::1, localhost); the CLI reports the reason and exits non-zero",
+        "the agent loads or creates <workdir>/peer_key (0600, atomic) and uses it for the control handshake; the worker CLI takes --coordinator-id (or WANTRAIN_COORD_ID); the agent refuses to connect to a non-loopback coordinator without it",
+        "handshake order: control_dial / control_accept first, so the channel is sealed before any message; then CHALLENGE{auth}; HELLO{mac = token_mac(token, transcript)} on first registration or {node_id, session_mac(session, transcript)} on reconnect; WELCOME{node_id, session}; the coordinator stores the handshake's peer_id on the Worker and accepts a reconnect only from that peer_id",
+        "a worker holding a token refuses CHALLENGE with auth=false (downgrade) and acts on no message from a coordinator whose key is not the pinned id; it reports the reason and retries within its reconnect window",
+        "tests: test_only_the_worker_holding_the_token_registers (kept), test_worker_refuses_a_coordinator_with_another_key (a fake coordinator holding the right token but another key never gets ASSIGN acted on), test_admitted_worker_cannot_pose_as_the_coordinator (a second agent with the token and its own key is refused by a worker pinned to the real id), test_relayed_hello_cannot_swap_the_worker_key (a relay that terminates the handshake with its own key gets a token MAC over another transcript and is refused), test_worker_refuses_a_downgraded_challenge, test_coordinator_refuses_to_start_off_loopback_without_a_token, test_session_secret_never_travels_in_clear (raw bytes captured between agent and coordinator never contain the session hex, WELCOME included), test_reconnect_from_another_key_is_refused, test_sealed_control_channel_runs_a_job (a token-protected 2-stage run byte-identical to the oracle); covers: CONTROL-I16",
+        "existing coordinator and chaos suites pass unmodified (they bind 127.0.0.1)"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k \"token or another_key or pose_as or relayed_hello or downgraded or off_loopback or session_secret or sealed_control\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"lifecycle\"",
+        "uv run pytest -q -p no:randomly tests/chaos/test_recovery.py -k \"blip\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "chaos",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "CONTROL-I16"
+      ],
+      "binding": [
+        "BA-34",
+        "BA-35",
+        "BA-36",
+        "BA-37",
+        "BA-40",
+        "BA-41",
+        "BA-42"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "slot-key-pinning",
+      "title": "Each stage gets its agent's key; the coordinator pins slot -> peer id",
+      "objective": "Pass each agent's own key to its stage and have the coordinator pin each slot's peer id (and the allowlist), taken from the control handshake, into every launch, heal, restart and rebalance spec.",
+      "workstream": "control",
+      "deps": [
+        "ctrl-mutual-auth",
+        "resume-ownership"
+      ],
+      "scope": [
+        "src/wantrain/worker/agent.py",
+        "src/wantrain/coordinator/coordinator.py",
+        "src/wantrain/fault_tolerance/checkpoint.py",
+        "tests/integration/test_coordinator.py",
+        "tests/unit/test_fault_tolerance.py"
+      ],
+      "acceptance": [
+        "the agent's _env sets WANTRAIN_PEER_KEY=<workdir>/peer_key for its stage, overriding the inherited environment",
+        "every spec the coordinator launches (first launch, heal, restart, rebalance) has slot_peers[stage][peer] = the assigned Worker's handshake peer_id and trusted_peers = the sorted set of those ids; patch_spec_for_resume(spec_json, endpoints, devices, slot_peers=...) re-pins them and still pins everything else",
+        "tests: test_launched_spec_pins_each_slots_key (two agents, distinct ids, each slot's id equals its agent's key), test_heal_repins_the_replacement_key (the dead node's id is gone from slot_peers and trusted_peers), test_stage_gets_its_agents_key, test_resume_spec_pins_everything_but_addresses_and_slot_keys (extends the existing CONTROL-I8 test without dropping any assertion); covers: CONTROL-I22 or CONTROL-I8",
+        "chaos heal tests and the multiworker fleet-state test pass unmodified"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"pins_each_slots_key or repins or agents_key or lifecycle or wide_stage\"",
+        "uv run pytest -q -p no:randomly tests/chaos/test_recovery.py -k \"dead_worker\"",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "chaos",
+        "multiworker",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "CONTROL-I22"
+      ],
+      "binding": [
+        "BA-22",
+        "BA-28",
+        "BA-29"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "stage-p2p-secure",
+      "title": "Every chain and mesh socket authenticated, bound to its slot and sealed (M2-P1-MESH-AUTH); AEAD cost measured",
+      "objective": "Authenticate every data-plane socket against the pinned slot table, refuse and log intruding, duplicate or out-of-range peers without bringing the stage down or consuming a real peer's slot, seal every socket, and measure the sealing cost against the step.",
+      "workstream": "runtime",
+      "deps": [
+        "identity-handshake",
+        "aead-records",
+        "resume-ownership",
+        "slot-key-pinning",
+        "wave-resume"
+      ],
+      "scope": [
+        "src/wantrain/runtime/stage.py",
+        "src/wantrain/validation/aead_cost.py",
+        "tests/integration/test_engine_bitwise.py"
+      ],
+      "acceptance": [
+        "a spec with endpoints and no slot_peers is refused at connect ('unpinned data plane'); with endpoints None (local mode) slot_peers is optional and enforced when set",
+        "mesh: each accepted socket is authenticated in its own thread with a 30 s handshake timeout, then its HELLO (st, pe) is checked: st in {rank-1, rank}, pe in range, intra pe > own peer, (st, pe) not yet bound, authenticated peer_id == slot_peers[st][pe]; a failure closes the socket, prints 'WT_P2P_REFUSED reason=<r> st=<st> pe=<pe> peer=<id>' and records a p2p_refused event; accepting continues until every expected (st, pe) is bound",
+        "mesh dial threads authenticate with expect_peer = slot_peers[target] and send the HELLO immediately after verification; chain: each accepted socket is authenticated in its own thread under the same 30 s handshake timeout and the listener keeps accepting until n = p2p_streams sockets whose authenticated id is slot_peers[rank-1][0] are bound; a socket that fails, holds another id or stays silent is refused the same way (WT_P2P_REFUSED, p2p_refused) without consuming a stream slot; once every expected socket (chain or mesh) is bound, the listener and every still-pending socket are closed; a dialed socket whose acceptor is not slot_peers[rank+1][0] is fatal",
+        "after authentication every socket (chain, mesh, every p2p stream) is wrapped in SecureSocket with the handshake's keys and cipher, aes_hw from secure.hardware_aes(); END and half-close pass through",
+        "exactly one p2p_auth and one p2p_connected event per legitimate socket, each with peer id, mode and cipher",
+        "at finish each slot prints one 'WT_AEAD rank=<r> peer=<p> seal_ns=<n> open_ns=<n> bytes_out=<n> bytes_in=<n> steps=<n> steps_wall_ns=<n>' line summing every SecureSocket's stats (steps_wall_ns from monotonic time, first step start to last step end; no tensor op, no device sync)",
+        "python -m wantrain.validation.aead_cost --steps 20 [--max-frac 0.01] runs the toy 2-stage chain and a 1-2-1 wide run in local mode (sealed), reads every slot's WT_AEAD line, and prints JSON {label: 'SIMULATED', cipher, hw_aes, per_slot: [{rank, peer, cost_frac, seal_ms, open_ms, step_ms}], max_cost_frac, ok}; cost_frac = (seal_ns + open_ns) / steps_wall_ns; it exits 1 when max_cost_frac >= max-frac or when any slot printed no WT_AEAD line",
+        "tests in test_engine_bitwise.py, each run byte-identical to the oracle: test_chain_intruder_is_refused_and_the_run_completes, test_chain_intruder_is_refused_with_two_streams (p2p_streams=2), test_chain_silent_socket_does_not_hold_a_real_peers_slot, test_mesh_intruder_with_an_unknown_key_is_refused, test_mesh_peer_claiming_another_slot_is_refused, test_mesh_out_of_range_and_duplicate_hello_are_refused, test_silent_socket_does_not_hold_a_real_peers_slot; each rogue arm asserts the intruder's connection was accepted and refused (its WT_P2P_REFUSED line exists and the intruder saw EOF) and fails when no intruder engaged, and each silent arm finishes without waiting for the handshake timeout; test_p2p_auth_counts_match_the_topology checks chain and mesh counts; test_every_slot_reports_its_aead_cost; covers: RUNTIME-I16",
+        "every existing bitwise, oracle, coordinator and chaos test passes unmodified (payload bytes unchanged under AEAD)"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"intruder or claiming_another_slot or out_of_range or silent_socket or auth_counts or aead_cost\"",
+        "uv run pytest -q -p no:randomly tests/oracle",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"wide_stage or lifecycle\"",
+        "uv run python -m wantrain.validation.aead_cost --steps 20 --max-frac 0.01",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "oracle",
+        "identity",
+        "chaos",
+        "wan",
+        "static",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "RUNTIME-I16"
+      ],
+      "binding": [
+        "BA-25",
+        "BA-26",
+        "BA-27",
+        "BA-28",
+        "BA-38",
+        "BA-39",
+        "BA-44"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "rebalance-loop",
+      "title": "Between-step rebalancing from telemetry at a common wave (SPEC-control task 2)",
+      "objective": "Have the coordinator re-plan ownership and order from the current attempt's telemetry at a common wave when the predicted gain pays for the restart, apply it as its own attempt, and keep the run byte-identical.",
+      "workstream": "control",
+      "deps": [
+        "replan-solver",
+        "resume-ownership",
+        "slot-key-pinning"
+      ],
+      "scope": [
+        "src/wantrain/coordinator/coordinator.py",
+        "src/wantrain/fault_tolerance/checkpoint.py",
+        "tests/integration/test_coordinator.py",
+        "tests/unit/test_fault_tolerance.py"
+      ],
+      "acceptance": [
+        "_launch clears run.telem_window under run.lock for every attempt (first launch, heal, restart, rebalance), so the window never holds a summary of an earlier attempt or owner; test_telemetry_window_starts_empty_each_attempt",
+        "the rule is evaluated only on the _monitor thread, between judge passes, when common_step has advanced past the last evaluated step and every slot has >= 4 accepted TELEM_STEP summaries in the window; the CKPT intake on a connection thread never decides or applies a rebalance (BA-45); a convict or stall verdict in the same pass is handled first and the evaluation waits for the next attempt",
+        "it applies the plan only when decision is true, (pred_cur_s - pred_new_s) * remaining_steps > 2 * restart_cost_s and len(run.replans) < cfg.max_replans (default 2); restart_cost_s is the measured duration of this run's last restore-to-first-step, else cfg.replan_restart_cost_s (default 30)",
+        "applying runs _abort_all, then re-reads common_step (ABORT ships newer waves and the intake's prune may drop the decided one, as _heal already handles), restores that wave and relaunches with patch_spec_for_resume(..., resume_step=step, ownership={peer_weights, mb_owner, schedule_order}); a None common step abandons the rebalance with a log line, never a restart from step 0; it is recorded in run.replans and RunResult.replans as {step, pred_cur_s, pred_new_s, owner_changed, peer_weights} and logged as 'REPLAN ...'; it consumes neither max_restarts nor max_heals",
+        "patch_spec_for_resume changes ownership only through that explicit argument; every other field stays pinned",
+        "tests: test_slowed_peer_is_rebalanced_and_the_state_stays_exact (test_coordinator.py: a toy 1-2-1 wide stage, WANTRAIN_SIM_SLOW='1:1:4:6', replan_restart_cost_s=0.5: exactly one replan, owner_changed, the slowed peer's microbatch count drops, losses equal the oracle and fleet_manifest from tests/helpers/exact.py equals the reference manifest by sha256), test_rebalance_restores_the_common_wave_after_the_abort (a newer wave shipped during the abort: the rebalance still relaunches, from the re-read common step), test_rebalance_and_a_heal_in_one_window_make_one_attempt, test_rebalance_after_a_heal_ignores_the_dead_nodes_telemetry, test_balanced_fleet_is_never_replanned, test_replan_decision_rule (unit: gain below 10%, too few remaining steps, budget spent), test_ownership_patch_pins_everything_else; covers: CONTROL-I21",
+        "existing coordinator tests keep attempts == 1 where they assert it"
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k \"replan or ownership_patch\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"rebalanced or never_replanned or starts_empty or dead_nodes_telemetry or after_the_abort or one_window\"",
+        "uv run python -c \"import hashlib,sys; sys.exit(hashlib.sha256(open('tests/helpers/exact.py','rb').read()).hexdigest() != '9fcb6cb57fec968b9f348ae867a01567b20a095c1744ba4b43b9fb2464255e7d')\""
+      ],
+      "rungs": [
+        "syntax",
+        "fmt",
+        "lint",
+        "types",
+        "unit",
+        "integration",
+        "chaos",
+        "multiworker",
+        "claims",
+        "invariants",
+        "discipline"
+      ],
+      "invariants": [
+        "CONTROL-I21"
+      ],
+      "binding": [
+        "BA-22",
+        "BA-23",
+        "BA-24",
+        "BA-45"
+      ],
+      "risk": "high"
+    }
+  ]
+}

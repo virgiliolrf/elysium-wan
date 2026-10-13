@@ -1,0 +1,242 @@
+[
+ {
+  "name": "b1",
+  "port": 6566,
+  "host": "203.0.113.13",
+  "region": null,
+  "ip": "203.0.113.13",
+  "free_ports": [
+   [
+    8080,
+    6529
+   ],
+   [
+    10100,
+    6516
+   ],
+   [
+    10200,
+    6521
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "El Segundo",
+  "country": "US",
+  "org": "AS12195 RFX Inc",
+  "data": [
+   8080,
+   6529
+  ],
+  "probe": [
+   10100,
+   6516
+  ],
+  "coord": [
+   10200,
+   6521
+  ]
+ },
+ {
+  "name": "a3",
+  "port": 25163,
+  "host": "203.0.113.8",
+  "region": null,
+  "ip": "203.0.113.8",
+  "free_ports": [
+   [
+    10100,
+    14378
+   ],
+   [
+    10200,
+    3297
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Tustin",
+  "country": "US",
+  "org": "AS53336 BSQL Networking",
+  "data": [
+   10100,
+   14378
+  ],
+  "probe": [
+   10200,
+   3297
+  ]
+ },
+ {
+  "name": "a4",
+  "port": 50254,
+  "host": "203.0.113.26",
+  "region": null,
+  "ip": "203.0.113.26",
+  "free_ports": [
+   [
+    10100,
+    50232
+   ],
+   [
+    10200,
+    50251
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Boise",
+  "country": "US",
+  "org": "AS209 CenturyLink Communications, LLC",
+  "data": [
+   10100,
+   50232
+  ],
+  "probe": [
+   10200,
+   50251
+  ]
+ },
+ {
+  "name": "a5",
+  "port": 50203,
+  "host": "203.0.113.24",
+  "region": null,
+  "ip": "203.0.113.24",
+  "free_ports": [
+   [
+    10100,
+    50117
+   ],
+   [
+    10200,
+    50070
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 49140 MiB",
+  "city": "Bay View",
+  "country": "US",
+  "org": "AS7922 Comcast Cable Communications, LLC",
+  "data": [
+   10100,
+   50117
+  ],
+  "probe": [
+   10200,
+   50070
+  ]
+ },
+ {
+  "name": "b2",
+  "port": 1310,
+  "host": "203.0.113.13",
+  "region": null,
+  "ip": "203.0.113.13",
+  "free_ports": [
+   [
+    10100,
+    1370
+   ],
+   [
+    10200,
+    1348
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "El Segundo",
+  "country": "US",
+  "org": "AS12195 RFX Inc",
+  "data": [
+   10100,
+   1370
+  ],
+  "probe": [
+   10200,
+   1348
+  ]
+ },
+ {
+  "name": "b3",
+  "port": 44859,
+  "host": "203.0.113.21",
+  "region": null,
+  "ip": "203.0.113.21",
+  "free_ports": [
+   [
+    10100,
+    44809
+   ],
+   [
+    10200,
+    44874
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "Mesquite",
+  "country": "US",
+  "org": "AS25840 Cascade Access, LLC",
+  "data": [
+   10100,
+   44809
+  ],
+  "probe": [
+   10200,
+   44874
+  ]
+ },
+ {
+  "name": "b4",
+  "port": 40639,
+  "host": "203.0.113.9",
+  "region": null,
+  "ip": "203.0.113.9",
+  "free_ports": [
+   [
+    10100,
+    40674
+   ],
+   [
+    10200,
+    40509
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "Royse City",
+  "country": "US",
+  "org": "AS7018 AT&T Enterprises, LLC",
+  "data": [
+   10100,
+   40674
+  ],
+  "probe": [
+   10200,
+   40509
+  ]
+ },
+ {
+  "name": "b5",
+  "port": 50918,
+  "host": "203.0.113.1",
+  "region": null,
+  "ip": "203.0.113.1",
+  "free_ports": [
+   [
+    10100,
+    50349
+   ],
+   [
+    10200,
+    50628
+   ]
+  ],
+  "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+  "city": "Davidson",
+  "country": "US",
+  "org": "AS7018 AT&T Enterprises, LLC",
+  "data": [
+   10100,
+   50349
+  ],
+  "probe": [
+   10200,
+   50628
+  ]
+ }
+]

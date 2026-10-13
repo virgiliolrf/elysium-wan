@@ -1,0 +1,36 @@
+[coord info] COORDINATOR_ID ec6ba6f397117e714b9e86fddef8ad4f
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261013-041616-0f840d: starting
+[coord info] registered va (ab208d4bfc) key=1757ae6b62f13ed2bd7fa960017739d0 203.0.113.18:40913 cuda/NVIDIA H100 NVL 551.213 TFLOPs 92.6 GB region=us declared=['region']
+[coord info] registered cz (9437ce450d) key=ef843b56c6e331853fe3e9406bc1e975 203.0.113.12:53820 cuda/NVIDIA H100 NVL 538.848 TFLOPs 92.6 GB region=cz declared=['region']
+[coord info] selection: 2 node(s) in *: va(NVIDIA H100 NVL, 551.21 TFLOPs, 92.6 GB), cz(NVIDIA H100 NVL, 538.85 TFLOPs, 92.6 GB); one device model, so the run stays bit-comparable against itself
+[coord info] probe matrix (Mbps): [[null, 871.2], [871.2, null]]
+[coord info] link va->cz: fwd 880.45 rev 7457.86 bidir 1085.98+7382.45 Mbps, RTT 105.4 ms, duplex aggregate
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: estimated 169.31 GB per stage exceeds the 92.6 GB budget
+[coord info] zero-bubble schedule: predicted 40.215 s/step, bubble 0.9%; F/B/W ms per stage [[76.689, 162.475, 75.019], [76.676, 160.195, 71.589]], hop comm ms [126.195], peer weights [[1.0], [1.0]]
+[coord info] fit rank 0: peak 76.54 GiB of 78.69 GiB budget
+[coord info] fit rank 1: peak 74.02 GiB of 78.72 GiB budget
+[coord info] placement: [['va(cuda/NVIDIA H100 NVL)'], ['cz(cuda/NVIDIA H100 NVL)']] partition [[0, 22], [22, 42]]
+[coord warn] ckpt_every=0: a dead worker cannot be healed, only restarted from step 0
+[coord info] launching attempt 1 (resume=False) on 2 slot(s)
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from cz: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']
+[coord warn] dropped TELEM_STEP from va: summary keys ['emit_us', 'hops', 'ops', 'peer', 'rank', 'recv', 'stall_ms', 'step', 'step_ms', 'v']

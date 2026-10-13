@@ -1,0 +1,10 @@
+llama                          EXACT
+qwen3                          EXACT
+granite                        EXACT
+gpt2                           EXACT unconverted=['lm_head']
+llama4_text                    EXACT
+gpt_oss                        EXACT
+deepseek_v3                    EXACT
+phi3                           EXACT
+starcoder2                     EXACT unconverted=['lm_head']
+gemma3_text                    EXACT unconverted=['lm_head']

@@ -1,0 +1,68 @@
+[
+ {
+  "name": "va",
+  "port": 40623,
+  "host": "203.0.113.15",
+  "region": null,
+  "ip": "203.0.113.18",
+  "free_ports": [
+   [
+    8080,
+    40913
+   ],
+   [
+    10100,
+    40720
+   ],
+   [
+    10200,
+    40534
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Dulles Town Center",
+  "country": "US",
+  "org": "AS8069 Microsoft Corporation",
+  "data": [
+   8080,
+   40913
+  ],
+  "probe": [
+   10100,
+   40720
+  ],
+  "coord": [
+   10200,
+   40534
+  ]
+ },
+ {
+  "name": "cz",
+  "port": 53060,
+  "host": "203.0.113.12",
+  "region": null,
+  "ip": "203.0.113.12",
+  "free_ports": [
+   [
+    10100,
+    53820
+   ],
+   [
+    10200,
+    47700
+   ]
+  ],
+  "gpu": "NVIDIA H100 NVL, 95830 MiB",
+  "city": "Rakovn\u00edk",
+  "country": "CZ",
+  "org": "AS47232 ISP Alliance a.s.",
+  "data": [
+   10100,
+   53820
+  ],
+  "probe": [
+   10200,
+   47700
+  ]
+ }
+]

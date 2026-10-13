@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ladder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # full history: the scoped fmt/lint gate diffs the PR against its base
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Verification ladder (fast rungs)
+        env:
+          # a pull_request run checks out the merge commit: its first parent is the exact base. Empty on pushes to main,
+          # where the scoped gates check the whole tree.
+          FACTORY_BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+        run: node agents-architetura/tools/gates/ladder.mjs --upto unit

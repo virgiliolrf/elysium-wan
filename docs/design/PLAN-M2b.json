@@ -1,0 +1,1028 @@
+{
+  "milestone": "M2b",
+  "binding": [
+    {
+      "id": "BA-1",
+      "what": "Stride ZeRO-1 ownership of whole tensors: peer k owns params[k::w]",
+      "where": "src/wantrain/runtime/stage.py StageRuntime.__init__ self.shard_params (symbols of the M2 that P-M2 merges)",
+      "ruling": "Carried unchanged under shard 'zero1'. Under shard 'pieces' it is replaced at construction by pieces.piece_layout: peer k owns piece k (dim-0 cut on lcm(row length,128)-element quanta, equal by default or spec.piece_bounds) of every trainable tensor."
+    },
+    {
+      "id": "BA-2",
+      "what": "AdamW constructed over the owned shard; the reference's AdamW constructor",
+      "where": "src/wantrain/runtime/stage.py StageRuntime.__init__ self.opt; src/wantrain/validation/reference.py:41 (symbols of the M2 that P-M2 merges)",
+      "ruling": "Pinned: every piece optimizer uses exactly the reference's constructor (lr, betas (0.9, 0.95), eps 1e-8, weight_decay 0, default implementation). A per-unit update is opt.step() with only that unit's piece gradients set (the others None), so per-parameter state and step counters are untouched."
+    },
+    {
+      "id": "BA-3",
+      "what": "wgrad.flush widens every dW to the parameter dtype and sums a multi-use parameter in store order",
+      "where": "src/wantrain/model/wgrad.py:57-70",
+      "ruling": "flush is carried unchanged. flush_iter yields a single-contribution SplitLinear gradient in its GEMM output dtype and a multi-contribution one widened and summed in fp32 exactly as flush does (MODEL-I7)."
+    },
+    {
+      "id": "BA-4",
+      "what": "The deferred store's append order and the W pass that flushes it whole",
+      "where": "src/wantrain/model/wgrad.py capture/flush; src/wantrain/runtime/stage.py _run_backward.w_pass (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under wire 'native' the W pass iterates wgrad.flush_iter(store, spec.emission_order[rank]); under wire 'fp32' it calls flush as today."
+    },
+    {
+      "id": "BA-5",
+      "what": "Gradient shipping: synchronous .cpu() of stride slices into FIFO OBJ GRADS frames",
+      "where": "src/wantrain/runtime/stage.py _store_grads (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under wire 'native' each yielded gradient's non-owned part ships at once, in its production dtype, through the copy engine and the need-first queue; under 'fp32' unchanged."
+    },
+    {
+      "id": "BA-6",
+      "what": "Batch ZeRO-1 exchange (stream_grads False) retains own contributions to the barrier",
+      "where": "src/wantrain/runtime/stage.py _optimizer_step_wide, the batch branch (symbols of the M2 that P-M2 merges)",
+      "ruling": "Refused, not ignored: JobSpec.finalize rejects wire 'native' on a job with a wide stage and stream_grads False, naming both fields. Under wire 'fp32' carried unchanged."
+    },
+    {
+      "id": "BA-7",
+      "what": "Remote shard contributions moved to the device on the main thread before the fold",
+      "where": "src/wantrain/runtime/stage.py _shard_add, _optimizer_step_wide (symbols of the M2 that P-M2 merges)",
+      "ruling": "H2D runs on the copy engine (transport thread; CUDA copy stream with events), and the owner widens every contribution to fp32 before OrderedAccumulator.add, so the first fold operand is an fp32 copy."
+    },
+    {
+      "id": "BA-8",
+      "what": "The fold: first contribution cloned, the rest add_ in index order",
+      "where": "src/wantrain/runtime/accumulate.py:46-50",
+      "ruling": "Carried unchanged; its inputs become fp32 widened pieces. The piece fold kernel (pieces.py) starts from an fp32 copy of microbatch 0's widened piece, never a wire-dtype clone, never zeros (RUNTIME-I11)."
+    },
+    {
+      "id": "BA-9",
+      "what": "PARAMS broadcast barrier at every step end",
+      "where": "src/wantrain/runtime/stage.py _optimizer_step_wide PARAMS broadcast (symbols of the M2 that P-M2 merges)",
+      "ruling": "Kept under shard 'zero1' (wire fp32 or native). Under 'pieces' replaced by per-unit gathers in forward unit order; the full step barrier is kept at checkpoint steps and the last step only (a re-plan is a restart at a checkpoint, BA-44)."
+    },
+    {
+      "id": "BA-10",
+      "what": "Step loop: optimizer after _run_step, then WT_TELEM, checkpoint, WT_STEP",
+      "where": "src/wantrain/runtime/stage.py run: optimizer after _run_step, WT_TELEM, checkpoint, WT_STEP (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces' unit updates run in the first _pump after their fold completes; WT_TELEM t and WT_STEP t are printed in increasing step order as soon as every owned step-t update is applied (strictly increasing, so the liveness stall clock, BA-41, is unaffected). Unchanged under 'zero1'."
+    },
+    {
+      "id": "BA-11",
+      "what": "Forward reads module parameters directly",
+      "where": "src/wantrain/runtime/stage.py _forward, _rebuild (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces' F (and a recompute rebuild) of step t+1 on unit u waits only for u's step-t working copy; every op asserts the unit copy's step tag and a stale tag is fatal (RUNTIME-I10)."
+    },
+    {
+      "id": "BA-12",
+      "what": "_pump trusts GRADS/PARAMS payloads (indices, shapes, dtypes, duplicates)",
+      "where": "src/wantrain/runtime/stage.py _pump (symbols of the M2 that P-M2 merges)",
+      "ruling": "Validated at the boundary: dtype against the plan's table, shape against the piece or slice, mb in [0, M), step current or next, no repeated (step, mb, unit, sender), known unit; any violation is fatal."
+    },
+    {
+      "id": "BA-13",
+      "what": "Reassembler groups fragments by (type, step, mb, chunk=sender)",
+      "where": "src/wantrain/transport/framing.py:138",
+      "ruling": "Carried unchanged; every <=16 MiB exchange chunk is a self-contained frame whose OBJ envelope carries (unit, offset, length), sent with all its fragments contiguous on its socket, so two units of the same (step, mb, sender) never share a reassembly key."
+    },
+    {
+      "id": "BA-14",
+      "what": "Intra-stage send queues are FIFO; the shutdown sentinel and LOSS frames ride them",
+      "where": "src/wantrain/runtime/stage.py _wire, _sender_loop, _finish (symbols of the M2 that P-M2 merges)",
+      "ruling": "Intra queues become need-first priority queues (forward unit index, gathers before gradients, step, mb), one chunk at a time, never preempted inside a chunk; LOSS and the None sentinel sort after every exchange item so shutdown still drains everything queued before it."
+    },
+    {
+      "id": "BA-15",
+      "what": "Received tensors promoted to the compute dtype",
+      "where": "src/wantrain/runtime/stage.py _decode_body, _predecode (symbols of the M2 that P-M2 merges)",
+      "ruling": "Carried unchanged for FWD/BWD only; GRADS and PARAMS bytes are never promoted; widening is explicit at the owner (fp32) and a gather lands in the consumer dtype table."
+    },
+    {
+      "id": "BA-16",
+      "what": "Data-plane connections under M2 (RUNTIME-I16, TRANSPORT-I7): every chain and mesh socket is authenticated against the pinned slot table and sealed into a SecureSocket (AEAD records of at most MAX_RECORD = 1 MiB plaintext, seal/open counters summed by WT_AEAD) before any frame; intra links are paced per connection (LinkSpec())",
+      "where": "src/wantrain/runtime/stage.py _connect_mesh, _dial_secure, _auth_accepted, self._secure; src/wantrain/transport/secure.py SecureSocket, MAX_RECORD (symbols of the M2 that P-M2 merges)",
+      "ruling": "Carried unchanged: pieces adds no listener and no socket. Every GRADS/PARAMS chunk rides the existing authenticated, sealed sockets; a 16 MiB chunk is cut into <= 1 MiB records below the frame layer, so the chunk bound, the OBJ envelope and the reassembly key (BA-13, BA-40) are unchanged. Under pacing 'shared' the shared egress, ingress and uplink budgets pace the frame bytes handed to the sealed socket, at the point where M2's per-connection pacer paces them ('link' unchanged); the record overhead (length header and tag per 1 MiB) is not paced separately (HYPOTHESIS: about 20 B per MiB, 0.002%). Seal/open host-DRAM passes per byte are part of k (SC-5). M2-P1-MESH-AUTH is closed by M2, not reopened."
+    },
+    {
+      "id": "BA-17",
+      "what": "Per-connection SenderPacer; receiver-side delay without ingress bandwidth",
+      "where": "src/wantrain/transport/shim.py:27-33, :36-79",
+      "ruling": "Opt-in shared budgets (per-peer egress and ingress, per site pair and direction uplink, shared across threads and processes of one host); the default per-connection behaviour is byte- and time-unchanged."
+    },
+    {
+      "id": "BA-18",
+      "what": "Checkpoint payload: full replica layer state plus the owned optimizer shard",
+      "where": "src/wantrain/runtime/stage.py _checkpoint (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces' the slot file holds the peer's pieces (fp32 master, m, v, step, hparams), the torch RNG state, the loss history up to the step (as today's payload), the stage's non-trainable state (buffers and frozen parameters, replicated as today's chunk state_dict holds them) and an embedded manifest of (name, offset, length, sha256 per chunk) that also names the step, the wave's width, the slot's peer index and the full layout (piece_bounds per tensor) (BA-51); written as the wave's state.pt by checkpoint.commit_wave (M2's immutable wave, RUNTIME-I17), so wave.json's sha256 binds the embedded manifest and the legacy alias is derived as today. 'zero1' unchanged. The embedded manifest needs the RUNTIME-I12 amendment SC-1 (handout) before pieces-core runs."
+    },
+    {
+      "id": "BA-19",
+      "what": "Resume loads the slot's own shard and checks its sidecar",
+      "where": "src/wantrain/runtime/stage.py _resume, _check_resume_pins; src/wantrain/fault_tolerance/checkpoint.py check_resume_step, validate_wave (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces': manifest tiling and chunk hashes verified and manifest step == sidecar step == payload step before any state is applied; another width or split reads exactly the old wave's slots p0..p(w_old-1) of the stage at the resume step, each through checkpoint.validate_wave of its own wave directory (never another slot's legacy alias), with w_old and the layout taken from slot p0's embedded manifest (BA-51), merges the loss histories of those slots (refusing two values for one (step, mb) and any missing (step, mb) up to the step on the final stage), and takes the RNG state and non-trainable state every one of those slots holds (refusing if they differ); 'zero1' reads a logical checkpoint as names[k::w] of the logical tensors. The converse direction, 'pieces' resuming a whole-tensor zero1 wave, is ruled by BA-57."
+    },
+    {
+      "id": "BA-20",
+      "what": "Agent ships one sha256-verified file per slot; RESTORE writes a sidecar naming the step only",
+      "where": "src/wantrain/worker/agent.py _ship_waves/_ship_wave, _on_restore/_restore_locked; src/wantrain/fault_tolerance/checkpoint.py CheckpointStore.export_wave (symbols of the M2 that P-M2 merges)",
+      "ruling": "Carried unchanged: under M2 the agent ships and restores whole wave directories (state.pt + wave.json, sha256 on both ends, CONTROL-I23). The pieces manifest lives inside state.pt, so a restored pieces wave resumes like any wave; a heal keeps the width, so the coordinator never needs a cross-width restore (arm-pieces' heal test proves it)."
+    },
+    {
+      "id": "BA-21",
+      "what": "Identity manifest assumes names[p::w] optimizer ownership and full replicas",
+      "where": "src/wantrain/validation/state.py:94-147, :125-127",
+      "ruling": "Under 'pieces' the logical trainable state is assembled in canonical name order from the pieces, non-trainable weights and buffers come from every slot's replica (distinct digests recorded as a split), the RNG from every slot (distinct states never compare equal), and each peer's final working-copy digest per tensor is recorded (distinct digests are a split that never compares equal); 'zero1' unchanged."
+    },
+    {
+      "id": "BA-22",
+      "what": "RNG: torch state saved and restored; no dropout; shim jitter has its own RNG",
+      "where": "src/wantrain/runtime/stage.py _checkpoint 'rng', _resume set_rng_state; src/wantrain/model/gpt.py:5; src/wantrain/transport/shim.py DelayedDelivery._rng (symbols of the M2 that P-M2 merges)",
+      "ruling": "No torch RNG draw on any queue, copy, fold, update or gather path; the RNG state is part of the identity manifest and is compared. The shim's jitter RNG (timing only) takes its seed in the E-arms from launch/local.jitter_seed_from_env (WANTRAIN_E1_SEED, else os.urandom; printed), so repeated runs see distinct arrival streams."
+    },
+    {
+      "id": "BA-23",
+      "what": "The oracle's fold: acc = g0.clone(), then add_ in microbatch index order",
+      "where": "src/wantrain/validation/reference.py:85-88",
+      "ruling": "Never changed. Every piece fold reproduces it element for element; the E1 must-fail controls prove a different order or start value is detected."
+    },
+    {
+      "id": "BA-24",
+      "what": "Engine bridge solves a wide stage as one server of cost 1/sum(1/c_peer), then splits per peer",
+      "where": "src/wantrain/scheduler/zero_bubble.py slot_orders, default_schedule, schedule_for_spec, solve (r14's bridge_orders on this tree; the M2 that P-M2 merges rewrites solve and schedule_for_spec)",
+      "ruling": "Lane-consistent orders are solved per lane at that peer's own op costs and its own activation budget (mem_budgets[stage] may be a per-peer list); the bridge keeps whichever memory-feasible order simulate_slots finds faster. A scalar (summed) budget for a wide stage under mem_mode 'auto' keeps today's stage-level orders, so no lane is ever solved against a stage sum. Width-1 orders are byte-identical to today's; deterministic (R14, SCHEDULER-I19 after amendment SC-2)."
+    },
+    {
+      "id": "BA-25",
+      "what": "simulate_slots has no exchange model",
+      "where": "src/wantrain/scheduler/zero_bubble.py simulate_slots (no exchange model)",
+      "ruling": "Carried unchanged; the per-unit exchange simulation (SCHEDULER-I17) is a new module that drives the slot orders it is given."
+    },
+    {
+      "id": "BA-26",
+      "what": "plan_job plans one node per stage and charges 16 B/param of state",
+      "where": "src/wantrain/scheduler/planner.py:212-494; :180-210 (stage_fits)",
+      "ruling": "Extended: more devices than stages, candidates (deepest cut at w 1, narrower, zero1 wide, pieces where I16 admits) priced by simulated step time; I16's memory terms for pieces; width-1 fleets plan as today."
+    },
+    {
+      "id": "BA-27",
+      "what": "fleetplan.build_spec maps nodes to stages one to one",
+      "where": "src/wantrain/scheduler/fleetplan.py:121",
+      "ruling": "Builds endpoints and devices per [stage][peer] from the planner's placement; fleet nodes carry host, site, probed class (device, gpu_name), host RAM, host-DRAM GB/s, PCIe GB/s per direction (source 'absent' where the device is the host: no PCIe hop), NIC Mbps per direction and k, each with its source (measured | declared | counted | absent, BA-48), and the job may name shard to restrict candidates; allow_pieces is passed through (BA-49)."
+    },
+    {
+      "id": "BA-28",
+      "what": "Coordinator groups workers by the template's widths before planning; plan mode passes g[0] and a per-node label",
+      "where": "src/wantrain/coordinator/coordinator.py _setup, _plan (symbols of the M2 that P-M2 merges)",
+      "ruling": "Plan mode for wide stages hands every selected node to the planner and groups by its placement; the class key is (device, probed gpu_name), never the label (closes M2-R5-FIT-2)."
+    },
+    {
+      "id": "BA-29",
+      "what": "Coordinator activation budgets assume 16 B/param of state per stage",
+      "where": "src/wantrain/coordinator/coordinator.py _zero_bubble (symbols of the M2 that P-M2 merges)",
+      "ruling": "The coordinator passes per-peer activation budgets for wide stages (each node's memory less vram_reserve and the stage state, still charged at 16 B/param: conservative under pieces), so a lane solve never receives the stage's sum (BA-24); width-1 stages pass the same number as today."
+    },
+    {
+      "id": "BA-30",
+      "what": "Replacement defaults to the same series; the coordinator passes cfg.replacement_match",
+      "where": "src/wantrain/fault_tolerance/replacement.py:20-62; src/wantrain/coordinator/coordinator.py CoordinatorConfig.replacement_match, _heal (symbols of the M2 that P-M2 merges)",
+      "ruling": "A slot of a stage under shard 'pieces' is replaced only with match='model'; with no identical spare the heal fails cleanly naming the class. Other slots keep cfg.replacement_match."
+    },
+    {
+      "id": "BA-31",
+      "what": "A worker's declared gpu_name overrides the probe",
+      "where": "src/wantrain/resources/node.py:83",
+      "ruling": "For sharded stages (I16 class check and heal) the class comes from the probe: a node whose gpu_name or device is in NodeInfo.declared is refused for a pieces slot, naming the declared field."
+    },
+    {
+      "id": "BA-32",
+      "what": "Production flags",
+      "where": "src/wantrain/scheduler/production.py:14-21",
+      "ruling": "Carried unchanged in M2b: JobSpec defaults stay wire 'fp32', shard 'zero1'; plan_job sets wire, shard, emission order and layout explicitly on the candidate it chooses."
+    },
+    {
+      "id": "BA-33",
+      "what": "The every-feature-on identity topology",
+      "where": "tests/helpers/exact.py:13-23 (FEATURES_ON)",
+      "ruling": "Gains wire 'native' and shard 'pieces' only at the arm task, after every leg and E1-E7 passed."
+    },
+    {
+      "id": "BA-34",
+      "what": "FIT measures a slot standalone with a full optimizer step",
+      "where": "src/wantrain/resources/fit.py:28-40 (measure)",
+      "ruling": "Carried unchanged (conservative for pieces); I16's device-memory term is the admission for sharded stages."
+    },
+    {
+      "id": "BA-35",
+      "what": "Telemetry counts send bytes per hop from send events",
+      "where": "src/wantrain/runtime/telemetry.py:52-55; src/wantrain/runtime/stage.py _ev, self.telemetry (symbols of the M2 that P-M2 merges)",
+      "ruling": "Carried; E2 reads GRADS and PARAMS payload bytes per peer per step from the intra hops' send events."
+    },
+    {
+      "id": "BA-36",
+      "what": "Oracle cache key (recipe_digest)",
+      "where": "src/wantrain/launch/local.py:32-48",
+      "ruling": "Carried unchanged: wire, shard, emission_order, piece_bounds and pacing are not recipe fields and must not split the oracle cache (asserted by a test)."
+    },
+    {
+      "id": "BA-37",
+      "what": "JobSpec fields, finalize validation and JSON round trip",
+      "where": "src/wantrain/runtime/spec.py JobSpec fields, finalize, to_json/from_json (symbols of the M2 that P-M2 merges)",
+      "ruling": "New fields with defaults that keep every existing spec's behaviour; finalize refuses {wire fp32, shard pieces}, unknown values, misaligned or non-tiling piece_bounds, incomplete shared pacing."
+    },
+    {
+      "id": "BA-38",
+      "what": "Timing-only seam WANTRAIN_SIM_SLOW",
+      "where": "src/wantrain/runtime/stage.py __init__ WANTRAIN_SIM_SLOW, _sim_slow_wait (symbols of the M2 that P-M2 merges)",
+      "ruling": "Reused for the 2x-slow peer arms of E1/E3 (F4, F8); new seams WANTRAIN_TEST_UPDATES, WANTRAIN_TEST_QUEUE and WANTRAIN_TEST_BARRIER change timing only, never bytes, and are read like it."
+    },
+    {
+      "id": "BA-39",
+      "what": "Host<->device copies of exchange bytes on the compute thread",
+      "where": "src/wantrain/runtime/stage.py _store_grads .cpu(), _shard_add, _optimizer_step_wide (symbols of the M2 that P-M2 merges)",
+      "ruling": "Moved to the copy engine on a transport thread (CUDA: copy stream, pinned chunks <=16 MiB, events; CPU: the same thread structure, asserted by thread identity). The CUDA path is real-hardware pending (F7)."
+    },
+    {
+      "id": "BA-40",
+      "what": "Frame header has no unit field (chunk u16 = sending peer)",
+      "where": "src/wantrain/transport/framing.py:32, :115",
+      "ruling": "Carried unchanged: the unit, offset and length travel in the OBJ envelope (exact tensor bytes via transport/serial.py); no protocol change."
+    },
+    {
+      "id": "BA-41",
+      "what": "The stall clock reads strictly increasing WT_STEP progress",
+      "where": "src/wantrain/fault_tolerance/liveness.py:14-15, :247",
+      "ruling": "Carried unchanged; the pieces step loop keeps WT_STEP strictly increasing and never later than the completion of the step's own updates (BA-10)."
+    },
+    {
+      "id": "BA-42",
+      "what": "Parameters outside split linears (embeddings, norms, tied weights) get fp32 gradients in B",
+      "where": "src/wantrain/runtime/stage.py _run_backward; src/wantrain/model/wgrad.py owned_params (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces' they are units too (the Embed's tables one unit, first in forward order, shipped when W(mb) starts; each block's small tensors one unit; the Head's norm with the Head's linear), shipped in fp32. Tied weights (final check): under tie_embeddings the Head's out.weight IS the Embed's tok.weight (arch.py Head), one parameter that named_parameters() lists once, under the Embed; wgrad.convert leaves that Linear unconverted, so autograd sums both contributions in B. It belongs to the Embed's unit only (never to the Head linear's unit, which then holds the Head's norm alone), its fp32 gradient ships when W(mb) starts (after B(mb) has summed both contributions), and the Head's F reads the Embed unit's working copy. JobSpec.finalize refuses shard 'pieces' on a tie_embeddings recipe whose Embed and Head lie on different stages, naming the parameter (a refusal moves no bit). Test 'e1_core_tied' (stage-pieces)."
+    },
+    {
+      "id": "BA-43",
+      "what": "The emission order of W per stage",
+      "where": "src/wantrain/runtime/spec.py (new emission_order); src/wantrain/model/wgrad.py flush_iter(order); src/wantrain/scheduler/exchange_sim.py predict_exchange (emission \"backward\" = spec \"store\")",
+      "ruling": "A JobSpec field per stage ('store' default, 'forward'); the planner sets it from the I17 simulation."
+    },
+    {
+      "id": "BA-44",
+      "what": "Between-step re-plan (M2: CONTROL-I21 rebalance loop, SCHEDULER-I15 re-solve, RUNTIME-I15 resume with a changed peer_weights / mb_owner / schedule_order) changes every peer's M_k at a common wave by a restart in place, after admission",
+      "where": "src/wantrain/coordinator/coordinator.py _maybe_rebalance, _rebalance, _restart_in_place, run.replans; src/wantrain/scheduler/zero_bubble.py schedule_for_spec (re-solve); src/wantrain/runtime/stage.py _resume, _check_resume_pins (RUNTIME-I15) (symbols of the M2 that P-M2 merges)",
+      "ruling": "SCHEDULER-I16 re-checks class and memory 'at every re-plan'. For a run with a stage under shard 'pieces', before a rebalance is applied the coordinator calls admission.check_class on the stage's slots and admission.recheck (device memory, MEM-HOST, S2) with the new mb_owner and slot orders; on a failure the rebalance is not applied, the reason is logged and recorded with the run's replans, and the run continues on its current plan (never relaunched for it). Width and split never change in a rebalance: piece_bounds do not depend on mb_owner, so the resume is a same-layout pieces resume, byte-identical (RUNTIME-I15 under pieces). A change of width or split is still only a resume at a checkpoint (RUNTIME-I12)."
+    },
+    {
+      "id": "BA-45",
+      "what": "Per-step telemetry buffer: _emit_step_telemetry takes every queued event, and summarize_step counts F/B/W/OPT and stall only for the summarized step, so an event of a later step taken early is lost",
+      "where": "src/wantrain/runtime/stage.py _take_events, _emit_step_telemetry; src/wantrain/runtime/telemetry.py:38-56 (summarize_step) (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under 'pieces' (where step t+1's ops may run before WT_TELEM t) the OPS and stall events of steps > t stay queued for their own step's summary; send events are counted when taken, as today; every event is appended to the telemetry log exactly once. Unchanged under 'zero1' (the step barrier precedes the summary)."
+    },
+    {
+      "id": "BA-46",
+      "what": "Width-1 and own-shard folds: gw folded straight into OrderedAccumulator (first contribution cloned) and assigned as p.grad; the owner's local own-shard contribution in _shard_add",
+      "where": "src/wantrain/runtime/stage.py _store_grads, _shard_add, _optimizer_step_local (symbols of the M2 that P-M2 merges)",
+      "ruling": "Under wire 'native' with shard 'zero1' a width-1 stage keeps wgrad.flush (no exchange, nothing to stream), so its fold inputs stay in the parameter dtype; on a wide stage every fold input, local own-shard and remote alike, is widened to fp32 before OrderedAccumulator.add. Under shard 'pieces' every stage, width 1 included, folds through the piece fold kernel (fp32 copy of microbatch 0's widened piece). A job with every width 1 and wire 'native' takes exactly the wire 'fp32' path."
+    },
+    {
+      "id": "BA-47",
+      "what": "Post-admission re-weighting: _setup always runs _zero_bubble -> schedule_for_spec, which rewrites peer_weights and mb_owner from the profiles after the planner admitted the plan, changing every M_k",
+      "where": "src/wantrain/coordinator/coordinator.py _setup -> _zero_bubble; src/wantrain/scheduler/zero_bubble.py schedule_for_spec (re-weighting) (symbols of the M2 that P-M2 merges)",
+      "ruling": "For every stage under shard 'pieces' the coordinator re-runs I16's device-memory and MEM-HOST terms and S2 with the final mb_owner and slot orders before FIT and ASSIGN; a failure refuses the run naming the peer or host (no runtime overflow path, SPEC-runtime task 5). zero1 stages keep today's FIT check."
+    },
+    {
+      "id": "BA-48",
+      "what": "Fleet capacity inputs of SCHEDULER-I16: NodeInfo has no host RAM, host-DRAM bandwidth, PCIe or NIC capacity (from_hello drops probe['ramBytes']); the coordinator's plan fleet carries only host, ports, tflops, vram, compute_cap, label and device",
+      "where": "src/wantrain/resources/node.py CAPACITY_FIELDS, NodeInfo, from_hello, capacity_source; src/wantrain/resources/probe.py measure; src/wantrain/coordinator/coordinator.py _plan fleet dict (symbols of the M2 that P-M2 merges)",
+      "ruling": "The probe measures host RAM and host-DRAM copy bandwidth, and on CUDA pinned H2D/D2H bandwidth (real-hardware pending); NodeInfo carries them with their source (a declared override is listed in declared; a malformed value is refused at the boundary). The coordinator adds NIC capacity per direction from its link probes (bidirectional transfer: both directions loaded), the site from the declared region, the host from the probed hostname (one RAM and one DRAM capacity per host: the max of its workers' DRAM measurements, each a lower bound), and k = admission.K_HOST_DRAM_COUNTED, the transport's counted host-DRAM passes per side on the sealed M2 data plane (SC-5; SCHEDULER-I16; R10 deferred), each marked measured, declared, counted or absent (absent: a PCIe field on a cpu or mps node, where the device is the host; the PCIe link then drops out of S1, it is never treated as missing or as zero). A missing input refuses the wide candidates that need it, naming it; width-1 candidates plan as today."
+    },
+    {
+      "id": "BA-49",
+      "what": "Pieces candidates before the arm task: plan_job would choose shard 'pieces' and the tripwire would then refuse the whole job",
+      "where": "src/wantrain/scheduler/planner.py plan_job; src/wantrain/scheduler/fleetplan.py build_spec; src/wantrain/coordinator/coordinator.py _plan (symbols of the M2 that P-M2 merges)",
+      "ruling": "plan_job and build_spec take allow_pieces (default False): when False every candidate with shard 'pieces' or wire 'native' (the ADR-0006 layouts, tripwire pieces-unarmed) is refused with the reason 'not armed', listed in the rationale, and the best remaining candidate is chosen (today's fp32 zero1 and narrower plans). The coordinator passes False until arm-pieces passes True."
+    },
+    {
+      "id": "BA-50",
+      "what": "Spec-mode jobs bypass the planner: an explicit spec with shard 'pieces' is placed by placement.place without SCHEDULER-I16",
+      "where": "src/wantrain/coordinator/coordinator.py _setup spec branch (symbols of the M2 that P-M2 merges)",
+      "ruling": "Before FIT and ASSIGN a spec-mode job with shard 'pieces' gets I16's class check (probed class, never declared) and its memory terms (device, MEM-HOST) with the final ownership; a failure refuses the run naming the class, peer or host. S1 and S2 are evaluated and recorded in the rationale as warnings (they move time, not bits)."
+    },
+    {
+      "id": "BA-51",
+      "what": "Slot files are named by (rank, peer) only, so one out_dir holds the files of several waves after a resume at another width (the width-4 wave's rank1p3 at an older step next to the width-3 wave's rank1p0..p2)",
+      "where": "src/wantrain/runtime/stage.py _ckpt_path, _resume; src/wantrain/fault_tolerance/checkpoint.py wave_dir r<rank>p<peer>/step-N (symbols of the M2 that P-M2 merges)",
+      "ruling": "Names unchanged. The embedded manifest records the wave's width, the slot's peer index, the step and the full layout (piece_bounds per tensor). A resume reads slot p0's manifest, takes w_old and the layout from it, reads exactly p0..p(w_old-1), and refuses, naming the file, any of those slots whose manifest disagrees on width, layout or step, or whose peer index is not its file's; a slot with peer index >= w_old that has a wave at the resume step whose manifest names that step and width w_old is an EXTRA index and is refused naming the file (RUNTIME-I12 'refuses a missing or extra index'); a slot with index >= w_old whose wave at that step names another width, or that has no wave at that step, belongs to an older wave and is never read as state (test 'e5_refuse_extra_index'). E5 runs 4 -> 3 -> 2 in one out_dir without cleanup. Resume step (review round 2): under shard 'pieces', and for a zero1 wave read logically by a pieces resume (BA-57), every slot of the stage takes the same resume step: spec.resume_step when set, else the newest step at which old slot p0's wave validates and its manifest's p0..p(w_old-1) all validate (the newest complete wave); never the resuming slot's own waves, so a slot index >= w_old (a resume that raises the width) resumes without a wave of its own. E5 also raises the width (pieces 2 -> 4; zero1 w2 -> pieces w3)."
+    },
+    {
+      "id": "BA-52",
+      "what": "Entry points that bypass Coordinator.run_job (the tripwire's guard and the only probed class check): run_local / 'wantrain local' places every slot of a mixed JobSpec.devices map on this host, and 'wantrain stage' launches one slot on any machine with no control plane",
+      "where": "src/wantrain/runtime/spec.py devices; src/wantrain/launch/local.py run_local; src/wantrain/cli.py:182-190 (stage subcommand) (symbols of the M2 that P-M2 merges)",
+      "ruling": "The class rule moves to the boundary every entry point crosses: JobSpec.finalize refuses shard 'pieces' when the peers of one stage have different device types in devices, naming the stage and devices; run_local additionally refuses when two slots of one pieces stage resolve to devices whose torch device names differ (CUDA get_device_name; real-hardware pending under gpu false; on CPU one host is one class); 'wantrain stage' refuses shard 'pieces' permanently, because a one-slot launch cannot verify its peers' class (use the coordinator or 'wantrain local'). The local path stays open for the experiments only with one class per stage. The third one-slot entry point, 'python -m wantrain.worker.stage_main', is ruled by BA-58."
+    },
+    {
+      "id": "BA-53",
+      "what": "Recipe pins (M2, RUNTIME-I15): JobSpec.pins() is what a resume must match; it pins 'zero1_widths' (whole-tensor ZeRO-1 shards depend on w) and 'device_types' per stage, and its docstring already says M2b drops 'zero1_widths' for logical checkpoints",
+      "where": "src/wantrain/runtime/spec.py pins, first_pin_difference; src/wantrain/runtime/stage.py _check_resume_pins (symbols of the M2 that P-M2 merges)",
+      "ruling": "wire, shard, emission_order, piece_bounds, pacing, peer_egress_mbps, peer_ingress_mbps, sites and uplink_mbps are NOT pins and do not enter recipe_digest (they move no bit; a resume may change any of them). pins() itself is unchanged. _check_resume_pins compares every pin except 'zero1_widths' when (a) the stored payload is a pieces payload (it carries 'pieces' and its manifest, width-free, RUNTIME-I12), or (b) the resuming spec has shard 'pieces' and reads a zero1 wave logically (BA-57). For a zero1 payload resumed under shard 'zero1' every pin, 'zero1_widths' included, is compared, so a whole-tensor zero1 shard is never read as a shard at another width."
+    },
+    {
+      "id": "BA-54",
+      "what": "M2's immutable checkpoint waves: one directory per slot per step (out_dir/waves/<tag>/r<rank>p<peer>/step-N with state.pt and wave.json), commit_wave, the legacy alias <tag>_ckpt_rank<r>p<p>.pt, _drop_abandoned_waves dropping the slot's waves newer than the resume step, and per-slot pruning",
+      "where": "src/wantrain/fault_tolerance/checkpoint.py wave_dir, commit_wave, validate_wave, drop_waves_after, _prune, link_legacy; src/wantrain/runtime/stage.py _checkpoint, _drop_abandoned_waves (symbols of the M2 that P-M2 merges)",
+      "ruling": "checkpoint.py is carried unchanged. A pieces slot's payload is one state.pt per wave (commit_wave). A resume at another width reads the old peers' waves at the resume step by wave_dir + validate_wave before this slot's own _drop_abandoned_waves runs, and _drop_abandoned_waves stays per slot: it never drops another slot's waves. A new-width slot index >= w_old has no wave and never needs one: its resume step comes from slot p0's wave or spec.resume_step (BA-51), never from slot_waves of its own slot, which M2's _resume raises on when empty. Pruning keeps the resume step's waves (a resume reads only the step it starts from)."
+    },
+    {
+      "id": "BA-55",
+      "what": "Shared-pacer budget files: SharedBudget keeps its token-bucket state in a host file shared by every thread and local process that opens it; a named path must be fresh per run (a stale clock is refused)",
+      "where": "src/wantrain/transport/shim.py SharedBudget, LinkSpec.egress/uplink/ingress; src/wantrain/launch/local.py run_local (new); src/wantrain/runtime/stage.py _connect_mesh/_connect_chain (link specs)",
+      "ruling": "Created only by the local launcher for pacing 'shared': one file per peer egress, per peer ingress and per (site, site) direction under the run's out_dir, removed and recreated at launch (fresh per run), passed to every stage by path; each stage opens them with SharedBudget(mbps, path) and attaches them to the LinkSpec of every inter- and intra-stage connection of that peer. The coordinator path never creates them (real NICs pace themselves). pacing 'link' creates none."
+    },
+    {
+      "id": "BA-56",
+      "what": "The send-side encoder every queued item goes through: _encode_body sends a non-tensor body as OBJ (serial.dumps, exact bytes) but casts a tensor body to the model's boundary dtype under wire_codec 'planes' and scales it to fp8 under 'fp8_planes' (lossy for an fp32 or bf16 exchange piece)",
+      "where": "src/wantrain/runtime/stage.py _encode_body, _sender_loop, _mux_encoder, _mux_encoder_loop (symbols of the M2 that P-M2 merges)",
+      "ruling": "GRADS and PARAMS exchange chunks (zero1 native and pieces) are OBJ bodies only: the chunk's exact byte image through serial.dumps, never a tensor body, so no wire codec branch ever sees them; FWD/BWD keep the job's wire_codec. A test 'pieces_codec_exact' runs wire_codec 'planes' with a bf16 boundary, wire 'native', shard 'pieces', widths [1,3,1]: the fp32 Embed and LayerNorm pieces and the fp32 gathers arrive bit-identical and the manifest equals the reference; its must-fail control routes one piece through the planes branch (in the test, never through a product seam) and differs."
+    },
+    {
+      "id": "BA-57",
+      "what": "Converting a whole-tensor zero1 wave into pieces: a zero1 payload has no embedded manifest, its optimizer state is params[k::w_old] whole tensors spread over every old slot, and its width is a pin",
+      "where": "src/wantrain/runtime/stage.py _resume, _check_resume_pins; src/wantrain/runtime/logical_ckpt.py from_zero1, select_wave, assemble; src/wantrain/fault_tolerance/checkpoint.py validate_wave (symbols of the M2 that P-M2 merges)",
+      "ruling": "The payload kind decides the path: a pieces payload carries 'pieces' and must carry 'pieces_manifest' (else refused 'missing manifest'); a zero1 payload carries neither. A resume with shard 'pieces' that finds a zero1 payload in slot p0 takes w_old from that payload's pinned zero1_widths for the stage, reads every old slot p0..p(w_old-1) at the resume step through validate_wave before the slot's own _drop_abandoned_waves, requires each to be of the zero1 kind (a wave that mixes kinds is refused naming the slot), merges losses, RNG and non-trainable state as BA-19 rules, rebuilds the logical state with from_zero1(payloads, names, w_old) and takes owned_pieces at the new width (any width: the assembly is exact). Tests 'e5_zero1_to_pieces' (same width and another width, byte-identical) and 'e5_refuse_mixed_kind'."
+    },
+    {
+      "id": "BA-58",
+      "what": "The third entry point that bypasses Coordinator.run_job: 'python -m wantrain.worker.stage_main --spec s.json --rank r --peer k' launches one slot with no control plane; run_local and the worker agent launch every slot through it, so the refusal cannot live in run_stage",
+      "where": "src/wantrain/worker/stage_main.py main, run_stage; src/wantrain/launch/local.py run_local (the slot command line); src/wantrain/worker/agent.py (the slot command line) (symbols of the M2 that P-M2 merges)",
+      "ruling": "stage_main.main gains '--launcher {local,coordinator}'. Without it, a spec whose JSON has shard 'pieces' (read before JobSpec.load, like 'wantrain stage', I-9) is refused before the engine starts, naming the reason: a one-slot launch cannot verify its peers' class. run_local passes '--launcher local' after its own class check (BA-52); the worker agent passes '--launcher coordinator' (the coordinator checked the probed class at admission, BA-50) and is changed only by the arm task, since run_job refuses pieces until then. run_stage stays open for both launchers. The flag is not an authentication: the operator of a host is trusted (THREAT_MODEL); it removes the accidental bypass, so no documented one-slot command runs pieces without a class check. Tests: 'pieces_stage_main_refused' (stage-pieces) and 'pieces_armed' launching through the agent (arm-pieces)."
+    }
+  ],
+  "tripwires": [
+    {
+      "id": "pieces-unarmed",
+      "flag": "Coordinator.run_job refuses any job whose spec or plan has shard 'pieces' or wire 'native' (coordinator.PIECES_ARMED False; the production entry point), and the planner refuses every pieces or native candidate 'not armed' unless allow_pieces; 'wantrain stage' and a bare 'python -m wantrain.worker.stage_main' refuse pieces permanently (BA-52, BA-58); local experiment runs stay possible, with the class rule at their boundary. Wire 'native' is in the flag because its bits depend on model-flush-iter, stage-pieces and scheduler-pieces-plan together (review round 2)",
+      "legs": [
+        "heal-class-tripwire",
+        "model-flush-iter",
+        "stage-pieces",
+        "scheduler-pieces-plan"
+      ],
+      "arm": "arm-pieces",
+      "test": "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "model-flush-iter",
+      "title": "MODEL-I7: streamed native-dtype dW iterator and the gather-dtype table",
+      "objective": "Add wgrad.flush_iter(store, order) and the gather-dtype table without changing flush (MODEL-I7).",
+      "workstream": "model",
+      "deps": [],
+      "scope": [
+        "src/wantrain/model/wgrad.py",
+        "tests/unit/test_finetune.py"
+      ],
+      "acceptance": [
+        "Starting point: the partial code of commit 4201c65 (wgrad.flush_iter, gather_dtypes and 15 flush_iter tests in tests/unit/test_finetune.py; journal .factory/runs/M2b/tasks/model-flush-iter.md). Finish and review it; do not rewrite what passes.",
+        "flush_iter(store, order) runs the deferred GEMMs one store entry at a time and yields (param, grad) as soon as a parameter's last contribution is computed; order 'store' keeps the store's module order, 'forward' runs modules in forward order; every entry of one module runs consecutively in store order; any other order raises ValueError.",
+        "On a toy-GPT stage (blocks plus Head) under fp32, bf16 and fp16 autocast, every yielded gradient widened to the master dtype equals flush(store)[id(param)] bitwise under both orders; a single-contribution SplitLinear gradient is yielded in its GEMM output dtype (bf16 under bf16 autocast).",
+        "A SplitLinear called twice in one forward (built in the test) is widened and summed in fp32 in store order exactly as flush does; reordering its contributions (control) changes the bits.",
+        "At most one entry's GEMM outputs plus the incomplete multi-contribution sums are resident at once (counted through a test hook).",
+        "gather_dtypes(module, compute_dtype, autocast) returns the compute dtype for owned_params when the recipe autocasts and the master dtype otherwise; LayerNorm and embedding parameters stay fp32.",
+        "flush is unchanged: no line inside def flush changes. The existing deferred-dW tests (MODEL-I1, MODEL-I2, MODEL-I3) live in tests/unit/test_zero_bubble.py, a file scheduler-pieces-plan edits in this wave, so they run in arm-pieces' verify (wave 2) and the unit rung, not in this task's verify (review round 2: a wave-1 verify never runs a sibling's half-edited file).",
+        "Tests carry 'flush_iter' in their names and 'covers: MODEL-I7'.",
+        "Interface I-2 of the handout holds exactly: flush_iter(store: list, order: str) -> Iterator[tuple[nn.Parameter, torch.Tensor]] with order in FLUSH_ORDERS = (\"store\", \"forward\"); gather_dtypes(module, compute_dtype: str, autocast: bool) -> dict[int, torch.dtype] keyed by id(param). stage-pieces imports these symbols from the tree in the same wave: this task never changes a signature, the iteration contract or the bits flush_iter yields (bit equality with flush is MODEL-I7); a change that needs one is recorded as a spec conflict, never made.",
+        "Same-wave readers (review round 2): model/wgrad.py is imported by a sibling's tests in this wave. Every edit to it is one complete change that leaves the module importable (the coder runs `uv run python -c 'import wantrain.model.wgrad'` after each edit), and no edit changes a frozen interface of the handout (I-2).",
+        "Tripwire pieces-unarmed (leg): wire 'native' depends on flush_iter's bits, so this task is a leg (review round 2); it never lifts the coordinator's refusal. Its verify ends with the tripwire test, which heal-class-tripwire (the first leg) writes in the same wave. That line is evidence only when it exits 0: an exit 5 (not collected) means the first leg has not landed; the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed. The proof that the refusal holds over every leg is arm-pieces' verify (it depends on every leg) and the ladder at the end of the run."
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_finetune.py -k flush_iter",
+        "uv run pytest -q -p no:randomly tests/unit/test_finetune.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit"
+      ],
+      "invariants": [
+        "MODEL-I7"
+      ],
+      "binding": [
+        "BA-3",
+        "BA-43"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "transport-shared-pacers",
+      "title": "TRANSPORT-I8: shared egress, ingress and uplink budgets in the shim",
+      "objective": "Give the WAN shim an opt-in shared-pacer mode: one egress and one ingress budget per peer and one uplink budget per site pair and direction, shared by every connection, thread and local process that uses it.",
+      "workstream": "transport",
+      "deps": [],
+      "scope": [
+        "src/wantrain/transport/shim.py",
+        "tests/unit/test_transport.py"
+      ],
+      "acceptance": [
+        "Starting point: the partial code of commit 4201c65 (SharedBudget, LinkSpec.egress/uplink/ingress, DelayedDelivery.push(item, nbytes) and the shared_pacer tests; journal .factory/runs/M2b/tasks/transport-shared-pacers.md). Finish and review it.",
+        "LinkSpec's defaults and SenderPacer/DelayedDelivery behave exactly as today (the existing TRANSPORT-I6 tests pass unchanged).",
+        "A SharedBudget(mbps) token bucket can be held by several threads and by several processes of one host (the uplink case); a sender paces each chunk through every budget it crosses (its egress, the site-pair uplink) and a receiver paces through its ingress budget before delivery.",
+        "With 1, 2, 4 and 8 concurrent flows (threads; at least 2 processes for the uplink) through one budget for at least 2 s, aggregate throughput is within 5% of the budget; a per-connection control at 2 flows exceeds the budget by at least 1.8x (the test discriminates).",
+        "Delivered bytes are unchanged in shared mode (sha256 of every payload equal to the sent one).",
+        "No torch RNG use; the jitter RNG stays the seeded random.Random.",
+        "Tests carry 'shared_pacer' in their names and 'covers: TRANSPORT-I8'.",
+        "Interface I-3 of the handout holds exactly: SharedBudget(mbps: float, path: str | os.PathLike | None = None, burst_ms: float = 10.0) with reserve(nbytes) -> float, pace(nbytes), close(), picklable by path; LinkSpec gains egress, uplink, ingress (SharedBudget | None, default None); DelayedDelivery.push(item, nbytes: int | None = None) refuses a missing nbytes when an ingress budget is set. stage-pieces imports these symbols from the tree in the same wave and e4-exposure in wave 2: this task never changes a signature or the bytes delivered; a change that needs one is recorded as a spec conflict.",
+        "The budget-file lifecycle (BA-55) is the launcher's (stage-pieces): this task only guarantees that a fresh path works across threads and processes and that a stale clock is refused.",
+        "Same-wave readers (review round 2): transport/shim.py is imported by a sibling's tests in this wave. Every edit to it is one complete change that leaves the module importable (the coder runs `uv run python -c 'import wantrain.transport.shim'` after each edit), and no edit changes a frozen interface of the handout (I-3).",
+        "The shared_pacer tests measure wall time (aggregate within 5%), so their verify line takes the whole machine (machine-lock without --slot, --timeout 1200); a pass under load from another task is not evidence, and a load-induced miss is never a reason to widen the bound."
+      ],
+      "verify": [
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label transport-shared-pacer --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly tests/unit/test_transport.py -k shared_pacer'",
+        "uv run pytest -q -p no:randomly tests/unit/test_transport.py -k 'not shared_pacer'"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit"
+      ],
+      "invariants": [
+        "TRANSPORT-I8"
+      ],
+      "binding": [
+        "BA-17",
+        "BA-55"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "fleet-capacities",
+      "title": "Probed host capacities for SCHEDULER-I16: host RAM, host-DRAM and PCIe bandwidth in the probe and NodeInfo",
+      "objective": "Measure, and carry with their source, the per-node inputs SCHEDULER-I16 needs that a node can measure from inside itself (host RAM, host-DRAM copy bandwidth, PCIe bandwidth per direction), so the planner never assumes them.",
+      "workstream": "control",
+      "deps": [],
+      "scope": [
+        "src/wantrain/resources/probe.py",
+        "src/wantrain/resources/node.py",
+        "tests/unit/test_resources.py"
+      ],
+      "acceptance": [
+        "Starting point: the partial code of commit 4201c65, reviewed once with its amend applied (journal .factory/runs/M2b/tasks/fleet-capacities.md). Finish it; do not rewrite what passes.",
+        "probe.measure records hostRamBytes (today's ramBytes) and, when bench is on, hostDramGBps: a timed copy of at least 256 MiB between two host buffers, median of 3 after a warm-up; on CUDA it also records pcieH2dGBps and pcieD2hGBps from pinned-memory copies (real-hardware pending under gpu false); on cpu and mps the PCIe fields are absent, meaning the device is the host (no PCIe hop), never zero; with bench off no bandwidth is recorded (missing, never assumed). The probe still prints exactly one JSON line.",
+        "NodeInfo gains host_ram_bytes, host_dram_gbps, pcie_h2d_gbps and pcie_d2h_gbps (None when not measured); from_hello reads them from the probe; a 'declare' override of any of them is used and listed in NodeInfo.declared; a HELLO without them (an older worker) loads with None; to_dict round-trips them.",
+        "Boundary validation: a value that is not a finite non-negative number, from the probe or the declare block, makes from_hello raise ValueError naming the field (unit test per field).",
+        "capacity_source(info, field) returns 'measured', 'declared', 'missing' or 'absent' for each of the four fields: 'absent' only for a PCIe field on a cpu or mps node (the device is the host, no PCIe hop), 'missing' for a field that should have been measured and was not (bench off, an older worker, a CUDA node without PCIe); a unit test covers a cpu node (PCIe 'absent', DRAM 'measured') and a CUDA-shaped probe dict without PCIe ('missing'); the declared gpu_name/device rule (BA-31) is unchanged.",
+        "Existing resource tests pass; new tests carry 'capacities' in their names and 'covers: SCHEDULER-I16'.",
+        "Interface I-4 of the handout holds exactly: NodeInfo.host_ram_bytes: int | None, host_dram_gbps, pcie_h2d_gbps, pcie_d2h_gbps: float | None; CAPACITY_FIELDS maps them to the probe keys hostRamBytes, hostDramGBps, pcieH2dGBps, pcieD2hGBps; capacity_source(info, name) -> 'measured' | 'declared' | 'missing' | 'absent'. scheduler-pieces-plan reads it from the tree in the same wave and arm-pieces in wave 2: this task never changes a name, a key or a source value; a change that needs one is recorded as a spec conflict.",
+        "Same-wave readers (review round 2): resources/node.py is imported by a sibling's tests in this wave. Every edit to it is one complete change that leaves the module importable (the coder runs `uv run python -c 'import wantrain.resources.node'` after each edit), and no edit changes a frozen interface of the handout (I-4)."
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_resources.py -k capacities",
+        "uv run pytest -q -p no:randomly tests/unit/test_resources.py"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit"
+      ],
+      "invariants": [],
+      "binding": [
+        "BA-48"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "stage-pieces",
+      "title": "Runtime of ADR-0006: piece kernels (E6), JobSpec fields, exchange primitives, logical checkpoints, and steps 1 and 2 in the step loop (E1, E2, E3, E5, the F1/F8 tests)",
+      "objective": "Build every runtime part of ADR-0006 in one task (the piece kernels passing E6, the M2b JobSpec fields and refusals, the need-first queue, chunks, frame validator, copy engine, hold counters, the logical-checkpoint format, and steps 1 and 2 wired into M2's stage.py with logical resume, shared pacing and bounded holds), passing E1, E2, E3, E5 and E6 (RUNTIME-I10..I13).",
+      "workstream": "runtime",
+      "deps": [],
+      "scope": [
+        "src/wantrain/runtime/pieces.py",
+        "src/wantrain/runtime/spec.py",
+        "src/wantrain/runtime/exchange.py",
+        "src/wantrain/runtime/logical_ckpt.py",
+        "src/wantrain/runtime/stage.py",
+        "src/wantrain/launch/local.py",
+        "src/wantrain/worker/stage_main.py",
+        "src/wantrain/validation/state.py",
+        "tests/unit/test_runtime_spec.py",
+        "tests/integration/test_engine_bitwise.py"
+      ],
+      "acceptance": [
+        "READ FIRST: this task's acceptance list (85 items) and verify list (45 commands) are longer than the run prompt shows (wan-implement fences acceptance at 3000 and verify at 2000 characters). Read the whole task entry stage-pieces in docs/design/PLAN-M2b.json before coding; every item binds.",
+        "Starting point: the partial e6 code of commit 4201c65 (runtime/pieces.py and 11 e6_ tests in tests/unit/test_runtime_spec.py; journal .factory/runs/M2b/tasks/e6-piece-kernels.md); exchange.py and logical_ckpt.py are new. Order of work inside the task (one coder, no sibling waits on it): JobSpec fields and refusals; pieces kernels (E6); exchange primitives and logical_ckpt with their unit tests in tests/unit/test_runtime_spec.py; step 1 (wire 'native'); step 2 (pieces); resume; E2/E3; the F1 rotation tests. The journal records each stage as it passes, so a re-attempt resumes from it.",
+        "pieces.piece_layout(shapes, w, bounds=None) cuts every tensor along dim 0 on multiples of Q_t = lcm(row length, 128) elements (row length = numel/shape[0]; 1 for 1-D), equal by default (piece sizes differ by at most one quantum), w == 1 gives one piece, a tensor with fewer quanta than peers gets empty pieces; explicit bounds that are not monotone, not aligned or do not tile [0, numel) raise ValueError naming the tensor.",
+        "pieces.exchange_units(chunk) lists units in forward order: the Embed's tables (tok, pos) one unit first; each SplitLinear module one unit (weight and bias); each block's other trainable tensors one unit; the Head's norm in the Head linear's unit; every trainable parameter in exactly one unit; a tied parameter (tie_embeddings: Head.out.weight is Embed.tok.weight) is in the Embed's unit only (BA-42); deterministic.",
+        "The piece fold starts from an fp32 copy of microbatch 0's widened piece and adds in index order; on real toy-GPT gradients (fp32, bf16 and fp16 autocast, w 1..8) every piece equals the matching slice of the whole-tensor OrderedAccumulator result bitwise; controls that must differ: a bf16 clone as the start value, a zeros start with a -0.0 input.",
+        "Piece-local cast to bf16 and fp16 equals the slice of the whole-tensor cast for every one of the 2^32 fp32 bit patterns (exhaustive, chunked; NaN payloads compared bitwise).",
+        "Piece-local AdamW (the reference's constructor: lr, betas (0.9, 0.95), eps 1e-8, weight_decay 0) over 3 steps equals slices of whole-tensor AdamW in params, exp_avg, exp_avg_sq and step at w 1..8, with ragged explicit bounds and a tensor with fewer quanta than peers, and also when the step is applied unit by unit (only that unit's grads set).",
+        "No kernel draws from the torch RNG (torch.get_rng_state() is unchanged across every call).",
+        "pieces.consumer_dtype is removed with its test: the working-copy dtype has one source, wgrad.gather_dtypes (MODEL-I7, interface I-2), which stage-pieces uses.",
+        "JobSpec gains wire ('fp32' default | 'native'), shard ('zero1' default | 'pieces', job-wide), emission_order (per stage 'store' default | 'forward'), piece_bounds (None or explicit per-stage per-parameter bounds), pacing ('link' default | 'shared') with peer_egress_mbps and peer_ingress_mbps [stage][peer], sites [stage][peer] and uplink_mbps per site pair and direction; to_json/from_json round-trips them exactly and a spec JSON without them loads with the defaults.",
+        "finalize refuses, naming the fields: {wire 'fp32', shard 'pieces'}; wire 'native' on a job with a wide stage and stream_grads False; unknown values; piece_bounds that pieces.piece_layout rejects; shared pacing with a missing budget or site; shard 'pieces' on a tie_embeddings recipe whose Embed and Head lie on different stages (BA-42); shard 'pieces' with the peers of one stage on different device types in devices, naming the stage and devices (BA-52). This is the frozen finalize contract of interface I-7, which scheduler-pieces-plan's planner satisfies in the same wave: finalize accepts every combination I-7 lists as planner output (shard 'pieces' with wire 'native' and stream_grads True; wire 'native' with stream_grads True; piece_bounds None, or keyed by the stage chunk's named_parameters() name, the same '<layer index in chunk>.<param name>' names exchange_units uses, with bounds on multiples of pieces.quantum(shape)); a test 'spec_m2b_planner_contract' builds one spec per I-7 planner combination and finalizes it. A change to this contract is a recorded spec conflict naming scheduler-pieces-plan, never made.",
+        "recipe_digest is identical for two specs that differ only in these fields (the oracle cache is not split).",
+        "BA-53: two specs that differ only in the M2b fields have equal pins() and equal recipe_digest; pins() is otherwise unchanged (the M2 RUNTIME-I15 tests pass).",
+        "exchange.NeedFirstQueue (interface I-5): one per (sender, destination); pop returns the item with the smallest key (fwd_unit, kind, step, mb, seq), kind 0 for a gather (PARAMS) and 1 for a gradient (GRADS); LOSS frames and the shutdown sentinel sort after every exchange item; push and pop are thread-safe and pop blocks with a timeout. Unit tests with randomized pushes from several threads, named 'need_first'.",
+        "exchange.chunk_object(unit, payload) splits one unit's frame payload into self-contained chunks of at most 16 MiB carrying (unit, offset, length) in the OBJ envelope, with no frame header change (BA-40); reassembly by (type, step, mb, sender, unit) never mixes two units of one microbatch (BA-13); unit tests named 'need_first' or 'chunk'.",
+        "exchange.check_frame(kind, env, tensors, expect) is the receiver's boundary validator: every malformed GRADS or PARAMS frame (dtype not in the plan's table, shape not the slice or piece, mb outside [0, M), step neither current nor next, repeated (step, mb, unit, sender), unknown unit) raises FrameError naming its class; one unit test per class named 'frame_check'. Cost per frame: one dict lookup and a few integer comparisons (no tensor op).",
+        "exchange.CopyEngine (interface I-5): submit(fn) runs every exchange D2H/H2D copy on the engine's own thread and returns a future; on CPU a unit test proves the caller's thread never runs the copy (thread identity), named 'copy_engine'; the CUDA copy-stream path (pinned chunks of at most 16 MiB, events) is built and labelled real-hardware pending (F7).",
+        "exchange.HoldCounters (interface I-5): monotonic per-step counters of host gradient pieces held or queued, gathers queued out and received awaiting H2D, and own pieces on the device awaiting their prefix; per-step maxima (end_step) rendered as one 'WT_HOLD' line by line(step); no tensor op, device sync or RNG draw; unit tests named 'holds'.",
+        "logical_ckpt (interface I-6): build_manifest(step, width, peer, layout, tensors) records (name, offset, length, sha256 per 16 MiB chunk) plus the step, the wave's width, the slot's peer index and the full layout; select_wave(read_manifest, peers_present) takes w_old and the layout from slot p0's manifest and returns exactly p0..p(w_old-1), refusing, naming the slot, one whose manifest names another width, layout or step, or another peer index than its own; peers_present lists every peer index of the stage with a wave at the resume step, and one >= w_old whose manifest names that step and width w_old is an extra index, refused naming it (RUNTIME-I12); one >= w_old naming another width belongs to an older wave and is never read as state (BA-51).",
+        "logical_ckpt.assemble(payloads) rebuilds the logical master, m, v and step counters per tensor in canonical name order, merges the loss histories of every slot, and takes the RNG and non-trainable state every slot holds; it refuses, naming it, before any state is applied: pieces that leave a gap or overlap, a chunk sha256 mismatch, a missing manifest, a manifest step different from the payload's, a missing peer, two values for one (step, mb), a missing (step, mb) on the final stage, and slots whose RNG or non-trainable state differ (one unit test each).",
+        "logical_ckpt.owned_pieces(logical, layout, peer) and logical_ckpt.as_zero1(logical, names, w, k) / from_zero1(...) give shard 'pieces' at any width or split and shard 'zero1' as names[k::w], byte-identically (round trip 4 -> 3 -> 2 -> zero1 -> pieces equal bitwise); a control with one boundary shifted by one element differs.",
+        "No function in these modules draws from the torch RNG (torch.get_rng_state() unchanged across every call).",
+        "Tests carry 'e6_', 'spec_m2b', 'need_first', 'chunk', 'frame_check', 'copy_engine', 'holds' or 'logical_ckpt' in their names, each with a covers: line (RUNTIME-I11 for the kernels; RUNTIME-I5 for the spec fields; RUNTIME-I10, RUNTIME-I12 or RUNTIME-I13 for the primitives they serve) and a WOULD-FAIL-IF line.",
+        "Code base: stage.py as merged by P-M2, the M2 of PR #33 with its sealed data plane, waves and rebalance loop (M2 rewrites it: immutable waves, pins, telemetry; precondition P-M2). Every M2 test of tests/integration/test_engine_bitwise.py passes unchanged under wire 'fp32' and shard 'zero1' (the defaults).",
+        "On-tree interfaces only (the 2-wave rule, review round 1): from other workstreams this task imports only symbols that are on the tree at commit 4201c65 and pass their tests there: wgrad.FLUSH_ORDERS, flush_iter and gather_dtypes (I-2) and shim.SharedBudget, LinkSpec.egress/uplink/ingress and DelayedDelivery.push(item, nbytes) (I-3); the first verify line greps them. model-flush-iter and transport-shared-pacers finish those symbols in the same wave under frozen signatures and frozen bits; if a test of this task fails because one of them changed, the coder records a spec conflict naming both sides and never adds an adapter. Everything else this task needs (pieces kernels, JobSpec fields, exchange primitives, logical checkpoints) is its own code.",
+        "launch/local.py gains jitter_seed_from_env(): the int in WANTRAIN_E1_SEED when set, else one drawn from os.urandom; it prints 'E1_SEED=<n>' and every E-arm (here and in every later runtime task) passes it to links_for, so repeated runs see distinct jitter streams and a failure is reproducible from its printed seed (BA-22); links_for's default is unchanged for existing tests.",
+        "Under wire 'native' the W pass of a wide stage iterates flush_iter(store, spec.emission_order[rank]) and ships each yielded gradient's non-owned stride slices at once in its production dtype (bf16 GEMM output under a bf16 recipe; fp32 for B-produced gradients); the owner widens every fold input, its own local contribution and every remote one, to fp32 before OrderedAccumulator.add. A width-1 stage keeps wgrad.flush (BA-46). Under 'fp32' behaviour is unchanged.",
+        "The intra-stage send queues are exchange.NeedFirstQueue, one per (sender, destination), fed with chunks from exchange.chunk_object (unit, offset and length in the OBJ envelope, fragments contiguous on the socket, frame header unchanged, BA-13, BA-40); LOSS frames and the shutdown sentinel ride the same queues and sort after every exchange item, so shutdown still drains (BA-14).",
+        "Exchange D2H/H2D copies run in exchange.CopyEngine on a transport thread (CUDA: copy stream, pinned chunks of at most 16 MiB, events; labelled real-hardware pending, F7); on CPU a multi-process arm named 'copy_engine_stage' (tests/integration/test_engine_bitwise.py, its own verify line) proves the compute thread never runs an exchange copy (thread identity).",
+        "Every received GRADS or PARAMS frame passes exchange.check_frame before it is used (both branches of _pump); a malformed one is fatal at the receiver naming its class (the per-class unit tests are 'frame_check'; the end-to-end runs are 'pieces_frame' below, over both frame kinds).",
+        "E1 step-1 arms with wire 'native', each named 'e1_native_*', each with latency 10 ms, jitter 15 ms and its jitter seed from jitter_seed_from_env: widths [2,1], [1,2,1], [1,3] and weighted [3,1] (weights [1, 0.5, 0.25]); fp32, bf16 and fp16 recipes; both emission orders; schedule_fill on and off: the final state manifest (distributed_manifest) equals reference_manifest_for and every loss hex is equal. All existing CONFIGS pass under wire 'fp32'.",
+        "An all-width-1 chain ([1,1] and [1,1,1], bf16) with wire 'native', named 'native_width1' and jittered the same way, never calls flush_iter (spy) and its manifest and every loss hex equal the reference; a control that folds a width-1 stage from a bf16 clone differs (BA-46).",
+        "Integration arms carry 'e1_native_' or 'native_width1' in their names with 'covers: RUNTIME-I10' (the need_first, copy_engine and frame_check unit tests are in tests/unit/test_runtime_spec.py).",
+        "Every E1 arm's pytest id names its recipe ('fp32', 'bf16' or 'fp16'), so GATES-M2b entry sc3-identity-recipe-arms-e1 (`-k \"e1_ and fp16\"`, `-k \"e1_ and fp32\"`) selects them: SC-3, ruled by the human, E1's arms replace the ADR's fp16 and fp32 identity-rung arms.",
+        "Under shard 'pieces' peer k owns piece k of every trainable tensor of its stage (pieces.piece_layout, or spec.piece_bounds): fp32 master, AdamW m and v, fp32 fold accumulator; every peer holds a working copy in the consumer dtype of gather_dtypes.",
+        "Units follow pieces.exchange_units; the Embed tables' fp32 gradients ship when W(mb) starts; one frame per unit, destination and microbatch, chunked at 16 MiB.",
+        "A unit's update (AdamW on the owned piece, the cast, the gather send in forward unit order) runs in the first _pump after its fold completes, between ops or inside any blocked wait; F (and a recompute rebuild) of step t+1 on a unit waits only for that unit's step-t copy; an op that reads a unit copy of another step raises (test named 'pieces_stale_tag' with an injected stale tag).",
+        "The full step barrier is kept at checkpoint steps and the last step, nowhere else; WT_TELEM t then WT_STEP t are printed in increasing step order once every owned step-t update is applied.",
+        "A pieces checkpoint is one slot file, the wave's state.pt written by checkpoint.commit_wave (M2, BA-54), holding the peer's pieces (master, m, v, step, hparams), the torch RNG state, the loss history up to the step, the stage's non-trainable state (buffers and frozen parameters) and an embedded manifest of (name, offset, length, sha256 per chunk) naming the step, the wave's width, the slot's peer index and the full layout (piece_bounds per tensor) (BA-51); a test round-trips a stage holding a frozen parameter and a buffer bitwise (BA-18).",
+        "validation/state.distributed_manifest assembles the logical trainable state in canonical name order from the pieces, takes non-trainable weights and buffers from every slot's replica and the RNG from every slot (distinct values never compare equal), and records each peer's final working-copy digest per tensor; distinct digests never compare equal to the reference; zero1 manifests are unchanged.",
+        "E1 core arms with wire 'native' and shard 'pieces', bf16 recipe, 4 steps, M 8, latency 10 ms and jitter 15 ms seeded by jitter_seed_from_env, named 'e1_core_*': widths [1,2], [1,3], [1,4] and [2,1] (stage 0 holding the Embed): manifest equal to the reference, every loss hex equal, no stall within the run timeout.",
+        "Telemetry under pieces (BA-45, RUNTIME-I9): in the width-2 arm with one peer 2x slow (WANTRAIN_SIM_SLOW), every WT_TELEM t reports ops F, B and W counts equal to the microbatches that slot owns at step t, OPT counts that slot's step-t unit updates, and no event is appended to the telemetry log twice; a control that takes every queued event (today's code) miscounts at least one step (the test discriminates). Tests carry 'pieces_telem' and 'covers: RUNTIME-I9'.",
+        "run_local refuses shard 'pieces' when two slots of one pieces stage resolve to devices whose torch device names differ (CUDA get_device_name, real-hardware pending under gpu false), naming the stage (BA-52); test named 'pieces_local_class' in tests/integration/test_engine_bitwise.py (its verify line selects it there) with a monkeypatched device-name function, plus its control (equal names launch). run_local launches every slot with '--launcher local' (BA-58).",
+        "Tests in tests/integration/test_engine_bitwise.py carry 'pieces' in their names and 'covers: RUNTIME-I10' or 'covers: RUNTIME-I13' as they apply.",
+        "E5: a pieces run checkpointed every step and resumed at stage-1 width 4 -> 3 -> 2 in ONE out_dir with no cleanup between the runs (so the width-4 wave's stale rank1p3 stays beside the width-3 wave), one resumed at a RAISED width (pieces 2 -> 4, test 'e5_widen', resume_step None so the new slots p2 and p3 have no wave of their own), and one resumed with moved explicit boundaries, end with a manifest equal to the reference and every loss hex equal; every e5_ arm runs with latency 10 ms and jitter 15 ms seeded by jitter_seed_from_env (printed).",
+        "Wave selection (BA-51): resume takes w_old and the layout from slot p0's embedded manifest and reads exactly p0..p(w_old-1); a stale higher-index slot of an older wave is never read (the E5 chain proves it); a control that plants, inside p0..p(w_old-1), a slot whose manifest names another width, layout or step, or another peer index than its file name, is refused naming that file (one test each, named 'e5_refuse_*'); a planted slot p(w_old) with a wave at the resume step whose manifest names that step and width w_old is refused as an extra index (test 'e5_refuse_extra_index', RUNTIME-I12).",
+        "A resume at another width or split merges the loss histories of every old slot of the wave and takes the RNG state and non-trainable state every old slot of the stage holds: in E5 (stage 1 is the final stage, 4 -> 3 -> 2) the resumed losses file holds every (step, mb) of the uninterrupted run; a wave with two values for one (step, mb), a missing (step, mb), or slots whose RNG or non-trainable state differ is refused naming it (one test each, named 'e5_refuse_*').",
+        "shard 'zero1' resumes a pieces checkpoint as names[k::w] of the logical tensors, and shard 'pieces' resumes a whole-tensor zero1 checkpoint, both byte-identically (shard rolls back alone).",
+        "Before any state is applied, resume refuses with a named reason: pieces that leave a gap or overlap in a tensor; a chunk whose sha256 mismatches; a pieces payload (one carrying 'pieces') without its manifest; a manifest step different from the sidecar's or the payload's; any piece file of the wave missing (logical_ckpt's refusals, unit-tested in tests/unit/test_runtime_spec.py, exercised here once end to end through _resume, named 'e5_refuse_*').",
+        "Control: the assembled state with one boundary shifted by one element differs from the reference (E5 discriminates).",
+        "A wave exported by CheckpointStore.export_wave (M2's whole-wave export: state.pt + wave.json) resumes at the same width: the coordinator's ship and restore path needs no change.",
+        "Tests carry 'e5_' in their names and 'covers: RUNTIME-I12'.",
+        "BA-53/BA-54: _check_resume_pins skips only 'zero1_widths', and only in two cases: (a) the stored payload is a pieces payload (it carries 'pieces' and its manifest), or (b) the resuming spec has shard 'pieces' and reads a zero1 wave logically (BA-57); every other pin is compared in both cases. Must-fail control 'e5_refuse_zero1_width': a zero1 payload resumed under shard 'zero1' at another width is refused on zero1_widths. A resume at another width reads the old peers' waves at the resume step through checkpoint.validate_wave before _drop_abandoned_waves runs, which stays per slot (test 'e5_waves').",
+        "BA-55: run_local creates the shared-pacer budget files fresh under out_dir for pacing 'shared' (one per peer egress, per peer ingress, per site pair and direction) and every stage attaches them to all of its connections; pacing 'link' creates none (test 'pieces_budget_files').",
+        "E1 matrix (one run per arm here; arm-pieces re-runs F1's 20 jittered runs on the integrated tree before it lifts the refusal, and GATES-M2b reruns the whole e1_/e5_/native selection 20 times at closeout): a pairwise covering set (every pair of axis values in at least one arm, at most 30 arms per recipe) over sharded stage width 1, 2, 3, 4 (stage 1) and stage 0 holding the Embed at width 2 and 4; recompute on and off; schedule_fill on and off; emission 'store' and 'forward'; equal and weighted IWRR (weights [1, 0.5, 0.25]); latency 10 ms and jitter 15 ms; plus a run with one checkpoint and a resume 4 -> 3 -> 2; split into one set per recipe (fp32, bf16, fp16), each named 'e1_matrix_<recipe>_*': every final manifest equals the reference and every loss hex is equal.",
+        "Every jittered arm takes its shim jitter_seed from jitter_seed_from_env (WANTRAIN_E1_SEED when set, else os.urandom) and prints it, so 20 repetitions are 20 distinct jitter streams and any failure is reproducible from its printed seed.",
+        "e1_features_on: the exact FEATURES_ON transport mechanisms (stream_grads, recompute, wire_codec 'planes', p2p_streams 2, adapt_budget_ms 8, links latency 10 ms, jitter 15 ms, bw 80 Mbps) together with wire 'native', shard 'pieces' and the topology arm-pieces will put in FEATURES_ON (stage_widths [1,3,1], stage 1 weights [1, 0.5, 0.25], emission_order 'forward' on stage 1), spelled out in the test (tests/helpers is control's), straight and resumed from a checkpoint after 2 of 4 steps: both manifests equal the reference and every loss hex is equal. This proves the combination where stage.py is still in scope.",
+        "Must-fail controls, applied to gradient pieces captured from a real run and never through a product seam: LayerNorm gathered in bf16; a bf16 accumulator clone; arrival-order fold; torch.distributed gloo reduce_scatter of the same pieces; division by 3; a bf16 working copy in the fp32 recipe; multi-use contributions reordered: each digest differs from the reference.",
+        "Liveness control: with the timing-only seam WANTRAIN_TEST_UPDATES=between_ops the width-4 arm does not complete and the bounded run timeout (at most 120 s, inside the test, far below the 1200 s ceiling) reports it; without the seam the same arm completes.",
+        "Every malformed GRADS or PARAMS class (dtype, shape, mb range, step, duplicate key, unknown unit) is fatal: the validator is exchange.check_frame (its unit tests are 'frame_check'); here 'pieces_frame' is parametrized over both frame kinds: an injected bad GRADS frame, a PARAMS gather whose dtype is not the plan table's (fp32 where bf16 is expected) and a PARAMS gather of step t+2 each make the run exit non-zero with the class named; a control that validates only GRADS frames lets the bad PARAMS gather through (the test discriminates).",
+        "E2: GRADS+PARAMS payload bytes per peer per step from the intra hops' send events are within 2% (envelope and frame headers counted separately) of H2 = P_s·(w-1)/w·[M_k·b_g + b_p] for pieces at width 2 and 4 (bf16), and of the stride-slice volume for zero1 native; the planes-codec ratio and the changed-copy fraction of gradient pieces are printed (MEASURE, no bound).",
+        "No torch RNG draw on exchange paths (the RNG state in every manifest equals the reference's).",
+        "Tests carry 'e1_', 'e2_', 'e1_features_on' or 'pieces_frame' in their names and 'covers: RUNTIME-I10'.",
+        "Under pacing 'shared' every inter- and intra-stage connection of a peer is paced through the shim's shared egress, ingress and site-uplink budgets from the spec; pacing 'link' is unchanged.",
+        "Per peer the runtime counts, through exchange.HoldCounters, host gradient pieces held or queued, gathers queued out and received awaiting H2D, and own pieces on the device awaiting their prefix, and prints the per-step maxima in one WT_HOLD line (monotonic counters only: no tensor op, device sync or RNG draw).",
+        "E3: at width 2 and 4 (bf16; M 8 and M 32) the host maximum never exceeds b_g·P_s·[M_k·(w-1)/w + (M-M_k)/w] + 2·b_p·P_s·(w-1)/w and the device own-piece maximum never exceeds sum_u b_g,u·M_k·P_u/w (an excess is a bug), and each term is within 1.2x of its H4 prediction; the same holds with one peer 2x slow for the whole run (WANTRAIN_SIM_SLOW), one destination behind a slow ingress budget, weighted IWRR with one peer owning 12 of 32, and 2 to 4 peers of one process host summed; every step completes and every manifest equals the reference (F4, F8).",
+        "From send events, no queued item is ever sent while a higher need-first priority item for the same destination is queued, except inside a chunk.",
+        "The compute thread performs no exchange copy in any arm (thread identity); the CUDA copy-stream path stays real-hardware pending (F7).",
+        "Timing-only seams WANTRAIN_TEST_QUEUE=fifo and WANTRAIN_TEST_BARRIER=always exist for E4's controls and apply to every layout (pieces included); a test named 'holds_seams' proves the manifest is unchanged under each.",
+        "Tests carry 'e3_' or 'holds_seams' in their names and 'covers: RUNTIME-I13'.",
+        "Two test functions f1_rotation_a (runs 0-9) and f1_rotation_b (runs 10-19), each parametrized over its 10 run indices: run i takes arm i mod N from a fixed rotation that covers sharded stage 1 at w 1, 2, 3 and 4, stage 0 holding the Embed at w 2 and 4, fp32, bf16 and fp16, emission 'store' and 'forward', equal and weighted IWRR ([1, 0.5, 0.25]), a checkpoint with resume 4 -> 3 -> 2 in one out_dir, and a resume that raises the width 2 -> 4 (every axis value in at least two runs); every run uses latency 10 ms, jitter 15 ms and its own seed from jitter_seed_from_env, and prints one JSON line {run, arm, seed, sha256 of the manifest}.",
+        "F1: every run's manifest equals reference_manifest_for and every loss hex is equal; F8: every run completes within the bounded run timeout (no stall verdict, no deadlock).",
+        "A failing run is F1 or F8 firing: the task records a spec conflict naming the criterion, the arm and the printed seed (ADR-0006 refuted on that arm), never re-runs to pass, and never loosens a test (a flaky pass is not a pass).",
+        "Tests carry 'f1_rotation' in their names and 'covers: RUNTIME-I10'; these tests are written here and run once in this task's verify; arm-pieces runs them again as its gate.",
+        "Unit tests of the kernels, spec fields, primitives, logical_ckpt and the stage_main refusal live in tests/unit/test_runtime_spec.py; integration arms live in tests/integration/test_engine_bitwise.py (this task's two test files, owned by no other wave-1 task); every test carries a covers: line and a WOULD-FAIL-IF line.",
+        "BA-56: GRADS and PARAMS exchange chunks (zero1 native and pieces) are sent only as OBJ bodies (the exact byte image through serial.dumps) and never pass through _encode_body's 'planes' or 'fp8_planes' tensor branch; FWD/BWD keep the job's wire_codec. Test 'pieces_codec_exact' (wire_codec 'planes', bf16 boundary, wire 'native', shard 'pieces', widths [1,3,1]): the fp32 Embed and LayerNorm pieces and fp32 gathers arrive bit-identical and the manifest equals the reference; its must-fail control routes one captured piece through the planes encoder inside the test and differs.",
+        "BA-57: shard 'pieces' resumes a whole-tensor zero1 wave: the payload kind is decided by the 'pieces' key; w_old comes from slot p0's pinned zero1_widths for the stage; every old slot p0..p(w_old-1) is read at the resume step through validate_wave before _drop_abandoned_waves; a wave mixing kinds is refused naming the slot; the logical state is from_zero1(payloads, names, w_old) and the new width may differ. Tests 'e5_zero1_to_pieces' (same width, a lower width and a raised width zero1 w2 -> pieces w3; manifest equal to the reference, every loss hex equal) and 'e5_refuse_mixed_kind'.",
+        "BA-44 (RUNTIME-I15 under pieces): a pieces run resumed at the same width with only peer_weights, mb_owner and schedule_order changed (what M2's rebalance writes) ends with a manifest equal to the reference and every loss hex equal (test 'e5_rebalance_owner', weighted IWRR [1, 0.5, 0.25] -> equal weights at step 2).",
+        "BA-16: the pieces exchange uses M2's authenticated, sealed sockets unchanged (no new listener or socket); under pacing 'shared' the budgets pace the frame bytes handed to the sealed socket where M2's per-connection pacer does; the e1_core_ and e1_features_on arms run on the sealed data plane (WT_AEAD counters non-zero on every intra hop), proving the 16 MiB chunks cross the 1 MiB records unchanged.",
+        "BA-51/BA-54 resume step (review round 2): under shard 'pieces', and for a zero1 wave read by a pieces resume, every slot of the stage takes the resume step from spec.resume_step when set, else from old slot p0's newest complete wave (p0's wave and every p0..p(w_old-1) its manifest names validate at that step), never from its own slot_waves; M2's 'holds no wave' error stays for zero1-to-zero1 resumes. Tests 'e5_widen' (pieces 2 -> 4) and the raised-width arm of 'e5_zero1_to_pieces' (zero1 w2 -> pieces w3), each with manifest and every loss hex equal to the reference.",
+        "BA-58: worker/stage_main.main takes '--launcher {local,coordinator}'; without it a spec whose JSON has shard 'pieces' (read before JobSpec.load) is refused before the engine starts, naming the reason (a one-slot launch cannot verify its peers' class); with either value it calls run_stage unchanged; zero1 specs run with or without the flag as today. Unit test 'pieces_stage_main_refused' (refused without the flag, run_stage reached with '--launcher local' through a monkeypatch, a zero1 spec unaffected) in tests/unit/test_runtime_spec.py, with 'covers: RUNTIME-I10' (one probed class per pieces stage) and a WOULD-FAIL-IF line. The worker agent's flag is arm-pieces' (wave 2).",
+        "Same-wave readers (review round 2): runtime/spec.py is imported by a sibling's tests in this wave. Every edit to it is one complete change that leaves the module importable (the coder runs `uv run python -c 'import wantrain.runtime.spec'` after each edit), and no edit changes a frozen interface of the handout (I-7, its finalize contract included).",
+        "Time budget per verify command (review round 2): every command runs inside the 1200 s ceiling of a test run (machine-lock.mjs SLOT_TIMEOUT_SEC; the timing lines take the whole machine with the same --timeout 1200). There is no whole-file run of tests/integration/test_engine_bitwise.py: the M2 tests run as one selection excluding every M2b prefix, and the M2b arms run per selector, e1_native_ and the E1 matrix one command per recipe. HYPOTHESIS: about 20 s per multi-process arm, so 16 e1_native_ arms per recipe take about 320 s, 30 matrix arms about 600 s and each f1_rotation command about 200 s. A command whose measured time passes 900 s is split by run index or recipe, the split recorded in the journal, never shortened and never given a longer --timeout; an exit 124 is a hang to fix.",
+        "Tripwire pieces-unarmed (leg): this task never lifts the coordinator's refusal. Its verify ends with the tripwire test, which heal-class-tripwire (the first leg) writes in the same wave. That line is evidence only when it exits 0: an exit 5 (not collected) means the first leg has not landed; the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed. The proof that the refusal holds over every leg is arm-pieces' verify (it depends on every leg) and the ladder at the end of the run.",
+        "Tied weights (BA-42, final check): 'e1_core_tied' runs a tie_embeddings toy model (init_scheme 'gpt2') with the Embed and the Head on one wide stage at width 2 under wire 'native' and shard 'pieces', bf16, latency 10 ms and jitter 15 ms seeded by jitter_seed_from_env: the tied parameter is in the Embed's unit only, its manifest and every loss hex equal the reference; a 'spec_m2b' unit test shows finalize refuses pieces when the tied Embed and Head lie on different stages. Its integration test carries 'covers: RUNTIME-I10' and a WOULD-FAIL-IF line."
+      ],
+      "verify": [
+        "grep -q \"def flush_iter\" src/wantrain/model/wgrad.py && grep -q \"def gather_dtypes\" src/wantrain/model/wgrad.py && grep -q \"^class SharedBudget\" src/wantrain/transport/shim.py",
+        "grep -qF \"The manifest is embedded in every piece file\" docs/design/SPEC-runtime.md",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k e6_",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k spec_m2b",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k spec_m2b_planner_contract",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k need_first",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k chunk",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k frame_check",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k copy_engine",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k holds",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k logical_ckpt",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py -k pieces_stage_main_refused",
+        "uv run pytest -q -p no:randomly tests/unit/test_runtime_spec.py",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"not (e1_ or e2_ or e3_ or e4_ or e5_ or f1_rotation or pieces or native or holds_seams)\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and fp32\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and bf16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and fp16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"native_width1\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_core_\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e1_core_tied",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k copy_engine_stage",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_telem\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_local_class\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_stale_tag\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_budget_files\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e5_ and not e5_zero1_to_pieces and not e5_widen\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e5_widen",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e5_zero1_to_pieces",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e5_refuse_mixed_kind",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e5_refuse_zero1_width",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e5_refuse_extra_index",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e5_rebalance_owner\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"resume and not e5_\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_matrix_fp32\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_matrix_bf16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_matrix_fp16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e2_\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_features_on\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_frame\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"pieces_codec_exact\"",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label stage-pieces-e3 --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e3_'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label stage-pieces-holds-seams --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k holds_seams'",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"f1_rotation_a\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"f1_rotation_b\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit",
+        "integration",
+        "oracle"
+      ],
+      "invariants": [
+        "RUNTIME-I10",
+        "RUNTIME-I11",
+        "RUNTIME-I12",
+        "RUNTIME-I13"
+      ],
+      "binding": [
+        "BA-1",
+        "BA-2",
+        "BA-4",
+        "BA-5",
+        "BA-6",
+        "BA-7",
+        "BA-8",
+        "BA-9",
+        "BA-10",
+        "BA-11",
+        "BA-12",
+        "BA-13",
+        "BA-14",
+        "BA-15",
+        "BA-16",
+        "BA-18",
+        "BA-19",
+        "BA-21",
+        "BA-22",
+        "BA-23",
+        "BA-35",
+        "BA-36",
+        "BA-37",
+        "BA-38",
+        "BA-39",
+        "BA-40",
+        "BA-41",
+        "BA-42",
+        "BA-43",
+        "BA-44",
+        "BA-45",
+        "BA-46",
+        "BA-51",
+        "BA-52",
+        "BA-53",
+        "BA-54",
+        "BA-55",
+        "BA-56",
+        "BA-57",
+        "BA-58"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "scheduler-pieces-plan",
+      "title": "R14 lane orders (done), SCHEDULER-I17 simulation, SCHEDULER-I16 admission and plan mode for wide and sharded stages (E7)",
+      "objective": "Keep r14's lane-consistent slot orders green on the merged tree, finish the per-unit exchange simulation (SCHEDULER-I17), build the SCHEDULER-I16 admission predicate on it, and extend plan_job/build_spec to price and choose depth, widths, shard, wire and placement with pieces refused 'not armed' unless allow_pieces, passing E7 (F9).",
+      "workstream": "scheduler",
+      "deps": [],
+      "scope": [
+        "src/wantrain/scheduler/zero_bubble.py",
+        "src/wantrain/scheduler/exchange_sim.py",
+        "src/wantrain/scheduler/admission.py",
+        "src/wantrain/scheduler/planner.py",
+        "src/wantrain/scheduler/fleetplan.py",
+        "tests/unit/test_zero_bubble.py",
+        "tests/unit/test_scheduler.py"
+      ],
+      "acceptance": [
+        "READ FIRST: this task's acceptance list (35 items) and verify list (21 commands) are longer than the run prompt shows (wan-implement fences acceptance at 3000 and verify at 2000 characters). Read the whole task entry scheduler-pieces-plan in docs/design/PLAN-M2b.json before coding; every item binds.",
+        "R14 starting point: DONE and reviewed in the stopped run (journal .factory/runs/M2b/tasks/r14-lane-order.md; code on the tree at 4201c65). Not rewritten: this task re-runs r14's lane_order tests on the tree after P-M2 and, only if the M2 merge turned them red, re-does r14's acceptance below against M2's solve and schedule_for_spec (it owns both zero_bubble.py and tests/unit/test_zero_bubble.py, so it can).",
+        "A lane solve exists for wide stages: one zero-bubble schedule per lane at that peer's op cost, mapped onto its owned microbatches; schedule_for_spec, solve and default_schedule return whichever of the lane orders and today's stage-level orders has the smaller simulate_slots makespan among the orders that fit memory.",
+        "mem_budgets[stage] may be a number (the stage, as today) or a list with one budget per peer; under mem_mode 'auto' a lane solve uses its own peer's budget, the stage-level solve uses their sum, and a scalar budget on a wide stage keeps the stage-level orders (no lane is ever solved against a stage sum); with per-peer budgets given, every returned lane order's peak pending activation memory (the ZBConfig mem_f/mem_b model) stays within its peer's budget, and a control that hands a lane the stage sum exceeds it on a w 4 case (the test discriminates).",
+        "On every stage of width w with equal weights, uniform analytic costs, ZB-2p memory, zero comm and M 32, the simulate_slots bubble (as % of C) of the returned orders is within 0.5 points of derivation.md section 5's lane figures: S16 w2 46.9, S8 w4 43.8, S4 w8 37.5; and a control with today's stage-level orders reproduces 46.9 / 109.4 / 187.5 within 0.5 points (the test discriminates).",
+        "Over 200 seeded heterogeneous configurations (the generator of test_heterogeneous_inputs_always_give_valid_schedules, widths 1-4, weighted IWRR), the returned makespan is never larger than the stage-level solve's, and every order passes simulate_slots without deadlock (SCHEDULER-I3, SCHEDULER-I5).",
+        "Width-1 pipelines get byte-identical orders to today's (the golden SCHEDULER-I1 tests pass unchanged); default_schedule stays deterministic and survives a JSON round trip (SCHEDULER-I7).",
+        "RUNTIME-I2 (timing only): the wide-stage and solved-schedule bitwise integration tests of tests/integration/test_engine_bitwise.py (selection \"wide or solved_schedules\") stay green with this task's orders. stage.py is rewritten in the same wave, so that evidence is taken in wave 2 by arm-pieces' verify (it depends on both tasks) and by the ladder, never cited from a run on a sibling's half-edited file. What this task proves itself: interface I-10 holds (the entry-point signatures are unchanged, width-1 orders are byte-identical to today's, a scalar mem_budgets keeps today's stage-level orders), by its own unit tests 'lane_order_interface'.",
+        "r14's tests carry 'lane_order' in their names, 'covers: SCHEDULER-I19' (SC-2, applied) and a WOULD-FAIL-IF line.",
+        "i17 starting point: the partial code of commit 4201c65 (scheduler/exchange_sim.py and 16 exchange_sim tests in tests/unit/test_zero_bubble.py, 14 passing; journal .factory/runs/M2b/tasks/i17-exchange-sim.md).",
+        "A pure function (no I/O, no RNG, deterministic) takes lane slot orders, per-unit (P_u, b_g,u, b_p,u, forward index), the layout (owner bytes per unit piece), per-peer egress/ingress at min(NIC, PCIe) with 2·f/PCIe per hop, host DRAM with k passes per byte per side, site uplinks per direction, RTT, 16 MiB chunks, fold and AdamW HBM costs ((b_g + 16) B per folded element for a 2-byte wire, 12 for fp32; 30 B per updated element) and the emission order, and returns the predicted step time, E, window_s and X_s per stage.",
+        "It models one need-first queue per (sender, destination), max-min fair sharing of every resource among chunks in flight, gathers released after the owner's last fold and AdamW, F(t+1) on a unit waiting for that unit's gather, and the step barrier; the barrier is a flag independent of the layout (pieces, explicit bounds and zero1; on by default for zero1, off for pieces), so E4's barrier-kept pieces control has a simulation (a test shows pieces with the barrier flag on equals the zero1-style barrier timing on the same layout inputs); a FIFO policy flag exists for E4's control.",
+        "At the scaled B' of round5.md section 6 (F' 50 GFLOP/s, cap' 0.8 Gbps, HBM' 6.70 GB/s, f' 64 KiB) it reproduces, within 5% relative: stage 0 pieces / step 1 alone / LPT 2.82 / 71.31 / 20.09 % of C; interior w4 pieces / step 1 3.66 / 16.00; interior w8 pieces / LPT 10.03 / 25.10; and the same percentages at full point B within 0.5% of the B' values (scale invariance). A miss beyond the bound is reported as a specConflict, never tuned away. The expected values of the stage-0 'step 1 alone' and 'LPT' arms are read from docs/experiments/m2b-e4/PLAN.json, which precondition SC-4 re-pins before wave 1 (the researcher's amendment of derivation section 2 for owners whose gathers wait on their ingress); the test is never edited to match and never tuned.",
+        "In a volume-bound case E equals max(X_s, V/cap + RTT + t_gap - C) within 2%; FIFO exposes at least 1.5x the need-first exposure at point A (derived 33.9 vs 18.8 ms).",
+        "It returns the prediction for both emission orders and names the one with the smaller predicted step time (E4 measures both against it, BA-43).",
+        "exchange_sim names emission orders 'forward' and 'backward'; JobSpec.emission_order 'store' is the sim's 'backward' (BA-43): the planner and e4-exposure translate at the call, never by renaming the sim's values.",
+        "Class: peers of different device type or probed device model are refused naming the class; a declared (not probed) gpu_name or device is refused for pieces naming the field.",
+        "S1 on every NIC and PCIe path per direction, host DRAM (share 2(w-1)/w, k passes per side, boundary bytes A included) and site uplink (n_a·n_b/w), summed over every (stage, GPU) placed on the link, each at its own c_s, the planner's per-microbatch F + B + W from layer_costs through zero_bubble.analytic_costs (attention included, recompute as the recipe runs; the Embed tables carry none), the same c_s as S2 and C (SCHEDULER-I16 as amended, ADR-0006 R16). At point B it reproduces docs/experiments/m2b-e7/PLAN.md within 0.5%: stage 0 809.8 GB/s per GPU at k 10 and 162.0 at k 2, interior 383.6 and 76.7; a 600 GB/s host admits no stage-0 GPU at k 10 and 3 at k 2.",
+        "S2 with E and window_s from the exchange simulation: point B stage 0 pieces (24.07 ms against epsilon·C 28.78 ms at epsilon 3%, docs/experiments/m2b-e7/PLAN.md) admitted; (8, 4) and (4, 8) at 400 Gbps refused (ADR-0006 R7).",
+        "Device memory per peer and MEM-HOST summed over every peer of a host against that host's one RAM figure less its reserve (refusal names the host), both as functions of each peer's M_k and the placement so a caller can re-check after ownership changes; the one-step host bound reproduces round5.md section 4 within 0.5%: 21.74, 24.96, 19.93, 49.21, 32.91 GB.",
+        "Every capacity carries its source: one marked 'declared' or 'missing' refuses pieces naming the missing measurement (never assumed); a PCIe capacity marked 'absent' (cpu or mps node: the device is the host) removes the PCIe link from S1 for that node and never refuses (unit test with a cpu node); k on host DRAM is the module constant admission.K_HOST_DRAM_COUNTED, the transport's counted passes per side on the sealed M2 data plane as precondition SC-5 records it in SCHEDULER-I16 (10 only if SC-5 counts 10), marked 'counted'; a test asserts it equals the figure in SPEC-scheduler.md's SCHEDULER-I16. The S1 anchors and E7 configurations keep their explicit k values (scenario inputs).",
+        "plan_job accepts more devices than cut points (fleet nodes with host, site, probed class, host RAM, host-DRAM GB/s, PCIe per direction (source 'absent' on cpu and mps nodes, dropping that link from S1), NIC per direction and k, each with its source per BA-48) and returns stage_widths, a [stage][peer] placement (endpoints, devices), shard, wire, emission_order and piece_bounds; fleetplan.build_spec emits them and reads the new node fields. Frozen finalize contract (I-7, review round 2): the planner emits only combinations stage-pieces' finalize accepts: shard 'pieces' only with wire 'native'; wire 'native' on a plan with any wide stage only with stream_grads True; piece_bounds always None in M2b (equal layout, which is what admission prices); pieces only on a stage whose peers share device type and probed model; never pieces on a tie_embeddings recipe whose Embed and Head lie on different stages (BA-42). The M2b fields are set on the built spec by attribute assignment, as build_spec already sets out_dir and tag. This task's tests assert the M2b choice on plan_job's plan dict and the spec attributes, and a test 'plan_wide_finalize_contract' asserts the contract over every candidate the planner can emit, without relying on which finalize is on disk; build_spec with allow_pieces True through the real finalize and the JSON round trip are arm-pieces' 'plan_wide_spec_fields' in wave 2.",
+        "Candidates: the deepest cut at width 1 (on fewer devices when devices outnumber cut points), narrower stages, zero1 wide stages with the job's wire (today's admission plus the simulation, host DRAM and boundary bytes included) and pieces where I16 admits every wide stage; it picks the smallest simulated step, refuses the job only when no candidate fits memory, and the rationale names every refused width with its link, number, class or missing measurement. A wide candidate whose pricing input is missing is refused naming it; width-1 candidates never need these inputs.",
+        "allow_pieces (plan_job and build_spec, default False, BA-49): when False every candidate with shard 'pieces' or wire 'native' is refused with the reason 'not armed', listed in the rationale, and the best remaining candidate (fp32 zero1 or narrower) is chosen (unit test on a fleet I16 admits). The E7, i16_ and plan_wide pricing tests call with allow_pieces True. A plan job field shard ('zero1' | 'pieces') restricts the candidates to that layout and refuses the job, naming every reason, when none is admitted.",
+        "Grouping is by (device, probed gpu_name), never by node label (closes finding M2-R5-FIT-2); width-1 fleets plan exactly as today (existing SCHEDULER-I12 tests pass); production.PRODUCTION is unchanged.",
+        "E7 (round5.md section 3; 600 GB/s hosts, stage-contiguous packing): every configuration's expected choice is the one pinned in docs/experiments/m2b-e7/PLAN.json, which the researcher re-derives with the planner's attention-inclusive layer_costs (ADR-0006 R16) and the human grants before this task runs; the test reads it from that file. ADR-0006's a-priori choices, listed beside them in the PLAN: 7B on 32 H100 at 400 Gbps -> S16 w2 pieces on 1-GPU hosts at k 10 and on 8-GPU hosts at k 2; zero1 + native at (16, 2) on 2-GPU hosts at k 10 with stage 0's host DRAM named; S32 w1 on 4- and 8-GPU hosts at k 10; at 100 Gbps S32 w1. 7B on 128 H100 at 400 Gbps: 1-GPU hosts at k 10 -> S32 w4 zero1 + native with stage 0's host DRAM named; at k 6 -> pieces; 8-GPU hosts at k 10 -> S32 w1 on 32 GPUs, at k 2 -> zero1 + native; at 100 Gbps -> S32 w1 on 32 GPUs. H100 over one 10 Gbps uplink and mixed classes are refused naming the link or class; host memory below the per-host sum refuses with MEM-HOST.",
+        "F9: the chosen plan's simulated step is never more than 1% above the best admitted candidate's. A mismatch with the PLAN's pinned choice is reported as F9 (a specConflict), never fixed by editing the expectation, except under the PLAN's tie rule (the human's ruling, 2026-10-09): where the pinned margin to the runner-up is at most 2%, either of the two counts as matching if its simulated step is within 1% of the best admitted candidate's.",
+        "Interface I-8 (handout) for arm-pieces: plan_job(..., allow_pieces: bool = False, shard: str | None = None) and build_spec(fleet: dict, allow_pieces: bool = False) read the node keys and fleet keys of I-8; the returned spec object carries (as attributes) stage_widths, devices/endpoints per [stage][peer], shard, wire, emission_order, piece_bounds (None) and stream_grads; admission.recheck(..., pinned_bytes_per_peer=None) re-checks device memory, MEM-HOST and S2 for a given mb_owner and orders (BA-47) and admission.check_class(peers) applies the probed-class rule (BA-31, BA-50). It reads I-4 (node.py) from the tree as it is at 4201c65 (the second verify line greps it).",
+        "The e7_ test prints, before it asserts, one JSON line {\"choices_matching\": n, \"refusals_matching\": n, \"f9_violations\": n} (docs/experiments/m2b-e7/PLAN.json's performance command reads the last such line); refusal tests carry 'refuse' in their names (its failure command selects `plan_wide and refuse`); the E7 fleet runs with recompute on (the PLAN's sensitivity: recompute off flips 2 of 14 choices).",
+        "Tests carry 'exchange_sim' (in tests/unit/test_zero_bubble.py, 'covers: SCHEDULER-I17'), 'lane_order' (including 'lane_order_interface', 'covers: SCHEDULER-I19'), 'k_counted', 'i16_', 'e7_' or 'plan_wide' (in tests/unit/test_scheduler.py, 'covers: SCHEDULER-I16'), each with a WOULD-FAIL-IF line; refusal tests also carry 'refuse'.",
+        "allow_pieces defaults to False, so no caller gets a pieces or native plan until arm-pieces passes True.",
+        "Device memory, term by term (SCHEDULER-I16, review round 2): admission's device term for peer k is b_p·P_s + 16·P_s/w + b_g·M_k·P_s/w + b_g·P_module,max + min(S, M/w)·T_mb·h·b_boundary + L_s·T_mb·16·h·4, plus the head's logits on the last stage, against the device less vram_reserve. A test 'i16_device_bound' checks each term against an independent hand computation with distinct expected values and reproduces DESIGN §9 within 0.5%: state b_p + 16/w = 6.17 B/param at w 4 and 4.17 at w 8; own-piece hold b_g·M_k/w = 4 B/param at 7B, S 8, w 4, M 32 and 32 B/param for the fp32 Embed tables at 7B, S 32, w 4, M 128. A test 'i16_device_refuse' builds a fleet that passes MEM-HOST and fails device memory and is refused naming the peer; its control drops the b_g·M_k·P_s/w term and admits the same fleet (the test discriminates).",
+        "MEM-HOST pinned chunks (SCHEDULER-I16 'plus its pinned copy chunks in flight'): the host term adds, per peer, the pinned copy bytes in flight, an input of admission (pinned_bytes_per_peer, so admission never imports the runtime written in this wave): 0 on a cpu or mps node (no pinned copies), the caller's figure on CUDA (arm-pieces passes the copy engine's bound). A test 'i16_mem_host_pinned' shows a CUDA-shaped host one pinned budget short of the bound is refused MEM-HOST naming the host, while the same host as cpu nodes is admitted.",
+        "Interface I-10 (handout, review round 2): stage-pieces' finalize and stage.py call zero_bubble in this wave. The signatures of solve, schedule_for_spec, default_schedule, analytic_costs and simulate_slots stay those of the merged tree; a scalar mem_budgets and every width-1 pipeline get byte-identical orders to today's; outputs are deterministic. A change that needs more is a recorded spec conflict naming stage-pieces, never made. scheduler/zero_bubble.py is imported by a sibling's tests in this wave. Every edit to it is one complete change that leaves the module importable (the coder runs `uv run python -c 'import wantrain.scheduler.zero_bubble'` after each edit), and no edit changes a frozen interface of the handout (I-10).",
+        "Tripwire pieces-unarmed (leg): this task never lifts the coordinator's refusal. Its verify ends with the tripwire test, which heal-class-tripwire (the first leg) writes in the same wave. That line is evidence only when it exits 0: an exit 5 (not collected) means the first leg has not landed; the coder runs it again as its last command and, if it is still 5, writes 'NOT RUN: first leg not landed' in its journal and never cites it as passed. The proof that the refusal holds over every leg is arm-pieces' verify (it depends on every leg) and the ladder at the end of the run."
+      ],
+      "verify": [
+        "grep -qE \"SCHEDULER-I19\\.\" docs/design/SPEC-scheduler.md",
+        "grep -q \"def capacity_source\" src/wantrain/resources/node.py",
+        "grep -q \"SC-5\" docs/design/SPEC-scheduler-history.md",
+        "python3 -c \"import json;d=json.load(open('docs/experiments/m2b-e4/PLAN.json'));assert 'SC-4' in json.dumps(d['derivation'])\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k lane_order",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k \"not exchange_sim\"",
+        "node agents-architetura/tools/factory/approve.mjs check docs/experiments/m2b-e4/PLAN.json",
+        "node agents-architetura/tools/factory/approve.mjs check docs/experiments/m2b-e7/PLAN.json",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k exchange_sim",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k i16_",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k \"i16_ and absent\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k e7_",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k plan_wide",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py tests/unit/test_zero_bubble.py tests/unit/test_schedule.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k k_counted",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k lane_order_interface",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k i16_device_bound",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k i16_device_refuse",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k i16_mem_host_pinned",
+        "uv run pytest -q -p no:randomly tests/unit/test_scheduler.py -k plan_wide_finalize_contract",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit"
+      ],
+      "invariants": [
+        "SCHEDULER-I16",
+        "SCHEDULER-I17",
+        "SCHEDULER-I19"
+      ],
+      "binding": [
+        "BA-24",
+        "BA-25",
+        "BA-26",
+        "BA-27",
+        "BA-31",
+        "BA-32",
+        "BA-43",
+        "BA-49"
+      ],
+      "risk": "medium"
+    },
+    {
+      "id": "heal-class-tripwire",
+      "title": "CONTROL-I9 class-preserving heal, and the pieces tripwire",
+      "objective": "Heal a slot of a sharded stage only with the identical probed device model, and make the coordinator refuse shard 'pieces' jobs until the arm task (first leg of the pieces tripwire).",
+      "workstream": "control",
+      "deps": [],
+      "scope": [
+        "src/wantrain/fault_tolerance/replacement.py",
+        "src/wantrain/coordinator/coordinator.py",
+        "tests/unit/test_fault_tolerance.py",
+        "tests/unit/test_control_admission.py",
+        "src/wantrain/cli.py"
+      ],
+      "acceptance": [
+        "Code base: coordinator.py as merged by P-M2, the M2 of PR #33 with its sealed data plane, waves and rebalance loop (M2 rewrites _setup, _heal and the wave restore path; precondition P-M2).",
+        "For a slot of a stage under shard 'pieces', the heal calls find_replacement with match='model' whatever cfg.replacement_match says; a spare of another gpu_name or device is never chosen; zero1 and width-1 slots keep cfg.replacement_match.",
+        "A spare whose gpu_name or device is declared (in NodeInfo.declared) is not the identical model for a pieces slot.",
+        "With no identical spare the heal raises with a reason naming the required class, and the run ends not ok without relaunching.",
+        "Coordinator.run_job refuses a job whose spec or plan has shard 'pieces' or wire 'native' before any ASSIGN, with a reason saying they are not armed; it reads the plan dict's shard and wire on a plan-mode job (which has no spec) and the spec's on a spec-mode job, so a plan-mode job without them and every existing coordinator job run as today. The test carries 'pieces_unarmed' in its name and covers four cases (spec shard 'pieces', plan shard 'pieces', spec wire 'native', plan wire 'native'), with a control (a zero1 fp32 job passes the check). The fields are read without depending on stage-pieces' spec.py landing first: getattr(job.spec, 'shard', 'zero1'), getattr(job.spec, 'wire', 'fp32') and (job.plan or {}).get('shard'|'wire') (interface I-9); the refusal reason contains 'not armed'. The test is an in-process call (no stage process): this task's verify never launches stage.py, which stage-pieces rewrites in this wave; the coordinator integration and chaos selections that prove existing jobs unchanged run in arm-pieces' verify (wave 2) and the ladder (review round 2).",
+        "'wantrain stage' refuses a spec with shard 'pieces' before launching, naming the reason (a one-slot launch cannot verify its peers' class, BA-52); a unit test calls the CLI entry with such a spec and carries 'pieces_stage_cli' in its name. The CLI reads 'shard' from the spec file's JSON before JobSpec.load, so the refusal holds whether or not the field exists yet.",
+        "Existing CONTROL-I9 and CONTROL-I10 unit tests pass; new heal tests carry 'pieces_heal' in their names and 'covers: CONTROL-I9' (CONTROL-I9's M2b clause shares a line with its M0 text, so the invariants rung cannot see it uncovered: this verify is its check).",
+        "First leg of tripwire pieces-unarmed: this task adds the refusal (a module constant PIECES_ARMED = False in coordinator.py, interface I-9) and its test 'pieces_unarmed'; only arm-pieces sets it True, and the test stays after arming with the flag patched off. The other legs (model-flush-iter, stage-pieces, scheduler-pieces-plan) run this test as their last verify line; landing it early in the wave is this task's first job (HYPOTHESIS: it is the smallest wave-1 task, so it lands first)."
+      ],
+      "verify": [
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_fault_tolerance.py -k pieces_heal",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_stage_cli",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit",
+        "integration",
+        "chaos"
+      ],
+      "invariants": [
+        "CONTROL-I9"
+      ],
+      "binding": [
+        "BA-30",
+        "BA-31",
+        "BA-52"
+      ],
+      "risk": "high"
+    },
+    {
+      "id": "e4-exposure",
+      "title": "E4: measured exposure against the as-built simulation (F3, F5, F6)",
+      "objective": "Run experiment E4: measure the exposed exchange at the scaled B' on the shared-pacer shim and test it against the as-built SCHEDULER-I17 simulation (F3), pieces against step 1 alone and LPT (F6), and a tree arm (F5).",
+      "workstream": "runtime",
+      "deps": [
+        "stage-pieces",
+        "scheduler-pieces-plan",
+        "transport-shared-pacers"
+      ],
+      "scope": [
+        "src/wantrain/validation/exposure.py",
+        "tests/integration/test_engine_bitwise.py"
+      ],
+      "acceptance": [
+        "READ FIRST: this task's acceptance list (13 items) and verify list (4 commands) are longer than the run prompt shows (wan-implement fences acceptance at 3000 and verify at 2000 characters). Read the whole task entry e4-exposure in docs/design/PLAN-M2b.json before coding; every item binds.",
+        "Wave 2 (integration): runs on the tree where stage-pieces, scheduler-pieces-plan and transport-shared-pacers have landed. Its tests are new functions appended to tests/integration/test_engine_bitwise.py (second owner after stage-pieces); it never edits stage-pieces' tests, writes the block in one edit, and imports wantrain.validation.exposure inside the e4_ test functions, never at module level, so collection of the file (arm-pieces runs f1_rotation and e3_ from it in parallel) never depends on exposure.py being finished.",
+        "Deviation D-3 (handout): E4 runs beside arm-pieces, not before it. E4 decides the timing model of S2 (performance admission), never a bit of the result; a fired F3, F5 or F6 is recorded as a spec conflict naming the criterion and arm, and GATES-M2b entry e4-exposure-sweep keeps closeout NOT VERIFIED until it is resolved.",
+        "Precondition (ADR-0006 F6): the predictions are those of docs/experiments/m2b-e4/PLAN.json, re-pinned by the researcher at the F' profiled on this machine and granted by the human before this task runs; the harness reads them from that file and refuses to run off the PLAN's scaled configuration; the verify fails until the grant exists.",
+        "The harness builds B' (h' 256, V' 2000, seq' 256, T_mb' 256), checks every ratio of round5.md section 6's table within 0.5% before any arm, profiles F' with the recipe's deterministic kernels, sets cap', HBM' (measured fold rate where it cannot be paced) and f' by the scaling map, and pads the stage-0 arm's steps to C_B'.",
+        "Before measuring, the exchange simulation reproduces round5.md section 6's percentages within 5% at round 5's configuration (op split 1:2:1, HBM'), and docs/experiments/m2b-e4/PLAN.json's pinned table within 5% at the E4 configuration (the measured op split and fold rates); otherwise the task stops with a specConflict. Precondition SC-4 (re-pin of the two stage-0 arms) is closed before wave 1, so this pre-check runs on the re-pinned table. (P3 re-pin: this CPU's F:B:W split is about 0.10:0.81:0.08, not 1:2:1.)",
+        "F3: measured exposure (as SCHEDULER-I17 defines E, from the slots' stall and wait events) is within [0.8, 1.2]x the simulation at no fewer than 3 points on each side of the S1 threshold (T_mb' or cap' varied), the measured threshold is within 25% of the simulated one, and the shared-uplink arm meets the same bounds; the barrier-kept control (pieces with WANTRAIN_TEST_BARRIER=always) matches the simulation with its layout-independent barrier flag on, else the shim is reported wrong.",
+        "F6, in % of C (scale-free), each margin at least half the PLAN's re-pinned prediction (ADR-0006's a-priori halves: stage 0 pieces beat step 1 alone by 34.2 points and LPT (explicit whole-tensor bounds) by 8.6; interior w4 pieces beat step 1 alone by 6.2; interior w8 pieces beat LPT by 7.5); FIFO control (WANTRAIN_TEST_QUEUE=fifo) recorded.",
+        "F5: the tree arm is a standalone exchange harness in validation/exposure.py over the shared-pacer shim (no stage.py path: it moves the same bytes between w processes and never touches training state); the same harness measures the left-fold streaming exchange and the tree exchange at the same configuration, and the tree must expose more than the left fold while S1 holds.",
+        "Emission order and RTT (ADR-0006 E4 arms; BA-43): pieces arms at RTT 0 and at RTT_hi = 2*c_W, each under emission 'store' and 'forward': each measured E within [0.8, 1.2]x the simulation's prediction for that order; at RTT_hi the simulation's chosen order equals the measured faster one (the planner relies on it). At RTT 0 the predicted difference (1.5%) is below the band's resolution, so no order is asserted there. The predictions are pinned in docs/experiments/m2b-e4/PLAN.json.",
+        "Every training arm's manifest equals the reference. Results print as one JSON line labelled SIMULATED. Any falsification is reported as such (ADR-0006 refuted on that arm), never rationalized; the tests are not loosened.",
+        "Tests carry 'e4_' in their names, the emission-order/RTT arms also 'emission' and the F5 arm also 'tree'. They measure wall time, so every e4_ verify line takes the whole machine (machine-lock without --slot, --timeout 1200): arm-pieces' heavy lines, which run beside it in wave 2, take it too, so the two never measure under each other's load.",
+        "Results also print the metrics the /wan-experiment classification reads (one JSON line per arm: arm, predicted, measured, unit, criterion), so the researcher can record E4's LOCAL.json from this task's evidence."
+      ],
+      "verify": [
+        "node agents-architetura/tools/factory/approve.mjs check docs/experiments/m2b-e4/PLAN.json",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label e4-exposure --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e4_ and not emission and not tree\"'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label e4-exposure-emission --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e4_ and emission\"'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label e4-exposure-tree --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e4_ and tree\"'"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit",
+        "integration"
+      ],
+      "invariants": [],
+      "binding": [
+        "BA-43"
+      ],
+      "risk": "medium"
+    },
+    {
+      "id": "arm-pieces",
+      "title": "Coordinator plan mode for wide and sharded stages, then arm shard pieces (every feature on)",
+      "objective": "Wire the planner, probed capacities and admission re-checks into the coordinator's plan and spec modes, run F1 and F8 on the integrated tree, and only if they pass lift the pieces refusal and put wire 'native' and shard 'pieces' into the every-feature-on identity topology.",
+      "workstream": "control",
+      "deps": [
+        "heal-class-tripwire",
+        "stage-pieces",
+        "scheduler-pieces-plan",
+        "fleet-capacities",
+        "model-flush-iter",
+        "transport-shared-pacers"
+      ],
+      "scope": [
+        "src/wantrain/coordinator/coordinator.py",
+        "src/wantrain/worker/agent.py",
+        "tests/unit/test_control_admission.py",
+        "tests/integration/test_coordinator.py",
+        "tests/helpers/cluster.py",
+        "tests/helpers/exact.py"
+      ],
+      "acceptance": [
+        "READ FIRST: this task's acceptance list (22 items) and verify list (35 commands) are longer than the run prompt shows (wan-implement fences acceptance at 3000 and verify at 2000 characters). Read the whole task entry arm-pieces in docs/design/PLAN-M2b.json before coding; every item binds.",
+        "Wave 2 (integration), second owner of coordinator.py and tests/unit/test_control_admission.py after heal-class-tripwire. Code base: M2's coordinator.py (precondition P-M2).",
+        "GATE before the refusal is lifted (F1, F8 on the integrated tree; tripwire pieces-unarmed, whose legs now include model-flush-iter for wire 'native'): the f1_rotation_a, f1_rotation_b, three consecutive e3_ runs, and the e1_native_ (per recipe) and native_width1 selections of stage-pieces pass on the tree where every leg has landed. If any fails, F1 or F8 fired: the task records a spec conflict naming the criterion, the arm and the printed seed, leaves PIECES_ARMED False, and still delivers the plan-mode work below with allow_pieces False (never a retry to pass, never a loosened test).",
+        "A plan job can name a device count; _setup waits for that many workers and builds the plan fleet per BA-48: host from the probed hostname, site from the declared region, probed class (device, gpu_name; declared ones marked), one host RAM and one host-DRAM capacity per hostname (the max of its workers' measurements), PCIe per direction (source 'absent' on cpu and mps nodes), NIC capacity per direction from the link probes' bidirectional transfer (marked measured; the declared uplink/downlink, marked declared, when probing is off), and k = admission.K_HOST_DRAM_COUNTED marked counted (SC-5); groups are formed from the planner's placement. Test 'plan_wide_fleet_inputs' (tests/unit/test_control_admission.py, a direct call on four NodeInfos over two hostnames, one with probing off): one RAM and one DRAM figure per hostname equal to the max of its workers', PCIe 'absent' on cpu nodes, NIC 'measured' from the link probes and 'declared' with probing off, k equal to K_HOST_DRAM_COUNTED with source 'counted', and groups equal to the planner's placement; its control keys hosts by node label and fails.",
+        "The coordinator passes allow_pieces=PIECES_ARMED to build_spec. A test named 'plan_wide_unarmed', in tests/unit/test_control_admission.py, calls the coordinator's plan step directly (no launch) with PIECES_ARMED monkeypatched False on a fleet I16 would admit and shows that the rationale lists every pieces and native candidate refused 'not armed' and the chosen plan is the best fp32 zero1 or narrower one (kept after arming, so the unarmed path stays proven).",
+        "_zero_bubble passes per-peer activation budgets for wide stages (each node's memory less vram_reserve and the stage state; BA-29): a test named 'plan_wide_lane_budgets' (tests/unit/test_control_admission.py, direct call) with stage 1 at w 4 and four distinct node memories shows each lane solve receives its own peer's budget, never the sum; its control hands the sum and fails.",
+        "After schedule_for_spec re-weights ownership, every pieces stage is re-checked by admission's memory terms (device, MEM-HOST, with the copy engine's pinned bytes on CUDA) and S2 with the final mb_owner and orders before FIT and ASSIGN; a re-weighting past a bound refuses naming the peer or host (BA-47; test 'plan_wide_recheck', a direct call with one peer owning 12 of 32, plus a control that owns 8 of 32 and passes).",
+        "A spec-mode job with shard 'pieces' gets I16's class check (probed, never declared) and memory terms before FIT and ASSIGN, refusing naming the class, peer or host; S1 and S2 are recorded in the rationale as warnings (BA-50; test 'pieces_spec_mode_checks', a direct call: one case per refusal (mixed probed model, a declared gpu_name, device memory, MEM-HOST) and an admitted control).",
+        "On a localhost CPU cluster of 4 workers and a toy plan job whose fleet forces width and whose plan names shard 'zero1' (so the test stays valid after arming), the coordinator launches a plan with a zero1 wide stage solved by the lane-consistent bridge, and the run's losses and final state equal the oracle (CONTROL-I4, CONTROL-I6; test 'plan_wide_zero1_oracle' in tests/integration/test_coordinator.py).",
+        "The rationale records the candidates, the chosen one's simulated step, every input with its source, and every refused width with its reason; FIT runs per slot as today (test 'plan_wide_rationale', tests/unit/test_control_admission.py, a direct call: every key of the fleet appears with its source, the chosen candidate's simulated step is present, and each refused width names its reason).",
+        "plan_wide_spec_fields (tests/integration/test_coordinator.py): on the integrated tree, build_spec(fleet, allow_pieces=True) on a fleet I16 admits returns a spec_json that carries shard, wire, emission_order and piece_bounds, and JobSpec.from_json of it round-trips them exactly and passes finalize (the planner sets them by attribute in wave 1, I-8).",
+        "Rebalance under pieces (BA-44, SCHEDULER-I16 'at every re-plan'): before M2's rebalance applies a new mb_owner / peer_weights to a run with a stage under shard 'pieces', the coordinator calls admission.check_class on the stage's slots and admission.recheck (device memory, MEM-HOST, S2) with the new ownership and orders; on a failure the rebalance is not applied, the reason is logged and recorded with the run's replans, and the run continues on its current plan. Tests: 'pieces_rebalance' (localhost CPU, a pieces stage of width 2 with one peer 2x slow through WANTRAIN_SIM_SLOW so M2's rule fires; the rebalance applies and the final state equals the oracle by sha256) and 'pieces_rebalance_refused' (a direct call whose new M_k breaks MEM-HOST: not applied, reason recorded, no relaunch).",
+        "The coordinator accepts shard 'pieces' and wire 'native' specs and plans and passes allow_pieces True to the planner (BA-49); the worker agent launches every slot with '--launcher coordinator' (BA-58). 'pieces_unarmed' stays, with PIECES_ARMED patched False (so the tripwire test keeps selecting and proving the refusal), and a 'pieces_armed' test launches a pieces spec through the coordinator and the agent (it fails if the agent omits the flag).",
+        "plan_wide_armed (tests/unit/test_control_admission.py, direct call): on the same fleet with PIECES_ARMED True every pieces candidate in the rationale is admitted or refused with an I16 reason (S1, S2, device memory, MEM-HOST, class or a missing measurement). No test in tests/integration/test_coordinator.py contains the text 'not armed' (GATES-M2b entry pieces-armed greps it); the unarmed assertions live in tests/unit/test_control_admission.py, never hidden from the grep.",
+        "On a localhost CPU cluster of 4 workers, a plan job with shard 'pieces' is admitted by I16 on probed inputs (no 'missing' or 'declared' input; PCIe 'absent' on cpu nodes), planned with a pieces wide stage, and its losses and final state equal the oracle (test 'pieces_plan_oracle' in tests/integration/test_coordinator.py); the same job with one worker's hostDramGBps withheld is refused naming the missing measurement (test 'plan_wide_missing_dram' in tests/unit/test_control_admission.py, a direct call). If I16 refuses the toy fleet on measured inputs, that is reported as a specConflict, never loosened (HYPOTHESIS: S1 and S2 hold on loopback for the toy model).",
+        "FEATURES_ON gains wire 'native', shard 'pieces', stage 1 width 3 with weights [1, 0.5, 0.25] and emission_order 'forward' on stage 1 (one topology covering w 3, weighted IWRR and the forward emission); tests/oracle/test_state_identity.py passes in the production, FACTORY_FEATURES=off and FACTORY_REFERENCE=1 modes, and the identity gate compares the three by sha256.",
+        "tests/wan (which shares FEATURES_ON) passes with the new topology.",
+        "A coordinator run with a pieces stage of width 2, one peer killed mid-run and an identical-model spare heals and ends with a final state equal to the oracle (CONTROL-I10 under pieces); with only a different-model spare it fails cleanly naming the class (test 'pieces_heal_run' in tests/integration/test_coordinator.py, both cases).",
+        "The chaos suite passes unchanged.",
+        "Evidence moved here from wave 1 (review round 2: a wave-1 verify never runs a sibling's half-edited file): RUNTIME-I2 for scheduler-pieces-plan's orders (test_engine_bitwise.py -k \"wide or solved_schedules\"), the MODEL-I1..I3 deferred-dW tests for model-flush-iter (test_zero_bubble.py -k \"deferred or split_linear or tied or device_backward\"), and heal-class-tripwire's existing coordinator and chaos selections (test_coordinator.py -k \"node_lifecycle or planner_mode or wide_stage or relaunch\"; tests/chaos/test_recovery.py -k \"dead_worker or wide_stage_peer_death or no_spare\"). A failure there is attributed to its owner task as a recorded conflict and fixed by the review of the whole change, never by changing the test.",
+        "Timing and heavy lines take the whole machine (machine-lock without --slot, --timeout 1200): f1_rotation, e3_ and pieces_rebalance, so e4-exposure's measurements beside this task never run under them.",
+        "Tests carry 'plan_wide' (with 'covers: CONTROL-I4' or 'covers: SCHEDULER-I16'), 'pieces_armed', 'pieces_unarmed' or 'pieces' in their names, each with a WOULD-FAIL-IF line; every acceptance item above names its test, and the verify selects each test by its own name (a missing test makes its line exit 5, never hidden in an OR)."
+      ],
+      "verify": [
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-f1a --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k f1_rotation_a'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-f1b --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k f1_rotation_b'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-e3-1 --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e3_'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-e3-2 --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e3_'",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-e3-3 --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k e3_'",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and fp32\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and bf16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k \"e1_native_ and fp16\"",
+        "uv run pytest -q -p no:randomly -s tests/integration/test_engine_bitwise.py -k native_width1",
+        "uv run pytest -q -p no:randomly tests/integration/test_engine_bitwise.py -k \"wide or solved_schedules\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_zero_bubble.py -k \"deferred or split_linear or tied or device_backward\"",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"node_lifecycle or planner_mode or wide_stage or relaunch\"",
+        "uv run pytest -q -p no:randomly tests/chaos/test_recovery.py -k \"dead_worker or wide_stage_peer_death or no_spare\"",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_unarmed",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_armed",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_fleet_inputs",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_rationale",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_lane_budgets",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_recheck",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_spec_mode_checks",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k plan_wide_missing_dram",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_rebalance_refused",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_armed",
+        "uv run pytest -q -p no:randomly tests/unit/test_control_admission.py -k pieces_unarmed",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k plan_wide_zero1_oracle",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k plan_wide_spec_fields",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k pieces_plan_oracle",
+        "uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k pieces_heal_run",
+        "node agents-architetura/tools/verify/machine-lock.mjs run --label arm-pieces-rebalance --wait 3600 --timeout 1200 -- 'uv run pytest -q -p no:randomly tests/integration/test_coordinator.py -k \"pieces_rebalance and not refused\"'",
+        "! grep -n 'not armed' tests/integration/test_coordinator.py",
+        "FACTORY_REFERENCE=1 uv run pytest -q -p no:randomly tests/oracle/test_state_identity.py",
+        "FACTORY_FEATURES=off uv run pytest -q -p no:randomly tests/oracle/test_state_identity.py",
+        "uv run pytest -q -p no:randomly tests/oracle/test_state_identity.py",
+        "uv run pytest -q -p no:randomly tests/wan",
+        "uv run pytest -q -p no:randomly tests/chaos"
+      ],
+      "rungs": [
+        "fmt",
+        "lint",
+        "types",
+        "discipline",
+        "invariants",
+        "claims",
+        "unit",
+        "integration",
+        "oracle",
+        "identity",
+        "chaos",
+        "wan"
+      ],
+      "invariants": [],
+      "binding": [
+        "BA-20",
+        "BA-28",
+        "BA-29",
+        "BA-33",
+        "BA-34",
+        "BA-44",
+        "BA-47",
+        "BA-48",
+        "BA-49",
+        "BA-50",
+        "BA-58"
+      ],
+      "risk": "high"
+    }
+  ]
+}

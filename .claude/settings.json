@@ -1,0 +1,70 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node agents-architetura/tools/wf/build.mjs:*)",
+      "Bash(node agents-architetura/tools/gates/ladder.mjs:*)",
+      "Bash(node agents-architetura/tools/gates/bench-gate.mjs:*)",
+      "Bash(node --test:*)",
+      "Bash(uv:*)",
+      "Bash(uvx pip-audit:*)",
+      "Bash(cargo:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(test -e:*)",
+      "Bash(node agents-architetura/tools/factory/approve.mjs check:*)",
+      "Bash(node agents-architetura/tools/factory/approve.mjs pending:*)",
+      "Bash(node agents-architetura/tools/factory/freeze.mjs check:*)",
+      "Bash(node agents-architetura/tools/factory/publish.mjs:*)",
+      "Bash(node agents-architetura/tools/factory/hardware.mjs show:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(node agents-architetura/tools/factory/approve.mjs confirm:*)",
+      "Bash(node ./agents-architetura/tools/factory/approve.mjs confirm:*)",
+      "Bash(node agents-architetura/tools/factory/hardware.mjs set gpu true:*)",
+      "Bash(node ./agents-architetura/tools/factory/hardware.mjs set gpu true:*)",
+      "Bash(node agents-architetura/tools/vast/vast.mjs doctor:*)",
+      "Bash(node ./agents-architetura/tools/vast/vast.mjs doctor:*)"
+    ],
+    "deny": [
+      "Edit(.claude/workflows/**)",
+      "Edit(docs/design/APPROVALS.json)",
+      "Edit(docs/design/FROZEN.json)",
+      "Bash(vastai create:*)",
+      "Bash(vastai launch:*)",
+      "Bash(vastai set api-key:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(node agents-architetura/tools/factory/approve.mjs grant:*)",
+      "Bash(node ./agents-architetura/tools/factory/approve.mjs grant:*)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(agents-architetura/tools/factory/approve.mjs)",
+      "Edit(agents-architetura/tools/factory/approval-record.mjs)",
+      "Edit(agents-architetura/tools/factory/approval-record.sh)",
+      "Edit(agents-architetura/tools/factory/hardware.json)",
+      "Edit(agents-architetura/tools/factory/hardware.mjs)",
+      "Edit(agents-architetura/tools/vast/vast.mjs)",
+      "Edit(agents-architetura/tools/vast/client.mjs)",
+      "Edit(agents-architetura/tools/factory/autonomy.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/agents-architetura/tools/factory/approval-record.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

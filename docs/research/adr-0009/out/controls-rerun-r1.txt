@@ -1,0 +1,26 @@
+transformers 5.19.0 torch 2.14.1
+C1 real layer calls per stage: [0] [1, 2] [3] hidden hidden logits
+C2 1-ulp perturbed boundary -> logits equal? False
+C3 llama eager==sdpa logits? False max|d| 1.6763806343078613e-07
+C3 gemma2 eager==sdpa logits? False max|d| 3.8743019104003906e-07
+C4 gemma2 eager: softcap 50 vs None logits equal? False
+C4 gemma2 sdpa: softcap 50 vs None logits equal? True
+C5 llama        float32   converted= 29 loss equal=True grads differ 0/39
+C5 llama        bfloat16  converted= 29 loss equal=True grads differ 0/39
+C5 qwen3        float32   converted= 29 loss equal=True grads differ 0/47
+C5 qwen3        bfloat16  converted= 29 loss equal=True grads differ 0/47
+C5 gemma3_text  float32   converted= 28 loss equal=True grads differ 0/54
+C5 gemma3_text  bfloat16  converted= 28 loss equal=True grads differ 0/54
+C5 deepseek_v3  float32   converted= 33 loss equal=True grads differ 0/60
+C5 deepseek_v3  bfloat16  converted= 33 loss equal=True grads differ 0/60
+C5 gpt2         float32   converted=  0 loss equal=False grads differ 52/52
+C5 gpt2         bfloat16  converted=  0 loss equal=False grads differ 52/52
+C6 float32   S=256 D=64 chunk=64: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 float32   S=256 D=64 chunk=128: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 float32   S=1024 D=128 chunk=64: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 float32   S=1024 D=128 chunk=128: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 bfloat16  S=256 D=64 chunk=64: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 bfloat16  S=256 D=64 chunk=128: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 bfloat16  S=1024 D=128 chunk=64: fwd equal True; dq,dk,dv equal [True, False, False]
+C6 bfloat16  S=1024 D=128 chunk=128: fwd equal True; dq,dk,dv equal [True, False, False]
+C7 math sdpa is_causal==bool mask True ; enable_gqa==repeat_kv True

@@ -1,0 +1,56 @@
+TRUE  fp32 E8 k2 shared=False cut=1: identical=True ties=9 empty=18
+TRUE  fp32 E8 k2 shared=False cut=2: identical=True ties=9 empty=18
+TRUE  fp32 E8 k2 shared=False cut=3: identical=True ties=9 empty=18
+TRUE  fp32 E8 k2 shared=True cut=1: identical=True ties=10 empty=22
+TRUE  fp32 E8 k2 shared=True cut=2: identical=True ties=10 empty=22
+TRUE  fp32 E8 k2 shared=True cut=3: identical=True ties=10 empty=22
+TRUE  fp32 E8 k3 shared=False cut=1: identical=True ties=11 empty=7
+TRUE  fp32 E8 k3 shared=False cut=2: identical=True ties=11 empty=7
+TRUE  fp32 E8 k3 shared=False cut=3: identical=True ties=11 empty=7
+TRUE  fp32 E8 k3 shared=True cut=1: identical=True ties=10 empty=11
+TRUE  fp32 E8 k3 shared=True cut=2: identical=True ties=10 empty=11
+TRUE  fp32 E8 k3 shared=True cut=3: identical=True ties=10 empty=11
+TRUE  fp32 E6 k4 shared=False cut=1: identical=True ties=14 empty=0
+TRUE  fp32 E6 k4 shared=False cut=2: identical=True ties=14 empty=0
+TRUE  fp32 E6 k4 shared=False cut=3: identical=True ties=14 empty=0
+TRUE  fp32 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+TRUE  fp32 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+TRUE  fp32 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+TRUE  bf16 E8 k2 shared=False cut=1: identical=True ties=9 empty=18
+TRUE  bf16 E8 k2 shared=False cut=2: identical=True ties=9 empty=18
+TRUE  bf16 E8 k2 shared=False cut=3: identical=True ties=9 empty=18
+TRUE  bf16 E8 k2 shared=True cut=1: identical=True ties=10 empty=22
+TRUE  bf16 E8 k2 shared=True cut=2: identical=True ties=10 empty=22
+TRUE  bf16 E8 k2 shared=True cut=3: identical=True ties=10 empty=22
+TRUE  bf16 E8 k3 shared=False cut=1: identical=True ties=11 empty=7
+TRUE  bf16 E8 k3 shared=False cut=2: identical=True ties=11 empty=7
+TRUE  bf16 E8 k3 shared=False cut=3: identical=True ties=11 empty=7
+TRUE  bf16 E8 k3 shared=True cut=1: identical=True ties=10 empty=11
+TRUE  bf16 E8 k3 shared=True cut=2: identical=True ties=10 empty=11
+TRUE  bf16 E8 k3 shared=True cut=3: identical=True ties=10 empty=11
+TRUE  bf16 E6 k4 shared=False cut=1: identical=True ties=14 empty=0
+TRUE  bf16 E6 k4 shared=False cut=2: identical=True ties=14 empty=0
+TRUE  bf16 E6 k4 shared=False cut=3: identical=True ties=14 empty=0
+TRUE  bf16 E6 k4 shared=True cut=1: identical=True ties=20 empty=0
+TRUE  bf16 E6 k4 shared=True cut=2: identical=True ties=20 empty=0
+TRUE  bf16 E6 k4 shared=True cut=3: identical=True ties=20 empty=0
+TRUE  skew(all-zero router) bf16 E8 k3: identical=True ties=69 empty=44
+CTRL  topk         fp32: identical=False ties=69 empty=44
+CTRL  topk         bf16: identical=False ties=69 empty=44
+CTRL  skip_empty   fp32: identical=False ties=69 empty=44
+CTRL  skip_empty   bf16: identical=False ties=69 empty=44
+CTRL  rev_combine  fp32: identical=False ties=10 empty=11
+CTRL  rev_combine  bf16: identical=False ties=10 empty=11
+CTRL  desc_rows    fp32: identical=False ties=10 empty=11
+CTRL  desc_rows    bf16: identical=True ties=10 empty=11
+CTRL  no_fanout    fp32: identical=False ties=10 empty=11
+CTRL  no_fanout    bf16: identical=False ties=10 empty=11
+INFO  no_fanout on both paths fp32 cut=1: identical=True
+INFO  no_fanout on both paths fp32 cut=2: identical=True
+INFO  no_fanout on both paths fp32 cut=3: identical=True
+INFO  no_fanout on both paths bf16 cut=1: identical=True
+INFO  no_fanout on both paths bf16 cut=2: identical=True
+INFO  no_fanout on both paths bf16 cut=3: identical=True
+TRUE  recompute fp32 E8 k3 shared cut=2: identical=True
+TRUE  recompute bf16 E8 k3 shared cut=2: identical=True
+sha256 0b37f806e6ba5114

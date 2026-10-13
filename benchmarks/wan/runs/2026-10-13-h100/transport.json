@@ -1,0 +1,56 @@
+[
+ {
+  "label": "32 flows\nno pacing\n(before)",
+  "p50": 729,
+  "p90": 969,
+  "idle": 528
+ },
+ {
+  "label": "32 flows\npaced\n(cap unreached)",
+  "p50": 132,
+  "p90": 220,
+  "idle": 539
+ },
+ {
+  "label": "32 flows\npaced\n400 Mbps",
+  "p50": 132,
+  "p90": 504,
+  "idle": 538
+ },
+ {
+  "label": "32 flows\npaced\n100 Mbps",
+  "p50": 133,
+  "p90": 494,
+  "idle": 540
+ },
+ {
+  "label": "32 flows\npaced\n40 Mbps",
+  "p50": 156,
+  "p90": 385,
+  "idle": 539
+ },
+ {
+  "label": "64 flows\nno pacing",
+  "p50": 647,
+  "p90": 1465,
+  "idle": 424
+ },
+ {
+  "label": "64 flows\npaced\n50 Mbps",
+  "p50": 134,
+  "p90": 1422,
+  "idle": 438
+ },
+ {
+  "label": "8 flows\nno pacing",
+  "p50": 1424,
+  "p90": 3033,
+  "idle": 931
+ },
+ {
+  "label": "128 flows\nno pacing",
+  "p50": 565,
+  "p90": 3201,
+  "idle": 321
+ }
+]

@@ -1,0 +1,34 @@
+# factory run state
+.factory/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# rust
+target/
+
+# node
+node_modules/
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/
+
+# secrets
+.env
+.env.*
+.venv-*/
+
+# local agent tooling state (ruflo plugin): never committed
+.claude-flow/
+.swarm/
+ruvector.db
+.claude/proven-config.json
+.claude/.proven-config-version

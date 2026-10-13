@@ -1,0 +1,58 @@
+{
+ "model": {
+  "params_b": 15.79,
+  "d_model": 5632,
+  "n_layer": 40,
+  "n_head": 44,
+  "seq_len": 1024,
+  "vocab": 50257,
+  "compute_dtype": "bf16",
+  "attn": "naive/math"
+ },
+ "partition": [
+  [
+   0,
+   22
+  ],
+  [
+   22,
+   42
+  ]
+ ],
+ "microbatches": 128,
+ "tokens_per_step": 131072,
+ "steps_logged": 10,
+ "steady_steps": 8,
+ "step_s_median": 48.085004552999976,
+ "tokens_per_s_median": 2725.840512143861,
+ "mfu_vs_peak": 0.15465229197020514,
+ "loss_first": 11.001350291073322,
+ "loss_last": 6.311736349016428,
+ "loss_steps": 11,
+ "stages": {
+  "1": {
+   "node": "cz",
+   "idle_median": 0.09299722637485824,
+   "idle_mean": 0.09630078893089593,
+   "gpu_not_computing_median": 0.10717141744094905,
+   "peak_mem_gib": 74.15,
+   "ops_median_ms": {
+    "F": 61.361403786577284,
+    "B": 240.7121101859957,
+    "W": 37.51090669538826
+   }
+  },
+  "0": {
+   "node": "va",
+   "idle_median": 0.021866033033058056,
+   "idle_mean": 0.0218892180312715,
+   "gpu_not_computing_median": 0.052876829340603115,
+   "peak_mem_gib": 75.72,
+   "ops_median_ms": {
+    "F": 86.94554800001697,
+    "B": 191.64033074997633,
+    "W": 77.66167749986153
+   }
+  }
+ }
+}

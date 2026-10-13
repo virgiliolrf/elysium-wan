@@ -1,0 +1,11 @@
+llama        exported in 1.1s logits_equal=True grads_differ=0/39 S40 AssertionError
+qwen3        exported in 0.4s logits_equal=True grads_differ=0/47 S40 AssertionError
+gemma2       exported in 0.5s logits_equal=True grads_differ=0/46 S40 AssertionError
+gemma3_text  exported in 0.4s logits_equal=True grads_differ=0/54 S40 AssertionError
+granite      exported in 0.4s logits_equal=True grads_differ=0/39 S40 AssertionError
+gpt2         exported in 0.2s logits_equal=False grads_differ=52/52 S40 AssertionError
+llama4_text  exported in 0.4s logits_equal=True grads_differ=0/45 S40 AssertionError
+gpt_oss      exported in 0.5s logits_equal=True grads_differ=0/71 S40 AssertionError
+deepseek_v3  exported in 0.7s logits_equal=True grads_differ=0/60 S40 AssertionError
+phi3         exported in 0.3s logits_equal=True grads_differ=0/27 S40 AssertionError
+starcoder2   exported in 0.3s logits_equal=True grads_differ=0/67 S40 AssertionError

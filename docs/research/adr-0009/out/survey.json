@@ -1,0 +1,3031 @@
+[
+{
+"mt": "afmoe",
+"ok": true,
+"linear": 18,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"AfmoeRMSNorm": 13,
+"AfmoeSparseMoeBlock": 1,
+"AfmoeExperts": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "apertus",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"ApertusRMSNorm": 9,
+"XIELUActivation": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "arcee",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"ArceeRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "aria_text",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"AriaTextTopKRouter": 2,
+"AriaExperts": 2,
+"AriaTextRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "axk1",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"AXK1RMSNorm": 10,
+"AXK1Experts": 1,
+"AXK1TopkRouter": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "axk2",
+"ok": true,
+"linear": 29,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"AXK2RMSNorm": 9,
+"LayerNorm": 2,
+"AXK2Experts": 1,
+"AXK2TopkRouter": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"indexed_attention"
+]
+},
+{
+"mt": "bamba",
+"ok": true,
+"linear": 11,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"BambaRMSNorm": 5,
+"BambaMixer": 2,
+"Conv1d": 2,
+"BambaRMSNormGated": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "bart",
+"ok": true,
+"linear": 121,
+"linear_sub": 0,
+"other": {
+"BartScaledWordEmbedding": 1,
+"BartLearnedPositionalEmbedding": 1,
+"LayerNorm": 37
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "bert",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"BertLMPredictionHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "bert-generation",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5,
+"BertGenerationOnlyLMHead": 1
+},
+"nonpers": [
+"position_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "big_bird",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"BigBirdLMPredictionHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "bigbird_pegasus",
+"ok": true,
+"linear": 161,
+"linear_sub": 0,
+"other": {
+"BigBirdPegasusScaledWordEmbedding": 1,
+"BigBirdPegasusLearnedPositionalEmbedding": 1,
+"LayerNorm": 49
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "biogpt",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"BioGptScaledWordEmbedding": 1,
+"BioGptLearnedPositionalEmbedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "bitnet",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"BitNetRMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "blenderbot",
+"ok": true,
+"linear": 241,
+"linear_sub": 0,
+"other": {
+"BlenderbotScaledWordEmbedding": 1,
+"BlenderbotLearnedPositionalEmbedding": 1,
+"LayerNorm": 73
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "blenderbot-small",
+"ok": true,
+"linear": 81,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"BlenderbotSmallLearnedPositionalEmbedding": 1,
+"LayerNorm": 25
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "bloom",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 6
+},
+"nonpers": [],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "blt",
+"ok": true,
+"linear": 387,
+"linear_sub": 0,
+"other": {
+"BltRMSNorm": 120,
+"Embedding": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "camembert",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"CamembertLMHead": 1,
+"LayerNorm": 6,
+"Embedding": 3
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "codegen",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 3
+},
+"nonpers": [
+"embed_positions"
+],
+"layers_attr": "h",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "cohere",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"CohereLayerNorm": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "cohere2",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Cohere2LayerNorm": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "cohere2_moe",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Cohere2MoeTopKRouter": 2,
+"Cohere2MoeExperts": 2,
+"Cohere2MoeLayerNorm": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "cohere_compass_text",
+"ok": false,
+"err": "KeyError: 'full_attention'"
+},
+{
+"mt": "cpmant",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"CpmAntLayerNorm": 5,
+"Embedding": 2,
+"CpmAntSegmentPositionEmbedding": 1
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "ctrl",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"pos_encoding"
+],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "cwm",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"CwmRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "data2vec-text",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"Data2VecTextLMHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "dbrx",
+"ok": false,
+"err": "AttributeError: 'DbrxAttentionConfig' object has no attribute 'rope_theta'"
+},
+{
+"mt": "deepseek_v2",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"DeepseekV2RMSNorm": 9,
+"DeepseekV2Experts": 2,
+"DeepseekV2TopkRouter": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "deepseek_v3",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"DeepseekV3RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "deepseek_v32",
+"ok": true,
+"linear": 23,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"DeepseekV32RMSNorm": 9,
+"LayerNorm": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"indexed_attention"
+]
+},
+{
+"mt": "deepseek_v4",
+"ok": true,
+"linear": 19,
+"linear_sub": 2,
+"other": {
+"Embedding": 1,
+"DeepseekV4Attention": 2,
+"DeepseekV4RMSNorm": 11,
+"DeepseekV4GroupedLinear": 2,
+"DeepseekV4HCACompressor": 2,
+"DeepseekV4HashRouter": 2,
+"DeepseekV4Experts": 2,
+"DeepseekV4HyperConnection": 4,
+"DeepseekV4HyperHead": 1
+},
+"nonpers": [
+"compress_inv_freq",
+"compress_original_inv_freq",
+"main_inv_freq",
+"main_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"heavily_compressed_attention"
+]
+},
+{
+"mt": "diffllama",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"DiffLlamaAttention": 2,
+"DiffLlamaRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "doge",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"DogeDecoderLayer": 2,
+"DogeRMSNorm": 9,
+"DogeAttention": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "dots1",
+"ok": false,
+"err": "TypeError: empty() takes 1 positional argument but 3 were given"
+},
+{
+"mt": "electra",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "emu3",
+"ok": false,
+"err": "AttributeError: 'Emu3Config' object has no attribute 'pad_token_id'"
+},
+{
+"mt": "ernie",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"ErnieLMPredictionHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "ernie4_5",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Ernie4_5RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "ernie4_5_moe",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Ernie4_5_MoeRMSNorm": 5,
+"Ernie4_5_MoeTopKRouter": 1,
+"Ernie4_5_MoeStatics": 1,
+"Ernie4_5_MoeExperts": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "exaone4",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Exaone4RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "exaone_moe",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"ExaoneMoeRMSNorm": 9,
+"ExaoneMoeExperts": 1,
+"ExaoneMoeTopkRouter": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "falcon",
+"ok": true,
+"linear": 1,
+"linear_sub": 8,
+"other": {
+"Embedding": 1,
+"FalconLinear": 8,
+"LayerNorm": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "falcon_h1",
+"ok": true,
+"linear": 19,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"FalconH1Mixer": 2,
+"Conv1d": 2,
+"FalconH1RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"mup_vector",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"hybrid"
+]
+},
+{
+"mt": "falcon_mamba",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"FalconMambaRMSNorm": 3,
+"FalconMambaMixer": 2,
+"Conv1d": 2
+},
+"nonpers": [
+"weight"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "flex_olmo",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"FlexOlmoRMSNorm": 9,
+"FlexOlmoTopKRouter": 2,
+"FlexOlmoExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "fuyu",
+"ok": true,
+"linear": 10,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "gemma",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"GemmaTextScaledWordEmbedding": 1,
+"GemmaRMSNorm": 5
+},
+"nonpers": [
+"embed_scale",
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gemma2",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Gemma2TextScaledWordEmbedding": 1,
+"Gemma2RMSNorm": 9
+},
+"nonpers": [
+"embed_scale",
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "gemma3",
+"ok": true,
+"linear": 89,
+"linear_sub": 1,
+"other": {
+"Conv2d": 1,
+"Embedding": 1,
+"LayerNorm": 26,
+"SiglipMultiheadAttentionPoolingHead": 1,
+"MultiheadAttention": 1,
+"NonDynamicallyQuantizableLinear": 1,
+"Gemma3MultiModalProjector": 1,
+"Gemma3RMSNorm": 14,
+"Gemma3TextScaledWordEmbedding": 1
+},
+"nonpers": [
+"embed_scale",
+"position_ids",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "gemma3_text",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Gemma3TextScaledWordEmbedding": 1,
+"Gemma3RMSNorm": 13
+},
+"nonpers": [
+"embed_scale",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "gemma3n",
+"ok": false,
+"err": "ImportError: \nTimmWrapperModel requires the PIL library but it was not found in your environment. You can install"
+},
+{
+"mt": "gemma3n_text",
+"ok": false,
+"err": "ValueError: 'sliding_attention' is not in list"
+},
+{
+"mt": "gemma4",
+"ok": true,
+"linear": 20,
+"linear_sub": 0,
+"other": {
+"Gemma4TextScaledWordEmbedding": 2,
+"Gemma4RMSNorm": 16
+},
+"nonpers": [
+"embed_scale",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "gemma4_assistant",
+"ok": false,
+"err": "AttributeError: 'Gemma4AssistantConfig' object has no attribute 'vocab_size'"
+},
+{
+"mt": "gemma4_text",
+"ok": true,
+"linear": 20,
+"linear_sub": 0,
+"other": {
+"Gemma4TextScaledWordEmbedding": 2,
+"Gemma4RMSNorm": 16
+},
+"nonpers": [
+"embed_scale",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "gemma4_unified",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Gemma4UnifiedTextScaledWordEmbedding": 1,
+"Gemma4UnifiedRMSNorm": 13
+},
+"nonpers": [
+"embed_scale",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "gemma4_unified_assistant",
+"ok": false,
+"err": "AttributeError: 'Gemma4UnifiedAssistantConfig' object has no attribute 'vocab_size'"
+},
+{
+"mt": "gemma4_unified_text",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Gemma4UnifiedTextScaledWordEmbedding": 1,
+"Gemma4UnifiedRMSNorm": 13
+},
+"nonpers": [
+"embed_scale",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "git",
+"ok": true,
+"linear": 86,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 32,
+"GitVisionEmbeddings": 1,
+"Conv2d": 1
+},
+"nonpers": [
+"position_ids"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "glm",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GlmRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "glm4",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Glm4RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "glm4_moe",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Glm4MoeRMSNorm": 5,
+"Glm4MoeExperts": 1,
+"Glm4MoeTopkRouter": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "glm4_moe_lite",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Glm4MoeLiteRMSNorm": 9,
+"Glm4MoeLiteExperts": 1,
+"Glm4MoeLiteTopkRouter": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "glm_moe_dsa",
+"ok": true,
+"linear": 23,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GlmMoeDsaRMSNorm": 9,
+"LayerNorm": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"indexed_attention"
+]
+},
+{
+"mt": "got_ocr2",
+"ok": true,
+"linear": 64,
+"linear_sub": 0,
+"other": {
+"GotOcr2VisionEncoder": 1,
+"Conv2d": 5,
+"LayerNorm": 24,
+"GotOcr2VisionAttention": 12,
+"GotOcr2LayerNorm": 2,
+"Embedding": 1,
+"Qwen2RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "gpt-sw3",
+"ok": true,
+"linear": 1,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5,
+"Conv1D": 8
+},
+"nonpers": [],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gpt2",
+"ok": true,
+"linear": 1,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5,
+"Conv1D": 8
+},
+"nonpers": [],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gpt_bigcode",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5
+},
+"nonpers": [
+"bias"
+],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gpt_neo",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5
+},
+"nonpers": [
+"bias"
+],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gpt_neox",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "gpt_neox_japanese",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5,
+"GPTNeoXJapaneseAttention": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "gpt_oss",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GptOssAttention": 2,
+"GptOssTopKRouter": 2,
+"GptOssExperts": 2,
+"GptOssRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "gptj",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 3
+},
+"nonpers": [
+"embed_positions"
+],
+"layers_attr": "h",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "granite",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "granite_swa",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteSWAAttention": 2,
+"GraniteSWARMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "granitemoe",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteMoeRMSNorm": 5,
+"GraniteMoeTopKRouter": 2,
+"GraniteMoeExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "granitemoe_swa",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteMoeSWAAttention": 2,
+"GraniteMoeSWARMSNorm": 5,
+"GraniteMoeSWATopKRouter": 2,
+"GraniteMoeSWAExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "granitemoehybrid",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteMoeHybridRMSNorm": 5,
+"GraniteMoeHybridTopKRouter": 2,
+"GraniteMoeHybridExperts": 2,
+"GraniteMoeHybridMambaLayer": 2,
+"Conv1d": 2,
+"GraniteMoeHybridRMSNormGated": 2
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "granitemoeshared",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"GraniteMoeSharedRMSNorm": 5,
+"GraniteMoeSharedTopKRouter": 2,
+"GraniteMoeSharedExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "helium",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"HeliumRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "hrm_text",
+"ok": true,
+"linear": 257,
+"linear_sub": 0,
+"other": {
+"HrmTextModel": 1,
+"Embedding": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "hunyuan_v1_dense",
+"ok": false,
+"err": "TypeError: unsupported operand type(s) for ** or pow(): 'NoneType' and 'float'"
+},
+{
+"mt": "hunyuan_v1_moe",
+"ok": false,
+"err": "TypeError: unsupported operand type(s) for ** or pow(): 'NoneType' and 'float'"
+},
+{
+"mt": "hy_v3",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"HYV3RMSNorm": 9,
+"HYV3TopKRouter": 1,
+"HYV3Experts": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "hy_v4",
+"ok": true,
+"linear": 25,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"HYV4Attention": 2,
+"HYV4RMSNorm": 9,
+"LayerNorm": 2,
+"HYV4HyperConnection": 4,
+"HYV4Experts": 1,
+"HYV4TopkRouter": 1,
+"HYV4HyperHead": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"indexed_attention"
+]
+},
+{
+"mt": "hyperclovax",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"HyperCLOVAXRMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "inkling_text",
+"ok": true,
+"linear": 11,
+"linear_sub": 0,
+"other": {
+"InklingNormedEmbedding": 1,
+"InklingRMSNorm": 10,
+"Conv1d": 8,
+"InklingRelativeLogits": 2,
+"InklingTopkRouter": 2,
+"InklingExperts": 2,
+"InklingSharedExperts": 2
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"hybrid_sliding"
+]
+},
+{
+"mt": "jais2",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "jamba",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"JambaMambaMixer": 2,
+"Conv1d": 2,
+"JambaRMSNorm": 11,
+"JambaExperts": 1
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "jetmoe",
+"ok": true,
+"linear": 7,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"JetMoeMoE": 2,
+"JetMoeParallelExperts": 8,
+"JetMoeRMSNorm": 5,
+"JetMoeMoA": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "kimi_linear",
+"ok": true,
+"linear": 25,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Conv1d": 2,
+"KimiLinearForgetGate": 2,
+"KimiLinearRMSNormGated": 2,
+"KimiLinearRMSNorm": 5,
+"KimiLinearExperts": 1,
+"KimiLinearTopkRouter": 1
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "laguna",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LagunaRMSNorm": 9,
+"LagunaExperts": 1,
+"LagunaTopKRouter": 1
+},
+"nonpers": [
+"full_attention_inv_freq",
+"full_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "lfm2",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Lfm2RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "lfm2_moe",
+"ok": false,
+"err": "TypeError: 'NoneType' object is not subscriptable"
+},
+{
+"mt": "llama",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LlamaRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "llama4",
+"ok": false,
+"err": "AttributeError: 'Llama4Config' object has no attribute 'pad_token_id'"
+},
+{
+"mt": "llama4_text",
+"ok": true,
+"linear": 15,
+"linear_sub": 2,
+"other": {
+"Embedding": 1,
+"Llama4TextExperts": 2,
+"Llama4Router": 2,
+"Llama4TextRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": [
+"chunked_attention"
+]
+},
+{
+"mt": "longcat_flash",
+"ok": true,
+"linear": 35,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LongcatFlashExperts": 2,
+"LongcatFlashRMSNorm": 17
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "mamba",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MambaRMSNorm": 3,
+"MambaMixer": 2,
+"Conv1d": 2
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "mamba2",
+"ok": true,
+"linear": 5,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Mamba2RMSNorm": 3,
+"Mamba2Mixer": 2,
+"Conv1d": 2,
+"MambaRMSNormGated": 2
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "marian",
+"ok": true,
+"linear": 121,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MarianSinusoidalPositionalEmbedding": 1,
+"LayerNorm": 36
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "mbart",
+"ok": true,
+"linear": 121,
+"linear_sub": 0,
+"other": {
+"MBartScaledWordEmbedding": 1,
+"MBartLearnedPositionalEmbedding": 1,
+"LayerNorm": 38
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "megatron-bert",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"MegatronBertLMPredictionHead": 1
+},
+"nonpers": [
+"position_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "mellum",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MellumRMSNorm": 9,
+"MellumExperts": 2,
+"MellumTopKRouter": 2
+},
+"nonpers": [
+"full_attention_inv_freq",
+"full_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "mimo_v2_flash",
+"ok": true,
+"linear": 12,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MiMoV2FlashRMSNorm": 5,
+"MiMoV2FlashAttention": 1,
+"MiMoV2FlashExperts": 1,
+"MiMoV2FlashTopkRouter": 1
+},
+"nonpers": [
+"full_attention_inv_freq",
+"full_attention_original_inv_freq",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "minicpm3",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"MiniCPM3ScaledWordEmbedding": 1,
+"MiniCPM3RMSNorm": 9
+},
+"nonpers": [
+"embed_scale",
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "minimax",
+"ok": true,
+"linear": 8,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MiniMaxRMSNorm": 6,
+"MiniMaxTopKRouter": 2,
+"MiniMaxExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention",
+"linear_attention"
+]
+},
+{
+"mt": "minimax_m2",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MiniMaxM2RMSNorm": 9,
+"MiniMaxM2TopKRouter": 2,
+"MiniMaxM2Experts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "minimax_m3_vl_text",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MiniMaxM3VLRMSNorm": 9,
+"MiniMaxM3VLTopKRouter": 2,
+"MiniMaxM3VLExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "ministral",
+"ok": false,
+"err": "TypeError: unsupported operand type(s) for ** or pow(): 'NoneType' and 'float'"
+},
+{
+"mt": "ministral3",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Ministral3RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "mistral",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MistralRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "mixtral",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MixtralTopKRouter": 2,
+"MixtralExperts": 2,
+"MixtralRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "mllama",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MllamaTextRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "modernbert-decoder",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 6
+},
+"nonpers": [
+"full_attention_inv_freq",
+"full_attention_original_inv_freq",
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "moshi",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MoshiRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "mpt",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "musicgen",
+"ok": false,
+"err": "StrictDataclassFieldValidationError: Validation error for field 'text_encoder':\n    TypeError: Field 'text_encoder' with value None doesn"
+},
+{
+"mt": "musicgen_melody",
+"ok": false,
+"err": "StrictDataclassFieldValidationError: Validation error for field 'text_encoder':\n    TypeError: Field 'text_encoder' with value None doesn"
+},
+{
+"mt": "mvp",
+"ok": true,
+"linear": 121,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"MvpLearnedPositionalEmbedding": 1,
+"LayerNorm": 37
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "nanochat",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "nemotron",
+"ok": false,
+"err": "TypeError: unsupported operand type(s) for //: 'int' and 'NoneType'"
+},
+{
+"mt": "nemotron_h",
+"ok": true,
+"linear": 5,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"NemotronHRMSNorm": 3,
+"NemotronHMamba2Mixer": 1,
+"Conv1d": 1,
+"Zamba2RMSNormGated": 1,
+"NemotronHExperts": 1,
+"NemotronHTopkRouter": 1
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention",
+"moe"
+]
+},
+{
+"mt": "olmo",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "olmo2",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Olmo2RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "olmo3",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Olmo3RMSNorm": 9
+},
+"nonpers": [
+"sliding_attention_inv_freq",
+"sliding_attention_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"sliding_attention"
+]
+},
+{
+"mt": "olmo_hybrid",
+"ok": true,
+"linear": 21,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"OlmoHybridRMSNorm": 5,
+"OlmoHybridGatedDeltaNet": 2,
+"Conv1d": 2,
+"OlmoHybridRMSNormGated": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "olmoe",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"OlmoeRMSNorm": 9,
+"OlmoeTopKRouter": 2,
+"OlmoeExperts": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "openai-gpt",
+"ok": true,
+"linear": 1,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"Conv1D": 8,
+"LayerNorm": 4
+},
+"nonpers": [
+"bias",
+"position_ids"
+],
+"layers_attr": "h",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "opt",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"OPTLearnedPositionalEmbedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "pegasus",
+"ok": true,
+"linear": 121,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"PegasusSinusoidalPositionalEmbedding": 1,
+"LayerNorm": 37
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "persimmon",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "phi",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 3
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "phi3",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Phi3RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "phi4_multimodal",
+"ok": true,
+"linear": 372,
+"linear_sub": 1,
+"other": {
+"Embedding": 3,
+"Phi4MultimodalRMSNorm": 5,
+"Phi4MultimodalImageEmbedding": 1,
+"Conv2d": 6,
+"LayerNorm": 176,
+"Phi4MultimodalVisionMultiheadAttentionPoolingHead": 1,
+"MultiheadAttention": 1,
+"NonDynamicallyQuantizableLinear": 1,
+"Phi4MultimodalAudioGluPointWiseConv": 24,
+"Conv1d": 96
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "phimoe",
+"ok": true,
+"linear": 9,
+"linear_sub": 2,
+"other": {
+"Embedding": 1,
+"PhimoeTopKRouter": 2,
+"PhimoeExperts": 2,
+"LayerNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "plbart",
+"ok": true,
+"linear": 61,
+"linear_sub": 0,
+"other": {
+"PLBartScaledWordEmbedding": 1,
+"PLBartLearnedPositionalEmbedding": 1,
+"LayerNorm": 19
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "prophetnet",
+"ok": true,
+"linear": 133,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"ProphetNetPositionalEmbeddings": 1,
+"LayerNorm": 37
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "qwen2",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen2RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "qwen2_moe",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen2MoeTopKRouter": 2,
+"Qwen2MoeExperts": 2,
+"Qwen2MoeRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "qwen3",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen3RMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "qwen3_5",
+"ok": false,
+"err": "AttributeError: 'Qwen3_5Config' object has no attribute 'vocab_size'"
+},
+{
+"mt": "qwen3_5_moe",
+"ok": false,
+"err": "AttributeError: 'Qwen3_5MoeConfig' object has no attribute 'vocab_size'"
+},
+{
+"mt": "qwen3_5_moe_text",
+"ok": true,
+"linear": 19,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen3_5MoeGatedDeltaNet": 2,
+"Conv1d": 2,
+"Qwen3_5MoeRMSNormGated": 2,
+"Qwen3_5MoeTopKRouter": 2,
+"Qwen3_5MoeExperts": 2,
+"Qwen3_5MoeRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "qwen3_5_text",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen3_5GatedDeltaNet": 2,
+"Conv1d": 2,
+"Qwen3_5RMSNormGated": 2,
+"Qwen3_5RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "qwen3_moe",
+"ok": true,
+"linear": 9,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen3MoeRMSNorm": 9,
+"Qwen3MoeExperts": 2,
+"Qwen3MoeTopKRouter": 2
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "qwen3_next",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen3NextGatedDeltaNet": 2,
+"Conv1d": 2,
+"Qwen3NextRMSNormGated": 2,
+"Qwen3NextTopKRouter": 2,
+"Qwen3NextExperts": 2,
+"Qwen3NextRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "qwen4_exp",
+"ok": false,
+"err": "AttributeError: 'Qwen4ExpConfig' object has no attribute 'vocab_size'"
+},
+{
+"mt": "qwen4_exp_text",
+"ok": true,
+"linear": 33,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Qwen4ExpTextGatedDeltaNet": 2,
+"Conv1d": 2,
+"Qwen4ExpTextRMSNormGated": 2,
+"Qwen4ExpTextTopKRouter": 2,
+"Qwen4ExpTextExperts": 2,
+"Qwen4ExpTextRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "recurrent_gemma",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"RecurrentGemmaRMSNorm": 5,
+"Conv1d": 2,
+"RecurrentGemmaRglru": 2
+},
+"nonpers": [
+"normalizer"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "reformer",
+"ok": false,
+"err": "AssertionError: If you want to use `ReformerModelWithLMHead` make sure that `is_decoder=True`."
+},
+{
+"mt": "rembert",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6
+},
+"nonpers": [
+"position_ids"
+],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "roberta",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"RobertaLMHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "roberta-prelayernorm",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 7,
+"RobertaPreLayerNormLMHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "roc_bert",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 5,
+"LayerNorm": 6,
+"RoCBertLMPredictionHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "roformer",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 6,
+"RoFormerSinusoidalPositionalEmbedding": 1,
+"RoFormerLMPredictionHead": 1
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "rwkv",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 6,
+"RwkvSelfAttention": 2,
+"RwkvFeedForward": 2
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "seed_oss",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"SeedOssRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "smollm3",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"SmolLM3RMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention"
+]
+},
+{
+"mt": "solar_open",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"SolarOpenExperts": 2,
+"SolarOpenTopkRouter": 2,
+"SolarOpenRMSNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "stablelm",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "starcoder2",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "trocr",
+"ok": true,
+"linear": 21,
+"linear_sub": 0,
+"other": {
+"TrOCRScaledWordEmbedding": 1,
+"TrOCRLearnedPositionalEmbedding": 1,
+"LayerNorm": 7
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "vaultgemma",
+"ok": true,
+"linear": 15,
+"linear_sub": 0,
+"other": {
+"VaultGemmaTextScaledWordEmbedding": 1,
+"VaultGemmaRMSNorm": 5
+},
+"nonpers": [
+"embed_scale",
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"full_attention",
+"sliding_attention"
+]
+},
+{
+"mt": "whisper",
+"ok": true,
+"linear": 41,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"WhisperPositionalEmbedding": 1,
+"LayerNorm": 13
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xglm",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"XGLMScaledWordEmbedding": 1,
+"LayerNorm": 5
+},
+"nonpers": [
+"weights"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xlm",
+"ok": true,
+"linear": 13,
+"linear_sub": 0,
+"other": {
+"Embedding": 2,
+"LayerNorm": 5
+},
+"nonpers": [
+"position_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xlm-roberta",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"XLMRobertaLMHead": 1,
+"LayerNorm": 6,
+"Embedding": 3
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xlm-roberta-xl",
+"ok": true,
+"linear": 14,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"XLMRobertaXLLMHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xlnet",
+"ok": true,
+"linear": 5,
+"linear_sub": 0,
+"other": {
+"XLNetModel": 1,
+"Embedding": 1,
+"XLNetRelativeAttention": 2,
+"LayerNorm": 4
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "xlstm",
+"ok": true,
+"linear": 321,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"xLSTMRMSNorm": 65,
+"xLSTMMultiHeadLayerNorm": 32
+},
+"nonpers": [],
+"layers_attr": null,
+"tie": false,
+"layer_types": []
+},
+{
+"mt": "xmod",
+"ok": true,
+"linear": 18,
+"linear_sub": 0,
+"other": {
+"Embedding": 3,
+"LayerNorm": 6,
+"XmodLMHead": 1
+},
+"nonpers": [
+"position_ids",
+"token_type_ids"
+],
+"layers_attr": null,
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "youtu",
+"ok": true,
+"linear": 17,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"YoutuRMSNorm": 9
+},
+"nonpers": [
+"inv_freq",
+"original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": []
+},
+{
+"mt": "zamba",
+"ok": true,
+"linear": 5,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"ZambaMambaMixer": 2,
+"Conv1d": 2,
+"ZambaRMSNorm": 3
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "zamba2",
+"ok": true,
+"linear": 5,
+"linear_sub": 0,
+"other": {
+"Embedding": 1,
+"Zamba2MambaMixer": 2,
+"Conv1d": 2,
+"Zamba2RMSNormGated": 2,
+"Zamba2RMSNorm": 3
+},
+"nonpers": [],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"linear_attention"
+]
+},
+{
+"mt": "zaya",
+"ok": true,
+"linear": 19,
+"linear_sub": 0,
+"other": {
+"ZayaModel": 1,
+"Embedding": 1,
+"Conv1d": 4,
+"ZayaQKNorm": 2,
+"ZayaRMSNorm": 7,
+"ZayaExperts": 2,
+"ZayaResidualScaling": 4,
+"ZayaRouter": 1
+},
+"nonpers": [
+"hybrid_inv_freq",
+"hybrid_original_inv_freq"
+],
+"layers_attr": "layers",
+"tie": true,
+"layer_types": [
+"hybrid"
+]
+}
+]

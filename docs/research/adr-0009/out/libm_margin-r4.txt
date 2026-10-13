@@ -1,0 +1,1 @@
+constants checked: 1099; fp32-ambiguous under a <1-ULP libm: 0

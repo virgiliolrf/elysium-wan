@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" tests="3">
+<testcase classname="tests.unit.test_codec" name="test_roundtrip" file="tests/unit/test_codec.py" line="10" time="0.01"/>
+<testcase classname="tests.unit.test_codec" name="test_props" file="tests/unit/test_codec.py" line="20" time="0.4"><failure message="AssertionError: assert b'' == b'x'">Falsifying example: test_props(data=b'')
+AssertionError</failure></testcase>
+<testcase classname="tests.chaos.test_partition" name="test_heal" file="tests/chaos/test_partition.py" line="5" time="9.0"><failure message="TimeoutError: no quorum after heal">TimeoutError</failure></testcase>
+</testsuite></testsuites>

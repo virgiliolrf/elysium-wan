@@ -1,0 +1,22 @@
+[coord info] COORDINATOR_ID 0a4b750fbb8811ce7c9c2e743de58df0
+[coord info] listening on 0.0.0.0:10200
+[coord info] run run-20261012-234249-72473c: starting
+[coord info] registered mt (a1d622b11e) key=3e49fbd6251d451f836d5303045a9a74 203.0.113.3:40220 cuda/NVIDIA H100 80GB HBM3 619.351 TFLOPs 78.7 GB region=us declared=['region']
+[coord info] registered cz2 (b790059c04) key=c5fe61b0671928b23859e909f409b451 203.0.113.28:44020 cuda/NVIDIA H100 80GB HBM3 625.145 TFLOPs 78.7 GB region=cz declared=['region']
+[coord info] registered de (11b6a444b8) key=fc4509b957f7d1b845703f82732e096d 203.0.113.6:20582 cuda/NVIDIA H100 80GB HBM3 396.138 TFLOPs 78.7 GB region=de declared=['region']
+[coord info] registered cz1 (f209d98c94) key=833e08bd0e7e8126868ac6cfca83c9b9 203.0.113.29:42469 cuda/NVIDIA H100 80GB HBM3 608.978 TFLOPs 78.7 GB region=cz declared=['region']
+[coord info] selection: 4 node(s) in *: cz2(NVIDIA H100 80GB HBM3, 625.15 TFLOPs, 78.7 GB), mt(NVIDIA H100 80GB HBM3, 619.35 TFLOPs, 78.7 GB), cz1(NVIDIA H100 80GB HBM3, 608.98 TFLOPs, 78.7 GB), de(NVIDIA H100 80GB HBM3, 396.14 TFLOPs, 78.7 GB); one device model, so the run stays bit-comparable against itself; these nodes share 203.0.113.27/24 on different addresses: one LAN or one gateway hairpin; only a measurement separates the two
+[coord info] probe matrix (Mbps): [[null, 23.2, 850.1, 59.4], [23.2, null, 23.0, 16.2], [850.1, 23.0, null, 60.9], [59.4, 16.2, 60.9, null]]
+[coord info] link mt->cz2: fwd 38.04 rev 41.67 bidir 41.68+39.99 Mbps, RTT 160.63 ms, duplex per_direction
+[coord info] link cz2->cz1: fwd 4084.37 rev 671.08 bidir 3467.31+950.23 Mbps, RTT 0.6 ms, duplex aggregate
+[coord info] link cz1->de: fwd 111.59 rev 116.14 bidir 112.36+105.56 Mbps, RTT 57.05 ms, duplex per_direction
+[coord warn] planner: vocab_size 32768 -> 50257: the corpus was tokenized with 'gpt2', and the model must represent every id
+[coord info] plan: boundary_dtype pinned to bf16 by the operator -- WARNING: admissible but WITHOUT the 2x margin: needs 145.9 Mbps, link is 38.04 Mbps. Expect residual stall -- WARNING: estimated 144.36 GB per stage exceeds the 78.7 GB budget
+[coord info] zero-bubble schedule: predicted 21.266 s/step, bubble 30.6%; F/B/W ms per stage [[54.113, 116.747, 51.129], [56.407, 121.811, 53.742], [54.092, 115.987, 51.251], [61.046, 126.815, 59.403]], hop comm ms [1936.029, 105.491, 661.121], peer weights [[1.0], [1.0], [1.0], [1.0]]
+[coord info] fit rank 0: peak 61.75 GiB of 66.86 GiB budget
+[coord info] fit rank 1: peak 59.71 GiB of 66.87 GiB budget
+[coord info] fit rank 2: peak 59.58 GiB of 66.86 GiB budget
+[coord info] fit rank 3: peak 54.72 GiB of 66.87 GiB budget
+[coord info] placement: [['mt(cuda/NVIDIA H100 80GB HBM3)'], ['cz2(cuda/NVIDIA H100 80GB HBM3)'], ['cz1(cuda/NVIDIA H100 80GB HBM3)'], ['de(cuda/NVIDIA H100 80GB HBM3)']] partition [[0, 16], [16, 31], [31, 46], [46, 56]]
+[coord warn] ckpt_every=0: a dead worker cannot be healed, only restarted from step 0
+[coord info] launching attempt 1 (resume=False) on 4 slot(s)

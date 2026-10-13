@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="340" viewBox="0 0 820 340" font-family="Helvetica,Arial,sans-serif" font-size="12">
+<rect width="820" height="340" fill="white"/>
+<text x="410.0" y="22" text-anchor="middle" font-size="15" font-weight="bold">Throughput (tokens per second, from each step's time)</text>
+<line x1="64" x2="796" y1="292.0" y2="292.0" stroke="#e5e7eb"/>
+<text x="58" y="296.0" text-anchor="end">0</text>
+<text x="64.0" y="308" text-anchor="middle">0</text>
+<line x1="64" x2="796" y1="241.6" y2="241.6" stroke="#e5e7eb"/>
+<text x="58" y="245.6" text-anchor="end">656</text>
+<text x="210.4" y="308" text-anchor="middle">3.8</text>
+<line x1="64" x2="796" y1="191.2" y2="191.2" stroke="#e5e7eb"/>
+<text x="58" y="195.2" text-anchor="end">1.31e+03</text>
+<text x="356.8" y="308" text-anchor="middle">7.6</text>
+<line x1="64" x2="796" y1="140.8" y2="140.8" stroke="#e5e7eb"/>
+<text x="58" y="144.8" text-anchor="end">1.97e+03</text>
+<text x="503.2" y="308" text-anchor="middle">11.4</text>
+<line x1="64" x2="796" y1="90.4" y2="90.4" stroke="#e5e7eb"/>
+<text x="58" y="94.4" text-anchor="end">2.63e+03</text>
+<text x="649.6" y="308" text-anchor="middle">15.2</text>
+<line x1="64" x2="796" y1="40.0" y2="40.0" stroke="#e5e7eb"/>
+<text x="58" y="44.0" text-anchor="end">3.28e+03</text>
+<text x="796.0" y="308" text-anchor="middle">19</text>
+<text x="410.0" y="332" text-anchor="middle">step</text>
+<text x="14" y="166.0" text-anchor="middle" transform="rotate(-90 14 166.0)">tokens/s</text>
+<rect x="64" y="40" width="732" height="252" fill="none" stroke="#9ca3af"/>
+<polyline fill="none" stroke="#2563eb" stroke-width="1.6" points="64.0,201.7 102.5,181.9 141.1,174.0 179.6,119.8 218.1,153.1 256.6,136.2 295.2,111.8 333.7,131.9 372.2,207.1 410.7,150.6 449.3,211.6 487.8,234.3 526.3,145.7 564.8,53.7 603.4,52.0 641.9,73.5 680.4,120.2 718.9,110.5 757.5,134.8 796.0,145.2"/>
+<rect x="74" y="48" width="14" height="4" fill="#2563eb"/>
+<text x="94" y="54">tokens/s</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="1.6" points="64.0,201.7 102.5,191.8 141.1,185.9 179.6,169.4 218.1,166.1 256.6,161.1 295.2,154.1 333.7,151.3 372.2,157.5 410.7,156.8 449.3,161.8 487.8,167.8 526.3,166.1 564.8,158.1 603.4,151.0 641.9,146.2 680.4,144.7 718.9,142.8 757.5,142.3 796.0,142.5"/>
+<rect x="264" y="48" width="14" height="4" fill="#dc2626"/>
+<text x="284" y="54">tokens/s, 20-step mean</text>
+</svg>
