@@ -195,8 +195,8 @@ built. **RESEARCHING** means designed, not built yet.
 | HuggingFace dense decoders (`arch: hf`) and user models (`arch: user`) | **PARTIAL** |
 | bf16 working weights with fp32 masters in host memory | **PARTIAL** |
 | Benchmarks | **PARTIAL** |
-| Any HuggingFace decoder through its own modules (ADR-0009) | **RESEARCHING** |
-| AMD, TPU and Trainium backends in one run (ADR-0005) | **RESEARCHING** |
+| Any HuggingFace decoder through its own modules | **RESEARCHING** |
+| GPU, TPU and Trainium backends in one run  | **RESEARCHING** |
 
 ## Quick start
 
