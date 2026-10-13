@@ -2042,7 +2042,10 @@ E1_ARMS = {
 # `dt_proj.weight @ time_step` is a torch.matmul whose folding depends on whether its operand requires grad,
 # and the autocast cast of the weight requires grad only with grad enabled, so a recompute stage's no-grad
 # forward computes other bits than the reference's (MEASURED: the gate's first difference is the logits of the
-# deepest cut with recompute, bf16). A real divergence the gate must and does refuse.
+# deepest cut with recompute, bf16). A real divergence the gate must and does refuse. It is a rare bf16 rounding
+# flip between the two paths (one block of four on Apple M4), so it shows only where the CPU's kernels round them
+# differently: on some x86 CI runners the gate compares every cut and admits mamba under bf16 (MEASURED
+# 2026-10-13). An arm refused must be refused for its cause; an arm admitted must pass the full comparison.
 E1_REFUSED = {"mamba": ("GATE-DIFF", "recompute")}
 
 
@@ -2056,7 +2059,7 @@ def test_hf_family_e1_extra_arms_pass_the_gate(arm):
     mt, over = E1_ARMS[arm]
     hc = hfm.tiny_config(mt, **over)
     rep = hfm.gate(hc, GATE_RECIPE, "cpu")
-    if arm in E1_REFUSED:
+    if arm in E1_REFUSED and rep["cause"] == E1_REFUSED[arm][0]:
         # Recorded with its cause: refused, never exempted (the fp32 recipe is admitted).
         cause, where = E1_REFUSED[arm]
         _refused(rep, cause, arm)
