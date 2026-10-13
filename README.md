@@ -120,9 +120,12 @@ built. **RESEARCHING** means designed but not built yet.
 
 ## Quick start
 
-You need Python 3.10 or newer and [uv](https://docs.astral.sh/uv/). `uv sync` installs PyTorch 2.4 or newer, NumPy,
-zstandard and cryptography. The CPU demo needs only a laptop and has run on macOS (Apple Silicon). A GPU run needs one
-NVIDIA GPU per pipeline stage; ours have used Linux containers with H100 and RTX cards. Windows hasn't been tried.
+The quickest way to see Elysium work is the laptop demo: it needs no GPU and takes about 70 seconds on an M4 MacBook
+Air. Real training needs one NVIDIA GPU per pipeline stage. So far the demo has run on macOS (Apple Silicon), and GPU
+runs have used Linux containers with H100 and RTX cards. Windows hasn't been tried.
+
+Install Python 3.10 or newer and [uv](https://docs.astral.sh/uv/), then clone the repository. `uv sync` installs
+PyTorch 2.4 or newer, NumPy, zstandard and cryptography:
 
 ```bash
 git clone https://github.com/virgiliolrf/elysium-wan.git
@@ -132,14 +135,13 @@ uv sync
 
 ### Try it on your laptop
 
-This command starts a coordinator and five workers. They form a four-stage pipeline in two emulated regions, joined by
-a 60 Mb/s, 60 ms link, and one worker is killed at step 6:
-
 ```bash
 uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
 ```
 
-It takes about 70 seconds on an M4 MacBook Air. You should see something like this:
+This starts a coordinator and five workers on your machine, split into two emulated regions joined by a 60 Mb/s link
+with a 60 ms round trip. Four workers form the four-stage pipeline and the fifth is a spare. At step 6 the demo kills
+worker `w0`, and the end of the output looks like this:
 
 ```text
 >>> killing w0 (agent and stage) at step >= 6
@@ -150,15 +152,30 @@ It takes about 70 seconds on an M4 MacBook Air. You should see something like th
 vs single-device reference: {"ok": true, "compared": 240, "mismatches": 0, "max_abs_diff": 0.0, "first_mismatch": null}
 ```
 
-The last line compares the run with a single device: after losing a worker and healing, the four-stage run produced
-exactly the same 240 losses.
+The coordinator notices that `w0`'s control connection is gone, hands its slot to `w3`, and every stage resumes after
+step 5. The last line compares the run with a single device: all 240 losses are identical, crash and heal included.
 
-Add `--mps` to put one worker on the Apple GPU. The demo then skips the comparison, because a mixed device map has no
-single-device reference.
+On a Mac, add `--mps` to put one worker on the Apple GPU. The demo then skips the comparison, because a mixed device
+map has no single-device reference.
 
-### Run on real machines
+### Run on your own machines
 
-Start one coordinator, and one worker on each machine. The token authenticates the workers:
+Each pipeline stage needs a machine with an NVIDIA GPU and the repository installed as above.
+
+First, tokenize a corpus. The GPT-2 tokenizer comes with the `data` extra:
+
+```bash
+uv sync --extra data
+uv run wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bin --tokenizer gpt2
+```
+
+Next, write a job file. It is `{"plan": {...}, "stages": N}`, with the model shape, dataset, steps, microbatches and
+optimizer, and the planner works out the cut, the schedule and the memory mode from the fleet it measures. The job
+files in [`benchmarks/wan/`](benchmarks/wan/) are working examples. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json)
+is a two-stage one, and its `dataset` field is where your `data.bin` goes.
+
+Then start the coordinator, and one worker on each machine. They share a token, which is how the coordinator
+authenticates the workers:
 
 ```bash
 # the coordinator (control plane only)
@@ -169,20 +186,13 @@ WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-
     --advertise-host <public-ip> --data-port 29000 --region eu-west --device cuda
 ```
 
-`--any-region` lets one run span workers in different regions; without it, the coordinator picks workers from a
+`--any-region` lets one run span workers in different regions. Without it, the coordinator picks workers from a
 single region.
-
-The job file is `{"plan": {...}, "stages": N}`, with the model shape, dataset, steps, microbatches and optimizer. The
-planner works out the cut, the schedule and the memory mode from the measured fleet. The job files in
-[`benchmarks/wan/`](benchmarks/wan/) are working examples.
-
-To tokenize a corpus, run
-`wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bin --tokenizer gpt2`. The GPT-2 tokenizer
-needs the `data` extra.
 
 ### Rented GPUs
 
-[`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) drives the whole flow from your own machine:
+[`benchmarks/wan/cluster.py`](benchmarks/wan/cluster.py) drives the whole flow from your own machine, from checking
+the nodes to watching the run:
 
 ```bash
 cd benchmarks/wan
