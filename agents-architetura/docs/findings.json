@@ -292,6 +292,16 @@
       "location": "tests/chaos/test_recovery.py::test_frozen_stage_is_restarted_in_place",
       "problem": "Failed once in rung full with 'assert (2 == 1)' in the same run whose pytest session folder (pytest-of-virgiliofilho/pytest-37) the orchestrator's disk guard deleted at 00:04 (FileNotFoundError in the same rung).",
       "fix": "Not code: run 20x alone through the test slot on the committed tree 77113a8 (2 batches of 10): 20 passed, 0 failed. Attributed to the deleted session; the disk guard was fixed by the orchestrating session. Reopen if it fails again outside a deleted session."
+    },
+    {
+      "id": "HFM-LINUX-CUDA-FINGERPRINT",
+      "status": "open",
+      "severity": "major",
+      "lens": "bug",
+      "source": "elysium-wan CI ladder, unit rung on ubuntu-latest (torch 2.14.1+cu130, cp312 manylinux_2_28_x86_64), 2026-10-13",
+      "location": "src/wantrain/model/hfm.py TORCH_RECORDS (~line 81) and _native (~line 2188); tests/unit/test_finetune.py: test_hfm_guard_and_fingerprint_in_a_clean_launch, test_hf_e6_clean_site_copy_is_admitted, test_hf_e6_planted_pycache_runs_only_without_the_prefix (both parameters), test_hf_e6_torch_native_library_from_a_copy_is_refused",
+      "problem": "MODEL-I10's fingerprint refuses a clean Linux CUDA launch on two counts. FP-TORCH-RECORDS: TORCH_RECORDS holds only the measured macOS arm64 entry (Linux entries wait for the pin-bump PR, D-9). FP-NATIVE: the loaded .venv/lib/python3.12/site-packages/nvidia/cu13/lib/libcupti.so.13 is not a fingerprinted RECORD path, but its basename matches a fingerprinted RECORD file, so _native reports 'has a RECORD file's name but loads from another path'. The five arms pass on macOS (5 passed, 2026-10-13).",
+      "fix": "Measure and add the Linux CUDA TORCH_RECORDS entry in the pin-bump PR (D-9). Make _native admit a native library loaded from the wheel that owns it (match on the owning distribution's RECORD path, or fingerprint the nvidia-* wheels' RECORDs) while a copied torch library is still refused. Then remove the strict xfail pins in test_finetune.py."
     }
   ]
 }

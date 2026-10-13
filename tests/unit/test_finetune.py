@@ -29,10 +29,10 @@ from wantrain.model.gpt import GPTConfig, build_layers, call_layer, loss_fn
 # MODEL-I10's fingerprint on a Linux CUDA wheel: TORCH_RECORDS has no Linux entry yet (hfm.py: "Linux entries wait
 # for the pin-bump PR", D-9), and the native-library check flags nvidia/cu13/lib/libcupti.so.13 as a RECORD file's
 # name loaded from another path. These arms run on macOS, where the entry is measured; on a Linux CUDA wheel they
-# are expected to fail until the guard and the entry are fixed (see the "HF fingerprint on Linux CUDA wheels" issue).
+# are expected to fail until the guard and the entry are fixed (ledger: HFM-LINUX-CUDA-FINGERPRINT).
 _LINUX_CUDA_FINGERPRINT = pytest.mark.xfail(
     sys.platform.startswith("linux") and torch.version.cuda is not None,
-    reason="MODEL-I10 fingerprint: no Linux TORCH_RECORDS entry, FP-NATIVE false positive on nvidia libraries",
+    reason="LEDGER:HFM-LINUX-CUDA-FINGERPRINT no Linux TORCH_RECORDS entry; FP-NATIVE flags nvidia libraries",
     strict=True,
 )
 

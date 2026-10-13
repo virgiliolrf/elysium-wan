@@ -222,8 +222,12 @@ class StageRuntime:
     _opt_steps = (
         0  # optimizer steps this process has started (RUNTIME-I24 promotes after the second)
     )
-    _opt_events: list | None = None  # per chunk layer: the CUDA event its update ends with (RUNTIME-I23)
-    _opt_stream: torch.cuda.Stream | None = None  # the optimizer's side CUDA stream, one per run (RUNTIME-I23)
+    _opt_events: list | None = (
+        None  # per chunk layer: the CUDA event its update ends with (RUNTIME-I23)
+    )
+    _opt_stream: torch.cuda.Stream | None = (
+        None  # the optimizer's side CUDA stream, one per run (RUNTIME-I23)
+    )
 
     def __init__(self, spec: JobSpec, rank: int, peer: int = 0):
         self.spec = spec.finalize()

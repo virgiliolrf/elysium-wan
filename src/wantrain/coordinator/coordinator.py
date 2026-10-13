@@ -293,7 +293,9 @@ class _Run:
         self.plan_hops: list = []
         self.slot_base: dict = {}
         self.slot_hist: dict = {}
-        self.slow_noted: object = None  # the slow slot (or re-cut evaluation) already logged this attempt
+        self.slow_noted: object = (
+            None  # the slow slot (or re-cut evaluation) already logged this attempt
+        )
         self.restore_t0: float | None = None
         self.restart_cost_s: float | None = None
         self.telem_stats = {"accepted": 0, "dropped": 0, "handle_us_max": 0.0}
