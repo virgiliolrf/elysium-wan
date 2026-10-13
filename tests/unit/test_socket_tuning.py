@@ -31,7 +31,7 @@ def test_tune_never_raises_and_the_tuned_connect_carries_bytes(monkeypatch):
     lst = socket.socket()
     lst.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     applied = tuning.tune(lst)
-    assert set(applied) == {"cc", "sndbuf", "rcvbuf"}
+    assert set(applied) == {"cc", "sndbuf", "rcvbuf", "pace"}
     lst.bind(("127.0.0.1", 0))
     lst.listen(1)
     port = lst.getsockname()[1]
@@ -49,4 +49,4 @@ def test_tune_never_raises_and_the_tuned_connect_carries_bytes(monkeypatch):
     t.join(5)
     c.close()
     lst.close()
-    assert got == [b"hello"] and set(info) == {"cc", "sndbuf", "rcvbuf"}
+    assert got == [b"hello"] and set(info) == {"cc", "sndbuf", "rcvbuf", "pace"}

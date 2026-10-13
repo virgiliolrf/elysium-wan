@@ -18,6 +18,7 @@ def _spec(**kw):
 
 
 def test_the_last_stage_keeps_its_graph_and_the_others_recompute():
+    # covers: RUNTIME-I25
     spec = _spec(recompute=True)
     got = selective_recompute(spec)
     assert got is not None and got[-1] is False
@@ -30,12 +31,14 @@ def test_the_last_stage_keeps_its_graph_and_the_others_recompute():
 
 
 def test_forced_stages_recompute_and_nothing_changes_without_recompute():
+    # covers: RUNTIME-I25
     spec = _spec(recompute=True)
     assert selective_recompute(spec, force={2}) in (None, [True, True, True])
     assert selective_recompute(_spec(recompute=False)) is None
 
 
 def test_spec_validates_and_reads_the_per_stage_list():
+    # covers: RUNTIME-I25
     spec = _spec(recompute=True, recompute_stages=[True, False, False])
     assert [spec.recomputes(r) for r in range(3)] == [True, False, False]
     assert _spec(recompute=True).recomputes(1) is True
@@ -45,6 +48,7 @@ def test_spec_validates_and_reads_the_per_stage_list():
 
 
 def test_memory_and_cost_models_follow_the_stage():
+    # covers: RUNTIME-I25
     spec = _spec(recompute=True, recompute_stages=[True, True, False])
     a, b = spec.partition[2]
     kept = stage_memory_model(spec, b - a, (a, b), False)

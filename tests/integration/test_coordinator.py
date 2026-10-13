@@ -1849,6 +1849,7 @@ def test_a_slow_stage_is_re_cut_from_the_measured_costs(tmp_path):
 
 
 def test_a_stage_that_slows_down_is_replaced_by_a_spare_or_re_cut_away_from(tmp_path):
+    # covers: CONTROL-I27
     """CONTROL-I27: a slot whose compute per microbatch stays above 1.3x its own baseline for three summaries
     is healed onto an idle spare of the run's class; with no spare the chain is re-cut away from it. A slot slow
     from its first summary is its own baseline and stays."""

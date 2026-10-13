@@ -83,6 +83,7 @@ def test_refined_partition_moves_entries_off_the_slow_stage_and_needs_a_gain():
 
 
 def test_slow_slots_and_recut_refusal():
+    # covers: CONTROL-I27
     from wantrain.coordinator.coordinator import recut_refusal, slow_slots, stage_compute_ms
     from wantrain.model.gpt import make_config
     from wantrain.runtime.spec import JobSpec
