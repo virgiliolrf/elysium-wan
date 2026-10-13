@@ -39,8 +39,8 @@ Meanwhile, GPUs are expensive and scattered across clouds, smaller providers, un
 dozens of regions. Each pool is usually too small, or too far from the others, to train a large model on its own, and
 a model that doesn't fit in one pool can't borrow the rest.
 
-A synchronous step waits for its slowest stage and its slowest link, so all of this turns into idle GPUs. In our
-first transatlantic run, the GPUs spent 72 to 79% of each step waiting.
+Training one model across those pools puts the slow links inside every step, and a synchronous step waits for its
+slowest stage and its slowest link. In our first transatlantic run, the GPUs spent 72 to 79% of each step waiting.
 
 Hardware isn't interchangeable either. Different GPU models, even ones that differ only in their number of streaming
 multiprocessors, pick different kernels, so the same math can produce different bits. Vendors bring different stacks:
