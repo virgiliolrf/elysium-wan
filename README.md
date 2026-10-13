@@ -197,11 +197,7 @@ It currently assumes Vast.ai-style containers (mapped ports and `vast-capabiliti
 `~/.ssh/elysium_vast`.
 
 ## Architecture and research
-
-Every rule the engine keeps has a number, like RUNTIME-I27, and lives in a SPEC document:
-[runtime](docs/design/SPEC-runtime.md), [scheduler](docs/design/SPEC-scheduler.md),
-[transport](docs/design/SPEC-transport.md), [control](docs/design/SPEC-control.md) and [model](docs/design/SPEC-model.md).
-Bigger decisions are recorded as [ADRs](docs/design/adr/). Four decisions shape the rest of the engine:
+Four decisions shape the rest of the engine:
 
 - Exactness is part of the design. Gradients are summed in a fixed microbatch order, whatever order they arrive in.
   Kernels are pinned to deterministic implementations, and the wire is lossless. Initialization replays one seeded
