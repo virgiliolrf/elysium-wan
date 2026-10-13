@@ -967,8 +967,13 @@ def test_m4_agent_wire_abort_during_gate_kills_child_and_prefix(tmp_path, hf_off
     script = [lambda: (msg, b""), child_running, gate_answered]
     agent._serve(_serve_script(agent, script))
     kinds = [(m["kind"], m.get("rid")) for m in sent]
-    assert kinds == [("ABORT_ACK", "a"), ("ERROR", "g"), ("PONG", "after"), ("PONG", "last")]
-    assert sent[1]["error"] == "ChildAborted: GATE on cpu aborted"
+    # The ABORT_ACK (reader thread) and the GATE's ERROR (its own thread) race, and the
+    # coordinator matches each reply by its rid, so either may go first.
+    assert sorted(kinds[:2]) == [("ABORT_ACK", "a"), ("ERROR", "g")], kinds
+    assert kinds[2:] == [("PONG", "after"), ("PONG", "last")], kinds
+    assert next(m for m in sent if m["kind"] == "ERROR")["error"] == (
+        "ChildAborted: GATE on cpu aborted"
+    )
     # Killed by the ABORT (SIGKILL of its group), not waited for until the gate ended.
     assert held["proc"].returncode == -9
     assert _gone(held["proc"].pid) and not os.path.exists(held["prefix"])
