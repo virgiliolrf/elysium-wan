@@ -110,8 +110,8 @@ built. **RESEARCHING** means designed but not built yet.
 | Failure detection, heal from spares, resume from checkpoint waves | **PARTIAL** |
 | Re-cut a run to another partition at a checkpoint | **PARTIAL** |
 | Heterogeneous device maps (CUDA, MPS and CPU in one run) | **PARTIAL** |
-| Sharded wide stages (FSDP-style pieces, ADR-0006) | **PARTIAL** |
-| Mixture-of-Experts with deterministic routing (ADR-0008) | **PARTIAL** |
+| Sharded wide stages (FSDP-style pieces) | **PARTIAL** |
+| Mixture-of-Experts with deterministic routing | **PARTIAL** |
 | HuggingFace dense decoders (`arch: hf`) and user models (`arch: user`) | **PARTIAL** |
 | bf16 working weights with fp32 masters in host memory | **PARTIAL** |
 | Benchmarks | **PARTIAL** |
