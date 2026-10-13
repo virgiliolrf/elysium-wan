@@ -214,20 +214,16 @@ class StageRuntime:
     _bias_layer: dict = {}  # shard "pieces": bias name -> MoE layer
     _net_logged = False  # WT_NET dial printed (TRANSPORT-I10)
     _opt_thread: threading.Thread | None = None  # RUNTIME-I23: the step's optimizer, overlapped
-    _opt_ready: list | None = (
-        None  # per chunk layer: set once its parameters hold the step's update
-    )
+    # Per chunk layer: set once its parameters hold the step's update.
+    _opt_ready: list | None = None
     _opt_error: list = []
     _opt_logged = False
-    _opt_steps = (
-        0  # optimizer steps this process has started (RUNTIME-I24 promotes after the second)
-    )
-    _opt_events: list | None = (
-        None  # per chunk layer: the CUDA event its update ends with (RUNTIME-I23)
-    )
-    _opt_stream: torch.cuda.Stream | None = (
-        None  # the optimizer's side CUDA stream, one per run (RUNTIME-I23)
-    )
+    # Optimizer steps this process has started (RUNTIME-I24 promotes after the second).
+    _opt_steps = 0
+    # Per chunk layer: the CUDA event its update ends with (RUNTIME-I23).
+    _opt_events: list | None = None
+    # The optimizer's side CUDA stream, one per run (RUNTIME-I23).
+    _opt_stream: torch.cuda.Stream | None = None
 
     def __init__(self, spec: JobSpec, rank: int, peer: int = 0):
         self.spec = spec.finalize()
@@ -3135,7 +3131,7 @@ class StageRuntime:
         if (
             self._opt_steps != 3
             or self.device.type != "cuda"
-            or not hasattr(self.opt, "promote")
+            or not isinstance(self.opt, optim.HostAdamW)
             or os.environ.get("WANTRAIN_OPT_RESIDENT", "auto") == "off"
         ):
             return
@@ -3143,10 +3139,8 @@ class StageRuntime:
         # A margin of a tenth of the card (at least 1 GiB): the peak is the last step's (_print_mem resets it), and
         # a later step can run above it.
         room = int(0.85 * self._free_at_init) - peak - max(1 << 30, self._free_at_init // 10)
-        if self.opt is None:
-            return
         moved = self.opt.promote(room) if room > 0 else 0
-        n = len(getattr(self.opt, "resident", ()))
+        n = len(self.opt.resident)
         print(
             f"WT_OPT resident bytes={moved} params={n}/{len(self.params)} room={room} peak={peak}",
             flush=True,

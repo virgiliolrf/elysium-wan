@@ -2,7 +2,7 @@
 2-stage pipeline path (graph cut, capture, deferred W run in reverse order), sha256 of weights + AdamW state + every
 loss and aux hex. Local Mac, CPU, 1 thread, deterministic algorithms."""
 import sys, copy, hashlib, itertools
-sys.path.insert(0, "src")  # run from the repository root
+sys.path.insert(0, "/Users/virgiliofilho/edt-sec/src")
 import torch, torch.nn as nn, torch.nn.functional as F
 from wantrain.model import wgrad
 torch.set_num_threads(1); torch.use_deterministic_algorithms(True)

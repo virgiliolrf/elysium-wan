@@ -61,6 +61,9 @@ against an oracle; the oracle of a mixed map is per device map (ADR-0005). It st
 
 ## Results
 
+Commit hashes in the run reports below refer to the development history before the public release; the fixes they
+name are in this repository's first commit.
+
 | Run | Fleet | Result |
 |---|---|---|
 | [`2026-10-12-us-kr-607m`](runs/2026-10-12-us-kr-607m/REPORT.md) | 2 consumer GPUs, Washington ↔ Seoul | 607M dense, 30 min, loss 11.0 → 3.1, 1,741 tok/s; latency-bound |

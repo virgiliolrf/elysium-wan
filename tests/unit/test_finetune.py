@@ -26,17 +26,6 @@ from wantrain.model.gpt import GPTConfig, build_layers, call_layer, loss_fn
 # ------------------------------------------------------------------------ LoRA
 
 
-# MODEL-I10's fingerprint on a Linux CUDA wheel: TORCH_RECORDS has no Linux entry yet (hfm.py: "Linux entries wait
-# for the pin-bump PR", D-9), and the native-library check flags nvidia/cu13/lib/libcupti.so.13 as a RECORD file's
-# name loaded from another path. These arms run on macOS, where the entry is measured; on a Linux CUDA wheel they
-# are expected to fail until the guard and the entry are fixed (ledger: HFM-LINUX-CUDA-FINGERPRINT).
-_LINUX_CUDA_FINGERPRINT = pytest.mark.xfail(
-    sys.platform.startswith("linux") and torch.version.cuda is not None,
-    reason="LEDGER:HFM-LINUX-CUDA-FINGERPRINT no Linux TORCH_RECORDS entry; FP-NATIVE flags nvidia libraries",
-    strict=True,
-)
-
-
 def test_lora_leaves_the_model_numerically_untouched_at_step_zero():
     """B is zero, so the adapted model is the base model before any update."""
     # covers: MODEL-I5
@@ -1074,7 +1063,6 @@ def _causes(r) -> list:
     return [x.split(":")[0] for x in r["refusals"]]
 
 
-@_LINUX_CUDA_FINGERPRINT
 def test_hfm_guard_and_fingerprint_in_a_clean_launch(tmp_path):
     # covers: MODEL-I10
     # WOULD-FAIL-IF: a process started in stage_env with -X pycache_prefix is refused, or its fingerprint
@@ -1179,6 +1167,62 @@ def test_hfm_fingerprint_refuses_a_monkeypatch_from_another_installed_package(mo
         problem = hfm._code_problem(files)
         assert problem and "modeling_llama.rotate_half" in problem
     assert hfm._code_problem(files) is None
+
+
+def test_hfm_fingerprint_checks_what_a_requirement_pulls_in_through_its_extras(
+    tmp_path, monkeypatch
+):
+    # covers: MODEL-I10
+    # WOULD-FAIL-IF: torch's requirement kit[extra-a] (cuda-toolkit[cublas,cupti,...] on Linux CUDA wheels) is
+    # fingerprinted as the kit alone, so the distribution its extra pulls in (an nvidia-* wheel) is never
+    # RECORD-verified and its loaded library is refused as a RECORD file's name from another path; or an extra not
+    # requested, a marker false here, or the kit's own requirement is taken as torch's
+    import importlib.metadata as md
+
+    hfm = _hfm()
+    site = tmp_path / "site"
+
+    def dist(name: str, requires=(), files=()) -> None:
+        """A distribution installed under site: its files, METADATA, and a RECORD with each file's sha256."""
+        info = site / f"{name.replace('-', '_')}-1.0.dist-info"
+        info.mkdir(parents=True)
+        meta = ["Metadata-Version: 2.1", f"Name: {name}", "Version: 1.0"]
+        meta += [f"Requires-Dist: {r}" for r in requires]
+        (info / "METADATA").write_text("\n".join(meta) + "\n")
+        rows = []
+        for rel, data in files:
+            (site / rel).parent.mkdir(parents=True, exist_ok=True)
+            (site / rel).write_bytes(data)
+            rows.append(f"{rel},sha256={hfm._b64sha(data)},{len(data)}")
+        rows += [f"{info.name}/METADATA,,", f"{info.name}/RECORD,,"]
+        (info / "RECORD").write_text("\n".join(rows) + "\n")
+
+    never = 'sys_platform == "no-such-platform"'
+    dist("torch-like", ["kit[extra-a]", "plain", f"off[extra-a]; {never}"])
+    dist(
+        "kit",
+        [
+            'pkg-a; extra == "extra-a"',
+            'pkg-b; extra == "extra-b"',
+            f'pkg-c; extra == "extra-a" and {never}',
+            "kit-own",
+        ],
+    )
+    dist("off", ['pkg-d; extra == "extra-a"'])
+    dist("pkg-a", files=[("ns/lib/libpkga.so.1", b"pkg-a's native library")])
+    dist("plain", files=[("plain/__init__.py", b"")])
+    monkeypatch.syspath_prepend(str(site))
+    deps = hfm._torch_deps(md.distribution("torch-like"))
+    assert deps == ["kit", "pkg-a", "plain"], deps
+    problems: list = []
+    files_of: dict = {}
+    for dep in deps:
+        hfm._check_dist(dep, problems, files_of)
+    lib = os.path.realpath(site / "ns" / "lib" / "libpkga.so.1")
+    assert problems == [] and files_of[lib][:2] == ("pkg-a", "ns/lib/libpkga.so.1"), (
+        problems,
+        sorted(files_of),
+    )
 
 
 def test_hfm_record_diff_names_the_first_differing_path():
@@ -2045,7 +2089,9 @@ E1_ARMS = {
 # deepest cut with recompute, bf16). A real divergence the gate must and does refuse. It is a rare bf16 rounding
 # flip between the two paths (one block of four on Apple M4), so it shows only where the CPU's kernels round them
 # differently: on some x86 CI runners the gate compares every cut and admits mamba under bf16 (MEASURED
-# 2026-10-13). An arm refused must be refused for its cause; an arm admitted must pass the full comparison.
+# 2026-10-13). An arm refused must be refused for its cause; an arm admitted must pass the full comparison. That the
+# gate refuses a divergence only in a recompute stage's no-grad forward is checked on every platform by
+# test_hfm_gate_refuses_a_divergence_only_in_the_no_grad_recompute_forward.
 E1_REFUSED = {"mamba": ("GATE-DIFF", "recompute")}
 
 
@@ -2059,11 +2105,13 @@ def test_hf_family_e1_extra_arms_pass_the_gate(arm):
     mt, over = E1_ARMS[arm]
     hc = hfm.tiny_config(mt, **over)
     rep = hfm.gate(hc, GATE_RECIPE, "cpu")
-    if arm in E1_REFUSED and rep["cause"] == E1_REFUSED[arm][0]:
-        # Recorded with its cause: refused, never exempted (the fp32 recipe is admitted).
+    if arm in E1_REFUSED and rep["first_difference"] is not None:
+        # Refused, never exempted: for its documented cause, at a bit difference (not a crash) in the last cut the
+        # gate compared, a recompute cut; and the fp32 recipe is admitted.
         cause, where = E1_REFUSED[arm]
         _refused(rep, cause, arm)
-        assert where in rep["first_difference"], rep["first_difference"]
+        assert rep["cuts"] and where in rep["cuts"][-1], (rep["cuts"], rep["first_difference"])
+        assert rep["first_difference"].endswith(f"({rep['cuts'][-1]})"), rep["first_difference"]
         rep = hfm.gate(hc, FP32_RECIPE, "cpu")
         assert rep["dtypes"] == ["fp32"] and len(rep["cuts"]) == (_gate_depth(hc) + 4) * 2
         assert rep["first_difference"] is None
@@ -2078,6 +2126,33 @@ def test_hf_family_e1_extra_arms_pass_the_gate(arm):
         wgrad.convert(units, exclude=units.exclusions)
         mixer = units.root.backbone.layers[0].mixer
         assert type(mixer.dt_proj) is nn.Linear and type(mixer.in_proj) is wgrad.SplitLinear
+
+
+def test_hfm_gate_refuses_a_divergence_only_in_the_no_grad_recompute_forward(monkeypatch):
+    # covers: MODEL-I9, MODEL-I10
+    # WOULD-FAIL-IF: the gate admits a unit chain whose bits differ only in a recompute stage's no-grad forward (as
+    # mamba's bf16 slow path does on Apple M4): its recompute cut is dropped, or that forward runs with grad enabled
+    hfm = _hfm()
+    hc = _tiny("llama")
+    fired = []
+
+    def no_grad_only(mod, args, out):
+        if torch.is_grad_enabled():
+            return None
+        fired.append(1)
+        return out + 1.0
+
+    # The seam gets the chain's own tree (a deep copy of the reference), so the reference never runs the hook.
+    monkeypatch.setattr(
+        hfm, "_chain_buffers", lambda root: root.model.layers[1].register_forward_hook(no_grad_only)
+    )
+    rep = hfm.gate(hc, GATE_RECIPE, "cpu")
+    _fired(len(fired), "layer 1's output perturbed in a no-grad forward of the chain")
+    _refused(rep, "GATE-DIFF", "a divergence only in the no-grad recompute forward")
+    # The deepest cut compared equal with grad enabled (the hook a no-op) and differs in its recompute pass.
+    deep = f"cut {list(range(_gate_depth(hc) + 3))}, fp32, M=1"
+    assert rep["cuts"] == [deep, f"{deep}, recompute"], rep["cuts"]
+    assert rep["first_difference"].endswith(f"({deep}, recompute)"), rep["first_difference"]
 
 
 # --------------------------------------------------------- HF-MoE rows (F8)
@@ -3396,7 +3471,6 @@ def _replace_with_copy(site, rel: str, extra: str) -> None:
     p.write_text(text + extra)
 
 
-@_LINUX_CUDA_FINGERPRINT
 def test_hf_e6_clean_site_copy_is_admitted(tmp_path):
     # covers: MODEL-I10
     # WOULD-FAIL-IF: an unchanged copy of the installed transformers and torch (the control every drift arm is
@@ -3447,7 +3521,6 @@ def test_hf_e6_added_and_sourceless_files_are_refused(tmp_path):
     assert any("extra_e6.py" in x for x in rec) and any("e6_sourceless.pyc" in x for x in rec), rec
 
 
-@_LINUX_CUDA_FINGERPRINT
 @pytest.mark.parametrize(
     "dist, rel",
     [
@@ -3503,7 +3576,6 @@ def test_hf_e6_ld_preload_is_refused(tmp_path):
     assert r["guard"][0] == "ENV-LOADER" and "LD_PRELOAD" in r["guard"][1]
 
 
-@_LINUX_CUDA_FINGERPRINT
 def test_hf_e6_torch_native_library_from_a_copy_is_refused(tmp_path):
     # covers: MODEL-I10
     # WOULD-FAIL-IF: a torch native library loaded from a copy elsewhere (its RECORD basename, another path) is
@@ -3518,8 +3590,10 @@ def test_hf_e6_torch_native_library_from_a_copy_is_refused(tmp_path):
     )
     r = _e6(tmp_path, pre=pre)
     _fired(r["pre"], "a copy of a torch native library loaded")
+    # _native lists its refusals in path order: the copy's, wherever tmp_path sorts, must be among them.
+    copy_path = os.path.join(str(tmp_path), "copy", lib)
     nat = [x for x in r["refusals"] if x.startswith("FP-NATIVE")]
-    assert nat and lib in nat[0], r["refusals"]
+    assert any(copy_path in x for x in nat), r["refusals"]
 
 
 def test_hf_e6_monkeypatch_in_the_child_is_refused(tmp_path):

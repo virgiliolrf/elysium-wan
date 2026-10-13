@@ -1,6 +1,6 @@
 # Probe (not a benchmark): per-layer streamed replay of the v1 init stream vs full build.
 import hashlib, sys, time, torch
-sys.path.insert(0, "src")  # run from the repository root
+sys.path.insert(0, "/Users/virgiliofilho/edt-sec/src")
 from wantrain.model import arch, gpt
 from wantrain.model.gpt import GPTConfig
 torch.set_num_threads(1)

@@ -75,7 +75,8 @@ PROBED_LOCKED: frozenset[str] = frozenset()
 SUBSTITUTE: dict[tuple[str, str], type] = {}
 
 # (platform tag, torch version) -> {distribution: canonical RECORD sha256} of
-# torch and every distribution torch requires on that platform (MODEL-I10).
+# torch and every distribution torch requires on that platform, those its
+# requirements' extras pull in included (_torch_deps, MODEL-I10).
 # The macOS arm64 entry is MEASURED from the installed wheels (2026-10-11,
 # Apple Silicon, uv 0.11.14); Linux entries wait for the pin-bump PR (D-9).
 TORCH_RECORDS: dict[tuple[str, str], dict[str, str]] = {
@@ -2013,13 +2014,33 @@ def _recorded_paths() -> set:
 
 
 def _torch_deps(d) -> list[str]:
+    """The distributions torch requires here (MODEL-I10): each requirement
+    whose marker holds and, for one with extras, every requirement of the
+    named distribution whose marker holds under a requested extra and not
+    without one (cuda-toolkit[cublas,...] brings the nvidia-* wheels on
+    Linux CUDA wheels)."""
+    import importlib.metadata as md
+
     from packaging.requirements import Requirement
 
     out = []
     for r in d.requires or []:
         req = Requirement(r)
-        if req.marker is None or req.marker.evaluate({"extra": ""}):
-            out.append(req.name)
+        if req.marker is not None and not req.marker.evaluate({"extra": ""}):
+            continue
+        out.append(req.name)
+        if not req.extras:
+            continue
+        try:
+            kit = md.distribution(req.name).requires or []
+        except md.PackageNotFoundError:
+            continue  # the caller refuses the missing distribution by name
+        for k in kit:
+            sub = Requirement(k)
+            if sub.marker is None or sub.marker.evaluate({"extra": ""}):
+                continue  # the named distribution's own requirement, not an extra's
+            if any(sub.marker.evaluate({"extra": e}) for e in sorted(req.extras)):
+                out.append(sub.name)
     return sorted(set(out))
 
 

@@ -9,11 +9,7 @@ killed mid-run to show detection, replacement and an exact resume.
     uv run python examples/wan_cluster_demo.py --workers 5 --stages 4 --kill-at 6
 
 The last line prints the comparison against the single-device reference: the
-loss sequence is bit-identical, heal or no heal.
-
-With --mps, worker 0 registers on the Apple GPU. A run uses one device class
-until the heterogeneous track returns (CONTROL-I25), so the stages go to the CPU
-workers and the Apple GPU worker stays idle.
+loss sequence is bit-identical, heal or no heal, and the demo exits 1 if not.
 """
 
 from __future__ import annotations
@@ -51,11 +47,6 @@ def main() -> int:
     ap.add_argument("--stages", type=int, default=4)
     ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--kill-at", type=int, default=0, help="kill a worker at this step")
-    ap.add_argument(
-        "--mps",
-        action="store_true",
-        help="register worker 0 on the Apple GPU (it stays idle: a run uses one device class)",
-    )
     a = ap.parse_args()
 
     tmp = tempfile.mkdtemp(prefix="wantrain-demo-")
@@ -79,7 +70,6 @@ def main() -> int:
         prof = os.path.join(wd, "wan.json")
         with open(prof, "w") as f:
             json.dump(WAN, f)
-        dev = "mps" if (a.mps and i == 0) else "cpu"
         cmd = [
             sys.executable,
             "-m",
@@ -96,13 +86,19 @@ def main() -> int:
             "--workdir",
             wd,
             "--device",
-            dev,
+            # Every worker on the CPU, the reference's device: a run has one
+            # device class (CONTROL-I25).
+            "cpu",
             "--region",
             "eu" if i % 2 == 0 else "us",
             "--wan-profile",
             prof,
         ]
-        procs[f"w{i}"] = (subprocess.Popen(cmd, env=env, start_new_session=True), wd)
+        # pkill -f matches this extended regex against whole command lines: wd
+        # followed by "/", a space or the end names this agent (--workdir,
+        # --wan-profile) and its stage (--spec), and w1's never matches w10's.
+        kill_pattern = wd + "(/| |$)"
+        procs[f"w{i}"] = (subprocess.Popen(cmd, env=env, start_new_session=True), kill_pattern)
     coord.wait_for_workers(a.workers, 120)
 
     recipe = JobSpec(
@@ -145,21 +141,21 @@ def main() -> int:
             default=str,
         )
     )
+    exact = False
     if res.ok:
         ref = ensure_reference(JobSpec.from_json(recipe.to_json()), os.path.join(tmp, "ref"))
-        print(
-            "vs single-device reference:",
-            json.dumps(compare(ref, os.path.join(res.run_dir, "losses.json"))),
-        )
+        diff = compare(ref, os.path.join(res.run_dir, "losses.json"))
+        print("vs single-device reference:", json.dumps(diff))
+        exact = diff["ok"]
     coord.stop()
     time.sleep(0.5)
-    for p, wd in procs.values():
-        subprocess.run(["pkill", "-9", "-f", wd], check=False)
+    for p, kill_pattern in procs.values():
+        subprocess.run(["pkill", "-9", "-f", kill_pattern], check=False)
         try:
             os.killpg(p.pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             pass
-    return 0 if res.ok else 1
+    return 0 if exact else 1
 
 
 if __name__ == "__main__":

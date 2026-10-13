@@ -1,8 +1,5 @@
 # 2026-10-12: seven to nine RTX 4090s in the US (MoE attempts)
 
-Commit hashes below refer to the development history before the public release; those fixes are in this
-repository's first commit.
-
 No training step ran on this fleet. Every launch stopped at the coordinator's fit check, which measures each stage's
 real memory before the first step. What the attempts found was fixed in the engine:
 - `1cba9bd`: the fit replays the slot's real order;

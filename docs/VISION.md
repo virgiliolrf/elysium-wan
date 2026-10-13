@@ -3,7 +3,7 @@
 > **This is the destination, not what runs today.** It describes the heterogeneous fabric of the roadmap's later
 > phases: GPUs, TPUs, Trainium and other accelerators in one run, behind one PyTorch-facing API. Today Elysium trains one
 > model across **homogeneous GPUs in different sites** over an ordinary WAN, byte-exact; the `els.fit` API below does not
-> exist yet. See the [README](../README.md#status) for what is built.
+> exist yet. See the [README](../README.md#current-capabilities) for what is built.
 
 ## Why Elysium?
 
@@ -338,9 +338,7 @@ TPU            MB1  MB2  MB3  MB4  MB5
 Trainium            MB1  MB2  MB3  MB4  MB5
 ```
 
-For training, the runtime uses one family of schedules, zero-bubble pipeline parallelism: the backward pass is
-split into the input gradient (B) and the weight gradient (W), and W fills the gaps a 1F1B schedule would leave idle.
-The order is solved per run from measured stage and link costs, keeping memory within each device's budget.
+For training, the runtime uses one family of schedules, [zero-bubble pipeline parallelism](engine/ARCHITECTURE.md#one-execution-model-zero-bubble-pipeline-parallelism).
 
 ### 7. Hierarchical Parallelism
 

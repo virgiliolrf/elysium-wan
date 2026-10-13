@@ -21,7 +21,7 @@ clock ([run report](benchmarks/wan/runs/2026-10-13-h100/REPORT.md)).</sub>
 Elysium is early research software. So far we've trained dense GPT models from 607M to 25.1B parameters over the
 public internet, on GPUs rented by the hour. Between Czechia and Denver, a 2.8B model produced the same 320 losses as a
 single H100, bit for bit. A 15.8B model split between Virginia and Czechia reached 3,344 tokens/s, with the GPUs busy
-78% and 92% of each step.
+90% and 78% of each step.
 
 It doesn't yet mix GPU vendors, run a public compute network or run in production.
 
@@ -38,9 +38,9 @@ math can produce different bits.
 
 We want AI compute to work as one programmable layer. You describe a training job once; the system measures the
 machines and links available anywhere, places the work where it fits and runs best, and hands back the same model, bit
-for bit, that one big machine would have produced. Today's engine covers fleets of identical NVIDIA GPUs across sites.
-The [target architecture](docs/VISION.md) adds GPUs, TPUs, Trainium and AMD in one run, each stage on its own native
-runtime behind a common tensor contract.
+for bit, that one big machine would have produced. Today's engine covers fleets of NVIDIA GPUs of one model, or of one
+architecture, across sites. The [target architecture](docs/VISION.md) adds GPUs, TPUs, Trainium and AMD in one run,
+each stage on its own native runtime behind a common tensor contract.
 
 ## How Elysium works
 
@@ -96,15 +96,18 @@ uv run wantrain prepare-data --corpus corpus.txt --source-type txt --out data.bi
 
 Then write a job file, `{"plan": {...}, "stages": N}`, and start the coordinator and one worker per machine with the
 same token. [`job-2node-us-kr.json`](benchmarks/wan/job-2node-us-kr.json) is a two-stage example: set its `dataset` to
-your `data.bin`. The planner picks the cut, the schedule and the memory mode from the fleet it measures, and
-`--any-region` lets a run span regions.
+your `data.bin` and delete its `partition`, `mb_size` and `microbatches`. The planner then picks the cut, the schedule
+and the memory mode from the fleet it measures, and `--any-region` lets a run span regions. The first and last stages
+read the dataset on their own machines, so copy `data.bin` and `data.bin.meta.json` to the same path on every machine,
+or set `dataset_source` in the job to a directory or URL that holds them. The coordinator prints `COORDINATOR_ID <id>`
+when it starts; pass that id to every worker.
 
 ```bash
 # the coordinator (control plane only)
 WANTRAIN_COORD_TOKEN=<secret> uv run wantrain coordinator --port 28000 --job job.json --any-region
 
 # every worker
-WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-ip>:28000 \
+WANTRAIN_COORD_TOKEN=<secret> uv run wantrain worker --coordinator <coordinator-ip>:28000 --coordinator-id <id> \
     --advertise-host <public-ip> --data-port 29000 --region eu-west --device cuda
 ```
 
@@ -172,7 +175,8 @@ Each step pushes many microbatches through the pipeline. A stage runs the forwar
 the next stage over one or more TCP flows, paced by the kernel and encrypted with AES-256-GCM (ChaCha20-Poly1305 when
 either end lacks hardware AES). The backward pass is split in two, as in zero-bubble pipeline parallelism [1]: the
 input gradient goes back upstream at once, and the weight gradient waits. That deferred work fills the time a stage
-would otherwise spend waiting on the network, in 5 ms slices, so it never delays the next scheduled operation.
+would otherwise spend waiting on the network, in 5 ms slices, and stops between slices once the next scheduled
+operation can start.
 
 ### How memory is handled
 
@@ -184,9 +188,10 @@ The optimizer update then runs beside the next step's forward pass, which waits 
 
 Gradients are summed in microbatch order, whatever order they arrive in. Kernels are pinned to deterministic
 implementations, the wire is lossless, and initialization replays one seeded stream, so the weights never depend on
-where the model is cut. Every run uses one device class. A reference run trains the same recipe on one device, in
-the same microbatch order, and the two must match bit for bit; a change that alters the numerics is a new recipe that
-the reference runs too.
+where the model is cut. Every run uses one device class: one GPU model, or one GPU architecture with
+`WANTRAIN_DEVICE_CLASS=arch`. A reference run trains the same recipe on one device, in the same microbatch order, and
+the two must match bit for bit; a change that alters the numerics is a new recipe that the reference runs too. A run
+that mixes GPU models, like the 607M run below, can be checked only against a run on the same mix.
 
 ### When a worker fails
 
@@ -201,8 +206,8 @@ proven.
 - How do we save bandwidth without changing the bits? Lossy compression and low-communication optimizers [6][7] change
   what the model learns, so we work on the transport after idle periods, the bytes each token costs at a boundary, and
   overlap between the optimizer and communication.
-- Can different vendors agree on the bits? In our H100 measurements, exact accumulation cost 2.7 to 7.7× on the GEMM
-  term [11].
+- Can different vendors agree on the bits? In our H100 measurements of a research prototype that isn't in this
+  repository, exact accumulation [11] cost 2.7 to 7.7× on the GEMM term.
 
 ## Benchmarks and evaluation
 

@@ -93,9 +93,9 @@ def pace(sock: socket.socket):
 
 
 def tune(sock: socket.socket) -> dict:
-    """Apply congestion control and buffers to `sock` (before connect/listen). -> what holds after, for the run log:
-    {"cc": name or "unsupported", "sndbuf": bytes or "auto", "rcvbuf": bytes or "auto"}. Never raises: a knob the
-    kernel refuses keeps its default."""
+    """Apply congestion control, buffers and pacing to `sock` (before connect/listen). -> what holds after, for the
+    run log: {"cc": name or "unsupported", "sndbuf": bytes or "auto", "rcvbuf": bytes or "auto", "pace": bytes/s or
+    "off" or "unsupported" (pace())}. Never raises: a knob the kernel refuses keeps its default."""
     out: dict = {}
     want_cc = os.environ.get("WANTRAIN_TCP_CC", DEFAULT_CC)
     if not hasattr(socket, "TCP_CONGESTION"):

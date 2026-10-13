@@ -84,6 +84,9 @@ def test_refined_partition_moves_entries_off_the_slow_stage_and_needs_a_gain():
 
 def test_slow_slots_and_recut_refusal():
     # covers: CONTROL-I27
+    # WOULD-FAIL-IF: a slot were flagged slow when one of its last `runs` samples was within ratio x its baseline or
+    # it had no baseline, its ratio were not taken against the baseline, stage_compute_ms dropped one of the F, B, W
+    # medians, or recut_refusal let a wide stage be re-cut or refused a plain width-1 chain
     from wantrain.coordinator.coordinator import recut_refusal, slow_slots, stage_compute_ms
     from wantrain.model.gpt import make_config
     from wantrain.runtime.spec import JobSpec

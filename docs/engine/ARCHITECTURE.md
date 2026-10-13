@@ -192,8 +192,9 @@ only to a run on the same device map.
 ```bash
 uv sync
 WANTRAIN_COORD_TOKEN=secret uv run wantrain coordinator --port 28000 --job job.json
+# COORD_ID is the id the coordinator prints at start: COORDINATOR_ID <id>
 WANTRAIN_COORD_TOKEN=secret uv run wantrain worker --coordinator COORD:28000 \
-    --advertise-host PUBLIC_IP --data-port 29000 [--region eu-west]
+    --coordinator-id COORD_ID --advertise-host PUBLIC_IP --data-port 29000 [--region eu-west]
 uv run wantrain local --spec spec.json --compare      # every slot on this machine, diffed
 ```
 
@@ -204,6 +205,7 @@ implementation's own schedules, heterogeneous stress, IWRR, deferred-dW
 bit-exactness incl. device threads, planner, liveness, checkpoints),
 `tests/integration` (every mechanism as a real multi-process run diffed
 bit-for-bit against the oracle; coordinator end-to-end incl. WAN-emulated
-routing, profiled schedules, wide stages and a real CPU + MPS fleet),
+routing, profiled schedules and wide stages; a real CPU + MPS fleet, refused
+(`MIXED-FLEET`) before anything launches),
 `tests/chaos` (worker death, stage kill, frozen stage, control blip, no spare,
 wide-stage peer death — healed runs stay bit-identical).
