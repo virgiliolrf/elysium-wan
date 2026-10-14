@@ -23,8 +23,6 @@ public internet, on GPUs rented by the hour. Between Czechia and Denver, a 2.8B 
 single H100, bit for bit. A 15.8B model split between Virginia and Czechia reached 3,344 tokens/s, with the GPUs busy
 90% and 78% of each step.
 
-It doesn't yet mix GPU vendors, run a public compute network or run in production.
-
 ## The problem
 
 Training stacks expect every GPU to sit in one building, exchanging gradients or weights every step over links like
